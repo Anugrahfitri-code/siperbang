@@ -1,58 +1,320 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<div align="center">
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# 🚀 SIPERBANG
 
-## About Laravel
+**Sistem Informasi berbasis Laravel 13 + PostgreSQL**
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+[![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://php.net)
+[![Laravel](https://img.shields.io/badge/Laravel-13.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+</div>
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 📋 Daftar Isi
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- [Kebutuhan Sistem](#-kebutuhan-sistem)
+- [Cara Clone Proyek](#-cara-clone-proyek)
+- [Setup Otomatis ⚡ (Direkomendasikan)](#-setup-otomatis--direkomendasikan)
+- [Setup Manual](#-setup-manual)
+- [Menjalankan Aplikasi](#-menjalankan-aplikasi)
+- [Struktur Proyek](#-struktur-proyek)
+- [Perintah Berguna](#-perintah-berguna)
+- [Troubleshooting](#-troubleshooting)
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## 💻 Kebutuhan Sistem
 
-## Agentic Development
+Pastikan komputer kamu sudah terinstall software berikut sebelum memulai:
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+| Software | Versi Minimum | Link Download |
+|---|---|---|
+| **PHP** | 8.3+ | [php.net/downloads](https://php.net/downloads) |
+| **Composer** | 2.x | [getcomposer.org](https://getcomposer.org) |
+| **PostgreSQL** | 14+ | [postgresql.org/download](https://www.postgresql.org/download/) |
+| **Node.js** | 18+ | [nodejs.org](https://nodejs.org) |
+| **Git** | terbaru | [git-scm.com](https://git-scm.com) |
+
+> **Tips:** Untuk Windows, disarankan menggunakan [Laragon](https://laragon.org) atau [XAMPP + PostgreSQL](https://www.postgresql.org/download/windows/) agar lebih mudah.
+
+---
+
+## 📥 Cara Clone Proyek
+
+Buka terminal / command prompt, lalu jalankan:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/USERNAME/siperbang.git
+cd siperbang
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+> Ganti `USERNAME` dengan username GitHub pemilik proyek.
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## ⚡ Setup Otomatis (Direkomendasikan)
 
-## Code of Conduct
+Ini cara **paling mudah**. Script akan mengurus semuanya secara otomatis!
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 🪟 Windows
 
-## Security Vulnerabilities
+1. Masuk ke folder proyek
+2. **Double-click** file `setup.bat`
+3. Ikuti petunjuk yang muncul di layar
+4. Selesai! ✅
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Atau jalankan lewat Command Prompt:
+```cmd
+setup.bat
+```
 
-## License
+### 🐧 Linux / macOS
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+# Beri izin eksekusi dulu
+chmod +x setup.sh
+
+# Jalankan script
+./setup.sh
+```
+
+### Apa yang dilakukan script otomatis?
+
+Script akan melakukan langkah-langkah berikut secara otomatis:
+
+1. ✅ Mengecek PHP, Composer, PostgreSQL sudah terinstall
+2. ✅ Menanyakan konfigurasi database (host, port, nama database, username, password)
+3. ✅ **Membuat database PostgreSQL otomatis** (tidak perlu buat manual!)
+4. ✅ Menyalin `.env.example` → `.env`
+5. ✅ Menulis konfigurasi database ke `.env`
+6. ✅ Menjalankan `composer install`
+7. ✅ Generate `APP_KEY`
+8. ✅ Menjalankan **migrasi database** (tabel terbuat otomatis)
+9. ✅ Menanyakan apakah ingin menjalankan seeder (data awal)
+10. ✅ Menjalankan `npm install` dan `npm run build`
+
+---
+
+## 🔧 Setup Manual
+
+Jika ingin melakukan setup secara manual, ikuti langkah-langkah berikut:
+
+### Langkah 1 — Install Dependensi PHP
+
+```bash
+composer install
+```
+
+### Langkah 2 — Salin File .env
+
+```bash
+# Windows
+copy .env.example .env
+
+# Linux / macOS
+cp .env.example .env
+```
+
+### Langkah 3 — Buat Database PostgreSQL
+
+Buka **pgAdmin** atau **psql**, lalu buat database baru:
+
+```sql
+CREATE DATABASE siperbang;
+```
+
+Atau via terminal:
+```bash
+psql -U postgres -c "CREATE DATABASE siperbang;"
+```
+
+### Langkah 4 — Konfigurasi .env
+
+Buka file `.env` dengan teks editor, lalu ubah bagian database:
+
+```env
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=siperbang
+DB_USERNAME=postgres
+DB_PASSWORD=password_kamu
+```
+
+> Sesuaikan `DB_USERNAME` dan `DB_PASSWORD` dengan kredensial PostgreSQL kamu.
+
+### Langkah 5 — Generate APP_KEY
+
+```bash
+php artisan key:generate
+```
+
+### Langkah 6 — Jalankan Migrasi Database
+
+```bash
+php artisan migrate
+```
+
+Perintah ini akan **membuat semua tabel** di database secara otomatis.
+
+### Langkah 7 — (Opsional) Jalankan Seeder
+
+```bash
+php artisan db:seed
+```
+
+Ini akan mengisi database dengan data awal/contoh.
+
+### Langkah 8 — Install Dependensi Node.js
+
+```bash
+npm install
+```
+
+### Langkah 9 — Build Asset Frontend
+
+```bash
+npm run build
+```
+
+---
+
+## ▶️ Menjalankan Aplikasi
+
+Setelah setup selesai, jalankan aplikasi dengan salah satu perintah berikut:
+
+### Mode Sederhana (hanya server)
+
+```bash
+php artisan serve
+```
+
+Kemudian buka browser dan akses: **http://127.0.0.1:8000**
+
+### Mode Development Lengkap (server + queue + log + vite)
+
+```bash
+composer dev
+```
+
+Perintah ini menjalankan sekaligus:
+- 🌐 PHP server (`php artisan serve`)
+- 📬 Queue worker (`php artisan queue:listen`)
+- 📋 Log viewer (`php artisan pail`)
+- ⚡ Vite dev server (`npm run dev`)
+
+---
+
+## 📁 Struktur Proyek
+
+```
+siperbang/
+├── app/
+│   ├── Http/
+│   │   └── Controllers/    # Controller aplikasi
+│   ├── Models/             # Model Eloquent
+│   └── Providers/          # Service Provider
+├── database/
+│   ├── migrations/         # File migrasi database
+│   ├── seeders/            # Data seeder
+│   └── factories/          # Factory untuk testing
+├── resources/
+│   ├── views/              # Template Blade
+│   ├── css/                # File CSS
+│   └── js/                 # File JavaScript
+├── routes/
+│   └── web.php             # Definisi route web
+├── public/                 # File yang dapat diakses publik
+├── .env.example            # Contoh konfigurasi environment
+├── setup.bat               # Script setup otomatis (Windows)
+├── setup.sh                # Script setup otomatis (Linux/Mac)
+└── composer.json           # Dependensi PHP
+```
+
+---
+
+## 🛠️ Perintah Berguna
+
+| Perintah | Fungsi |
+|---|---|
+| `php artisan serve` | Menjalankan server development |
+| `php artisan migrate` | Menjalankan migrasi database |
+| `php artisan migrate:fresh` | Reset dan jalankan ulang semua migrasi |
+| `php artisan migrate:fresh --seed` | Reset migrasi + isi data awal |
+| `php artisan db:seed` | Menjalankan seeder |
+| `php artisan cache:clear` | Membersihkan cache |
+| `php artisan config:clear` | Membersihkan cache konfigurasi |
+| `php artisan route:list` | Melihat semua route yang terdaftar |
+| `npm run dev` | Menjalankan Vite development server |
+| `npm run build` | Build asset untuk production |
+| `composer dev` | Menjalankan semua service development |
+
+---
+
+## ❓ Troubleshooting
+
+### ❌ "SQLSTATE: could not connect to server"
+
+Pastikan PostgreSQL sudah berjalan:
+- **Windows:** Buka `Services` → cari `postgresql` → Start
+- **Linux:** `sudo service postgresql start`
+- **macOS:** `brew services start postgresql`
+
+Cek juga konfigurasi `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD` di file `.env`.
+
+---
+
+### ❌ "php: command not found" atau "php tidak dikenali"
+
+PHP belum ditambahkan ke PATH sistem. Beberapa solusi:
+- **Windows:** Tambahkan path folder PHP ke Environment Variables → PATH
+- **Laragon:** Pastikan sudah klik "Add Laragon to Path"
+
+---
+
+### ❌ "composer: command not found"
+
+Download dan install Composer dari [getcomposer.org](https://getcomposer.org/download/).
+
+---
+
+### ❌ "npm: command not found"
+
+Download dan install Node.js dari [nodejs.org](https://nodejs.org) (pilih versi LTS).
+
+---
+
+### ❌ Halaman kosong atau error setelah setup
+
+Coba jalankan perintah berikut:
+
+```bash
+php artisan config:clear
+php artisan cache:clear
+php artisan view:clear
+```
+
+---
+
+### ❌ Error "No application encryption key has been specified"
+
+```bash
+php artisan key:generate
+```
+
+---
+
+## 📞 Kontak
+
+Jika ada pertanyaan atau masalah, hubungi tim pengembang proyek ini.
+
+---
+
+<div align="center">
+
+Dibuat dengan ❤️ menggunakan [Laravel](https://laravel.com)
+
+</div>
