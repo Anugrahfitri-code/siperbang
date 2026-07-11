@@ -1,0 +1,311 @@
+import React, { useState } from "react";
+import { StockItem } from "../types";
+import { FileUp, FileSpreadsheet, Check, CheckCircle2, ShieldCheck, Database, RefreshCcw } from "lucide-react";
+
+interface StockManagementProps {
+  stockList: StockItem[];
+  onUploadStock: (newStock: StockItem[]) => void;
+}
+
+interface DraftUploadItem {
+  id: string;
+  category: string;
+  suggestedCode: string;
+  name: string;
+  qty: number;
+  unit: string;
+}
+
+export const StockManagement: React.FC<StockManagementProps> = ({
+  stockList,
+  onUploadStock,
+}) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [drafts, setDrafts] = useState<DraftUploadItem[]>([]);
+  const [activeTab, setActiveTab] = useState<"current" | "verify">("current");
+
+  const handleSimulateUpload = () => {
+    setIsProcessing(true);
+    // Simulate reading excel with small delay
+    setTimeout(() => {
+      setIsProcessing(false);
+      setDrafts([
+        {
+          id: "df-1",
+          category: "Alat Tulis Kantor (ATK)",
+          suggestedCode: "ATK-PAP-F4",
+          name: "Kertas F4 80gr Sinar Dunia",
+          qty: 25,
+          unit: "Rim",
+        },
+        {
+          id: "df-2",
+          category: "Alat Tulis Kantor (ATK)",
+          suggestedCode: "ATK-MKR-SND-RED",
+          name: "Spidol Boardmarker Snowman Red",
+          qty: 15,
+          unit: "Buah",
+        },
+        {
+          id: "df-3",
+          category: "Peralatan Komputer",
+          suggestedCode: "KOM-USB-SAN",
+          name: "Flashdisk SanDisk 32GB USB 3.0",
+          qty: 10,
+          unit: "Buah",
+        },
+      ]);
+      setActiveTab("verify");
+    }, 1500);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleSimulateUpload();
+  };
+
+  const handleCodeChange = (id: string, newCode: string) => {
+    setDrafts(
+      drafts.map((d) => (d.id === id ? { ...d, suggestedCode: newCode } : d))
+    );
+  };
+
+  const handleVerifyAndApprove = () => {
+    const formattedNewStock: StockItem[] = drafts.map((d) => ({
+      id: "st-upload-" + Math.random().toString(36).substring(2, 9),
+      category: d.category,
+      code: d.suggestedCode,
+      name: d.name,
+      qty: d.qty,
+      unit: d.unit,
+      lastUpdated: new Date().toISOString().split("T")[0],
+    }));
+
+    onUploadStock(formattedNewStock);
+    setDrafts([]);
+    setActiveTab("current");
+  };
+
+  return (
+    <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 border-b border-slate-100 pb-5">
+        <div className="flex items-center gap-3">
+          <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded border border-indigo-150">
+            <Database size={18} />
+          </div>
+          <div>
+            <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Manajemen Stok & Kode Persediaan</h2>
+            <p className="text-[11px] text-slate-500">
+              Unggah file Excel stok dan verifikasi kode persediaan barang masuk
+            </p>
+          </div>
+        </div>
+
+        {/* View Tabs */}
+        <div className="flex bg-slate-100 border border-slate-200 rounded p-0.5 self-start sm:self-auto">
+          <button
+            onClick={() => setActiveTab("current")}
+            className={`px-3 py-1 rounded text-xs font-bold transition-all ${
+              activeTab === "current"
+                ? "bg-white text-slate-800 shadow-xs"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            Stok Aktif ({stockList.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("verify")}
+            className={`px-3 py-1 rounded text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === "verify"
+                ? "bg-white text-slate-800 shadow-xs"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            Verifikasi Kode
+            {drafts.length > 0 && (
+              <span className="bg-amber-100 text-amber-900 text-[9px] px-1.5 py-0.5 rounded font-bold">
+                {drafts.length}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Upload Drag & Drop Area */}
+      <div className="mb-6">
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={handleSimulateUpload}
+          className={`border-2 border-dashed rounded p-6 text-center cursor-pointer transition-all ${
+            isDragging
+              ? "border-indigo-500 bg-indigo-50/50"
+              : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
+          }`}
+        >
+          {isProcessing ? (
+            <div className="flex flex-col items-center py-4">
+              <RefreshCcw className="animate-spin text-indigo-600 mb-3" size={24} />
+              <p className="text-xs font-bold text-slate-700">Membaca File Excel Stok...</p>
+              <p className="text-[10px] text-slate-400 mt-1">Mengurai baris, mencocokkan kategori barang, & menyusun draf kode</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded border border-emerald-100 mb-2">
+                <FileSpreadsheet size={20} />
+              </div>
+              <h3 className="text-xs font-extrabold text-slate-800 mb-1">
+                Unggah File Excel Stok Baru
+              </h3>
+              <p className="text-[11px] text-slate-400 max-w-md mx-auto mb-3">
+                Seret dan lepas file template Excel stok Anda ke sini, atau klik untuk mensimulasikan pembacaan file excel stok
+              </p>
+              <div className="flex items-center gap-1 text-[11px] text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1.5 rounded border border-indigo-150">
+                <FileUp size={12} />
+                Pilih File Excel
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Tab Contents */}
+      {activeTab === "current" ? (
+        <div className="overflow-x-auto border border-slate-200 rounded">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 text-slate-600 text-[10px] font-bold uppercase tracking-wider border-b border-slate-200">
+                <th className="px-5 py-3">Kode Persediaan</th>
+                <th className="px-5 py-3">Nama Barang</th>
+                <th className="px-5 py-3">Kategori</th>
+                <th className="px-5 py-3 text-right">Stok Tersedia</th>
+                <th className="px-5 py-3">Satuan</th>
+                <th className="px-5 py-3">Terakhir Diperbarui</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {stockList.map((item) => (
+                <tr key={item.id} className="hover:bg-slate-50/50 transition-colors text-xs font-mono">
+                  <td className="px-5 py-3 font-semibold text-indigo-600">
+                    {item.code}
+                  </td>
+                  <td className="px-5 py-3 font-bold text-slate-800 font-sans">
+                    {item.name}
+                  </td>
+                  <td className="px-5 py-3 text-[11px] font-medium text-slate-500 font-sans">
+                    {item.category}
+                  </td>
+                  <td className="px-5 py-3 text-right font-bold text-slate-700 font-sans">
+                    {item.qty}
+                  </td>
+                  <td className="px-5 py-3 font-medium text-slate-500 font-sans">
+                    {item.unit}
+                  </td>
+                  <td className="px-5 py-3 text-slate-400 font-sans">
+                    {item.lastUpdated}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        /* Code Verification Workspace */
+        <div>
+          {drafts.length === 0 ? (
+            <div className="text-center py-10 bg-slate-50 rounded border border-slate-200">
+              <CheckCircle2 className="text-emerald-500 mx-auto mb-2" size={24} />
+              <p className="text-xs font-bold text-slate-700">Tidak ada draf dalam antrean verifikasi</p>
+              <p className="text-[11px] text-slate-400 mt-1">Gunakan pengunggah Excel di atas untuk memproses baris baru</p>
+            </div>
+          ) : (
+            <div>
+              <div className="bg-amber-50 border border-amber-100 rounded p-3.5 mb-4 text-xs text-amber-800 flex items-start gap-2">
+                <ShieldCheck size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="font-extrabold">Pemeriksaan Ganda Diperlukan:</span> Petugas Persediaan wajib melakukan pemeriksaan dan memverifikasi kesesuaian kategori, nama barang, dan kode persediaan sebelum data masuk ke database utama (Section 3.2, 4.12).
+                </div>
+              </div>
+
+              <div className="overflow-x-auto border border-slate-200 rounded mb-4">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-600 text-[10px] font-bold uppercase tracking-wider border-b border-slate-200">
+                      <th className="px-5 py-3">Kategori Barang</th>
+                      <th className="px-5 py-3">Nama Barang</th>
+                      <th className="px-5 py-3">Jumlah Excel</th>
+                      <th className="px-5 py-3">Satuan</th>
+                      <th className="px-5 py-3">Kode Persediaan (Bisa Diedit)</th>
+                      <th className="px-5 py-3 text-center">Status Verif</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {drafts.map((d) => (
+                      <tr key={d.id} className="hover:bg-slate-50/50 transition-colors text-xs font-mono">
+                        <td className="px-5 py-3 text-[11px] text-slate-500 font-semibold font-sans">
+                          {d.category}
+                        </td>
+                        <td className="px-5 py-3 font-bold text-slate-800 font-sans">
+                          {d.name}
+                        </td>
+                        <td className="px-5 py-3 font-bold text-slate-700 font-sans">
+                          {d.qty}
+                        </td>
+                        <td className="px-5 py-3 text-slate-500 font-sans">
+                          {d.unit}
+                        </td>
+                        <td className="px-5 py-3">
+                          <input
+                            type="text"
+                            value={d.suggestedCode}
+                            onChange={(e) => handleCodeChange(d.id, e.target.value.toUpperCase())}
+                            className="bg-white border border-slate-200 rounded px-2 py-1 text-xs font-mono font-bold text-indigo-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          />
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 font-bold">
+                            <Check size={11} />
+                            Valid (Auto)
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex justify-end gap-2.5">
+                <button
+                  onClick={() => setDrafts([])}
+                  className="px-3.5 py-2 rounded text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all"
+                >
+                  Batalkan Draf
+                </button>
+                <button
+                  onClick={handleVerifyAndApprove}
+                  className="px-4 py-2 rounded text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs flex items-center gap-1.5"
+                >
+                  <Check size={13} />
+                  Setujui & Simpan ke Stok Master
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};

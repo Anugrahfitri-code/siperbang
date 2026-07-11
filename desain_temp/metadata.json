@@ -1,0 +1,6 @@
+{
+  "name": "SIPERBANG",
+  "description": "Sistem Informasi Penyediaan Barang - BBPSDM Komunikasi dan Digital Makassar",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
