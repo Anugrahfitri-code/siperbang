@@ -133,16 +133,56 @@ export interface HistoryLog {
   details: string;
 }
 
-export type ReceiptDocumentStatus = "uploaded" | "queued" | "processing" | "needs_review" | "verified" | "failed";
+export type OcrStatus = "uploaded" | "queued" | "processing" | "needs_review" | "verified" | "failed";
+
+export interface OcrField<T> {
+  value: T;
+  confidence: number;
+}
+
+export interface OcrLine {
+  text: string;
+  confidence: number;
+  box: number[][];
+}
+
+export interface OcrPage {
+  page_num: number;
+  lines: OcrLine[];
+}
+
+export interface OcrWarning {
+  field: string;
+  message: string;
+}
+
+export interface ParsedItem {
+  name?: OcrField<string>;
+  qty?: OcrField<number>;
+  price?: OcrField<number>;
+  subtotal?: OcrField<number>;
+}
+
+export interface ParsedReceiptResult {
+  store_name?: OcrField<string>;
+  invoice_no?: OcrField<string>;
+  date?: OcrField<string>;
+  items: ParsedItem[];
+  subtotal?: OcrField<number>;
+  tax_amount?: OcrField<number>;
+  total?: OcrField<number>;
+  warnings: OcrWarning[];
+  pages: OcrPage[];
+}
 
 export interface ReceiptDocument {
   id: number;
   receipt_id?: number | null;
   uploaded_by: number;
   original_filename: string;
-  status: ReceiptDocumentStatus;
+  status: OcrStatus;
   raw_text?: string | null;
-  parsed_result?: any | null;
+  parsed_result?: ParsedReceiptResult | null;
   error_message?: string | null;
   created_at: string;
 }

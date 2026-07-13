@@ -17,8 +17,8 @@ class OcrServiceClient
     public function __construct()
     {
         $this->url = rtrim(config('services.ocr.url', 'http://127.0.0.1:8001'), '/');
-        $this->token = config('services.ocr.token', '');
-        $this->timeout = config('services.ocr.timeout', 180);
+        $this->token = (string) config('services.ocr.token', '');
+        $this->timeout = (int) config('services.ocr.timeout', 180);
     }
 
     /**
