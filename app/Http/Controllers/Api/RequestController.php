@@ -12,9 +12,15 @@ use Illuminate\Support\Facades\DB;
 
 class RequestController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $requests = ItemRequest::with(['distribution', 'procurements'])->orderBy('created_at', 'desc')->get();
+        $query = ItemRequest::with(['distribution', 'procurements'])->orderBy('created_at', 'desc');
+        
+        if ($request->user() && $request->user()->role === 'Ketua Tim') {
+            $query->where('user_id', $request->user()->id);
+        }
+        
+        $requests = $query->get();
         return response()->json($requests);
     }
 
@@ -34,6 +40,7 @@ class RequestController extends Controller
         $bonNo = 'BON/' . date('Y/m/') . str_pad($countToday, 3, '0', STR_PAD_LEFT);
 
         $itemRequest = ItemRequest::create([
+            'user_id' => $request->user() ? $request->user()->id : null,
             'bon_no' => $bonNo,
             'section' => $validated['section'],
             'item_name' => $validated['itemName'],

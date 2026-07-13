@@ -23,6 +23,11 @@ class ItemRequest extends Model
 
     // ── Relationships ────────────────────────────────────────────
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function stockItem()
     {
         return $this->belongsTo(StockItem::class);
