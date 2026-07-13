@@ -26,4 +26,9 @@ class Receipt extends Model
     {
         return $this->hasMany(ReceiptItem::class);
     }
+
+    public function document()
+    {
+        return $this->hasOne(ReceiptDocument::class);
+    }
 }

@@ -132,3 +132,17 @@ export interface HistoryLog {
   action: string;
   details: string;
 }
+
+export type ReceiptDocumentStatus = "uploaded" | "queued" | "processing" | "needs_review" | "verified" | "failed";
+
+export interface ReceiptDocument {
+  id: number;
+  receipt_id?: number | null;
+  uploaded_by: number;
+  original_filename: string;
+  status: ReceiptDocumentStatus;
+  raw_text?: string | null;
+  parsed_result?: any | null;
+  error_message?: string | null;
+  created_at: string;
+}
