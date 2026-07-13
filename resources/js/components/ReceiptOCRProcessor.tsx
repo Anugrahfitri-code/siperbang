@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ReceiptData, ReceiptItem, ProcurementMethod, RequestStatus, ItemRequest } from "../types";
 import { SAMPLE_RECEIPTS, SampleReceiptPayload } from "../data";
+import { apiFetch } from "../api";
 import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt } from "lucide-react";
 
 interface ReceiptOCRProcessorProps {
@@ -32,12 +33,99 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   const [bastName, setBastName] = useState("");
   const [bastDate, setBastDate] = useState("");
 
+  const pollDocumentStatus = async (id: number, attempts = 0) => {
+    if (attempts > 30) {
+      setIsScanning(false);
+      alert("Waktu tunggu OCR habis (Timeout).");
+      return;
+    }
+
+    try {
+      const res = await apiFetch(`/api/receipt-documents/${id}`);
+      const data = await res.json();
+
+      if (data.status === "needs_review" || data.status === "verified") {
+        setIsScanning(false);
+        const p = data.parsed_result || {};
+
+        const newDraft: ReceiptData = {
+          id: "rc-draft-" + data.id,
+          invoiceNo: p.invoiceNo || "",
+          storeName: p.storeName || "",
+          date: p.date || "",
+          isTaxed: p.isTaxed || false,
+          taxRate: p.taxRate || 0,
+          subtotal: p.subtotal || 0,
+          taxAmount: p.taxAmount || 0,
+          total: p.total || 0,
+          isVerified: false,
+          status: "Menunggu Verifikasi",
+          method: p.method || ProcurementMethod.SENDIRI,
+          items: (p.items || []).map((it: any, index: number) => ({
+            id: "it-draft-" + index,
+            name: it.name,
+            qty: it.qty,
+            price: it.price,
+            subtotal: it.qty * it.price,
+          })),
+          bastName: p.storeName || "",
+          bastDate: p.date || "",
+        };
+
+        setActiveDraft(newDraft);
+        setStoreName(newDraft.storeName);
+        setInvoiceNo(newDraft.invoiceNo);
+        setDate(newDraft.date);
+        setIsTaxed(newDraft.isTaxed);
+        setTaxRate(newDraft.taxRate);
+        setMethod(newDraft.method);
+        setItems(newDraft.items);
+        setBastName(newDraft.bastName || "");
+        setBastDate(newDraft.bastDate || "");
+      } else if (data.status === "failed") {
+        setIsScanning(false);
+        alert("Proses OCR gagal: " + (data.error_message || "Unknown error"));
+      } else {
+        setTimeout(() => pollDocumentStatus(id, attempts + 1), 2000);
+      }
+    } catch (e) {
+      console.error(e);
+      setIsScanning(false);
+      alert("Terjadi kesalahan saat mengecek status OCR.");
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setIsScanning(true);
+    setActiveDraft(null);
+    const imageUrl = URL.createObjectURL(file);
+    setSelectedImage(imageUrl);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await apiFetch("/api/receipt-documents", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      pollDocumentStatus(data.document.id);
+    } catch (e) {
+      console.error(e);
+      setIsScanning(false);
+      alert("Gagal mengunggah dokumen OCR.");
+    }
+  };
+
   const handleTriggerOCR = (payload: SampleReceiptPayload, clearImage = true) => {
     setIsScanning(true);
     setActiveDraft(null);
     if (clearImage) setSelectedImage(null);
 
-    // Simulate AI parsing using Gemini 3.5 Flash OCR engine
     setTimeout(() => {
       setIsScanning(false);
       const subtotal = payload.items.reduce((sum, item) => sum + item.qty * item.price, 0);
@@ -68,7 +156,6 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         bastDate: payload.date,
       };
 
-      // Set form states
       setActiveDraft(newDraft);
       setStoreName(newDraft.storeName);
       setInvoiceNo(newDraft.invoiceNo);
@@ -232,11 +319,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
           className="hidden" 
           onChange={(e) => {
             if (e.target.files && e.target.files.length > 0) {
-              const file = e.target.files[0];
-              const imageUrl = URL.createObjectURL(file);
-              setSelectedImage(imageUrl);
-              // Lanjutkan simulasi OCR menggunakan mockup data karena engine asli belum ada
-              handleTriggerOCR(SAMPLE_RECEIPTS[0], false);
+              handleFileUpload(e.target.files[0]);
             }
           }}
         />
