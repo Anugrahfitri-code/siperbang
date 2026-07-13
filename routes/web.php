@@ -90,6 +90,9 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/requests', [\App\Http\Controllers\Api\RequestController::class, 'index']);
     Route::post('/requests', [\App\Http\Controllers\Api\RequestController::class, 'store']);
     Route::put('/requests/{itemRequest}/status', [\App\Http\Controllers\Api\RequestController::class, 'updateStatus']);
+    Route::post('/requests/{itemRequest}/distribute', [\App\Http\Controllers\Api\RequestController::class, 'distribute']);
+    Route::post('/requests/{itemRequest}/procure', [\App\Http\Controllers\Api\RequestController::class, 'procure']);
+    Route::post('/requests/{itemRequest}/complete-procurement', [\App\Http\Controllers\Api\RequestController::class, 'completeProcurement']);
     
     // Receipts
     Route::get('/receipts', [\App\Http\Controllers\Api\ReceiptController::class, 'index']);
