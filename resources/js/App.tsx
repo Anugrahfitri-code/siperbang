@@ -72,9 +72,27 @@ export default function App() {
 
   // Navigation tab states
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [officerTab, setOfficerTab] = useState<"dashboard" | "checking" | "stock" | "ocr" | "report" | "history">("dashboard");
-  const [requesterTab, setRequesterTab] = useState<"bon" | "monitoring" | "history" | "stock">("bon");
-  const [superadminTab, setSuperadminTab] = useState<"users" | "dashboard" | "checking" | "stock_manage" | "ocr" | "report" | "bon" | "monitoring" | "stock_catalog" | "history">("users");
+  const [officerTab, setOfficerTab] = useState<"dashboard" | "checking" | "stock" | "ocr" | "report" | "history">(
+    () => (localStorage.getItem("officerTab") as any) || "dashboard"
+  );
+  const [requesterTab, setRequesterTab] = useState<"bon" | "monitoring" | "history" | "stock">(
+    () => (localStorage.getItem("requesterTab") as any) || "bon"
+  );
+  const [superadminTab, setSuperadminTab] = useState<"users" | "dashboard" | "checking" | "stock_manage" | "ocr" | "report" | "bon" | "monitoring" | "stock_catalog" | "history">(
+    () => (localStorage.getItem("superadminTab") as any) || "users"
+  );
+
+  useEffect(() => {
+    localStorage.setItem("officerTab", officerTab);
+  }, [officerTab]);
+
+  useEffect(() => {
+    localStorage.setItem("requesterTab", requesterTab);
+  }, [requesterTab]);
+
+  useEffect(() => {
+    localStorage.setItem("superadminTab", superadminTab);
+  }, [superadminTab]);
 
   // Memulihkan sesi Laravel ketika browser di-refresh.
 useEffect(() => {
@@ -368,7 +386,7 @@ useEffect(() => {
   };
 
   // 3. Process Stock Check & Allocate Quantities
-  const handleUpdateStatus = (
+  const handleUpdateStatus = async (
     reqId: string,
     status: RequestStatus,
     qtyAvailable: number,
@@ -376,38 +394,68 @@ useEffect(() => {
     logMessage: string,
     deductStock?: { code: string; qtyToDeduct: number }
   ) => {
-    setRequests((prev) =>
-      prev.map((req) => {
-        if (req.id === reqId) {
-          return {
-            ...req,
-            status,
-            qtyAvailable,
-            qtyFulfilled,
-            lastUpdated: new Date().toISOString().split("T")[0],
-          };
-        }
-        return req;
-      })
-    );
+    try {
+      const payload = {
+        status,
+        qtyAvailable,
+        qtyFulfilled,
+        deductStock: deductStock ? {
+          code: deductStock.code,
+          qtyToDeduct: deductStock.qtyToDeduct
+        } : null
+      };
 
-    // Deduct stock if allocated from warehouse
-    if (deductStock) {
-      setStock((prev) =>
-        prev.map((s) => {
-          if (s.code === deductStock.code) {
+      const response = await apiFetch(`/api/requests/${reqId}/status`, {
+        method: "PUT",
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || "Gagal mengupdate status pengajuan");
+      }
+      
+      const resData = await response.json();
+      const updatedReq = resData.data;
+
+      setRequests((prev) =>
+        prev.map((req) => {
+          if (req.id === reqId) {
             return {
-              ...s,
-              qty: Math.max(0, s.qty - deductStock.qtyToDeduct),
+              ...req,
+              status,
+              qtyAvailable,
+              qtyFulfilled,
+              qtyToProcure: updatedReq.qty_to_procure ?? 0,
+              stockAllocated: Boolean(updatedReq.stock_allocated),
               lastUpdated: new Date().toISOString().split("T")[0],
             };
           }
-          return s;
+          return req;
         })
       );
-    }
 
-    addLog(currentUser, "Verifikasi Stok", logMessage);
+      // Deduct stock if allocated from warehouse
+      if (deductStock) {
+        setStock((prev) =>
+          prev.map((s) => {
+            if (s.code === deductStock.code) {
+              return {
+                ...s,
+                qty: Math.max(0, s.qty - deductStock.qtyToDeduct),
+                lastUpdated: new Date().toISOString().split("T")[0],
+              };
+            }
+            return s;
+          })
+        );
+      }
+
+      addLog(currentUser, "Verifikasi Stok", logMessage);
+    } catch (err: any) {
+      console.error(err);
+      window.alert(err.message || "Terjadi kesalahan saat memverifikasi stok");
+    }
   };
 
   // 4. Manual OCR Verified Invoice Saver
