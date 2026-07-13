@@ -26,6 +26,8 @@ class ReceiptDocumentController extends Controller
 
     public function store(Request $request)
     {
+        \Illuminate\Support\Facades\Log::info('Upload endpoint hit', ['all' => $request->all(), 'files' => $request->allFiles()]);
+        
         $maxSize = config('services.ocr.max_upload_size', 10240); // 10MB default
 
         $request->validate([
