@@ -41,5 +41,7 @@ class DatabaseSeeder extends Seeder
             'role' => 'Superadmin',
             'section' => 'Admin',
         ]);
+
+        $this->call(KategoriDanKodePersediaanSeeder::class);
     }
 }

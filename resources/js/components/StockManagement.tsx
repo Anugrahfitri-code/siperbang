@@ -146,39 +146,24 @@ export const StockManagement: React.FC<StockManagementProps> = ({
       {/* Upload Drag & Drop Area */}
       <div className="mb-6">
         <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={handleSimulateUpload}
-          className={`border-2 border-dashed rounded p-6 text-center cursor-pointer transition-all ${
-            isDragging
-              ? "border-indigo-500 bg-indigo-50/50"
-              : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
-          }`}
+          onClick={() => window.location.href = '/stok-upload'}
+          className="border-2 border-dashed rounded p-6 text-center cursor-pointer transition-all border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50"
         >
-          {isProcessing ? (
-            <div className="flex flex-col items-center py-4">
-              <RefreshCcw className="animate-spin text-indigo-600 mb-3" size={24} />
-              <p className="text-xs font-bold text-slate-700">Membaca File Excel Stok...</p>
-              <p className="text-[10px] text-slate-400 mt-1">Mengurai baris, mencocokkan kategori barang, & menyusun draf kode</p>
+          <div className="flex flex-col items-center">
+            <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded border border-emerald-100 mb-2">
+              <FileSpreadsheet size={20} />
             </div>
-          ) : (
-            <div className="flex flex-col items-center">
-              <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded border border-emerald-100 mb-2">
-                <FileSpreadsheet size={20} />
-              </div>
-              <h3 className="text-xs font-extrabold text-slate-800 mb-1">
-                Unggah File Excel Stok Baru
-              </h3>
-              <p className="text-[11px] text-slate-400 max-w-md mx-auto mb-3">
-                Seret dan lepas file template Excel stok Anda ke sini, atau klik untuk mensimulasikan pembacaan file excel stok
-              </p>
-              <div className="flex items-center gap-1 text-[11px] text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1.5 rounded border border-indigo-150">
-                <FileUp size={12} />
-                Pilih File Excel
-              </div>
+            <h3 className="text-xs font-extrabold text-slate-800 mb-1">
+              Buka Modul Upload File Excel Stok (Laravel)
+            </h3>
+            <p className="text-[11px] text-slate-400 max-w-md mx-auto mb-3">
+              Klik di sini untuk berpindah ke halaman khusus Upload & Verifikasi Excel yang baru dibuat.
+            </p>
+            <div className="flex items-center gap-1 text-[11px] text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1.5 rounded border border-indigo-150">
+              <FileUp size={12} />
+              Buka Halaman Upload
             </div>
-          )}
+          </div>
         </div>
       </div>
 

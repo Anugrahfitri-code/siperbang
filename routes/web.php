@@ -39,6 +39,24 @@ Route::post('/api/logout', function (Request $request) {
     return response()->json(['message' => 'Logout successful']);
 });
 
+Route::middleware('auth')->group(function () {
+    // Stok Upload Module
+    Route::get('/stok-upload', [\App\Http\Controllers\StokUploadController::class, 'index'])->name('stok-upload.index');
+    Route::post('/stok-upload', [\App\Http\Controllers\StokUploadController::class, 'upload'])->name('stok-upload.store');
+    Route::get('/stok-upload/template', [\App\Http\Controllers\StokUploadController::class, 'downloadTemplate'])->name('stok-upload.template');
+    Route::get('/stok-upload/riwayat', [\App\Http\Controllers\StokUploadController::class, 'riwayat'])->name('stok-upload.riwayat');
+    Route::get('/stok-upload/{id}/preview', [\App\Http\Controllers\StokUploadController::class, 'preview'])->name('stok-upload.preview');
+    Route::post('/stok-upload/{id}/finalisasi', [\App\Http\Controllers\StokUploadController::class, 'finalisasi'])->name('stok-upload.finalisasi');
+
+    // Verifikasi Kode Persediaan
+    Route::get('/stok-upload/{id}/verifikasi', [\App\Http\Controllers\VerifikasiKodePersediaanController::class, 'verifikasi'])->name('stok-upload.verifikasi.index');
+    Route::post('/stok-upload/{id}/verifikasi', [\App\Http\Controllers\VerifikasiKodePersediaanController::class, 'postVerifikasi'])->name('stok-upload.verifikasi.store');
+
+    // Master Barang
+    Route::get('/master-barang', [\App\Http\Controllers\BarangController::class, 'index'])->name('master-barang.index');
+    Route::get('/master-barang/search', [\App\Http\Controllers\BarangController::class, 'search'])->name('master-barang.search');
+});
+
 // Protected API Routes
 Route::middleware('auth')->prefix('api')->group(function () {
     // Stocks
