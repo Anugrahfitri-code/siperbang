@@ -79,15 +79,54 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
     }))
   );
 
-  const handleSimulateExport = () => {
-    setIsExporting(true);
-    setExportSuccess(false);
+  const handleRealExport = async () => {
+    try {
+      setIsExporting(true);
+      setExportSuccess(false);
 
-    setTimeout(() => {
-      setIsExporting(false);
+      // Mengirim parameter filter aktif ke server backend
+      const queryParams = new URLSearchParams({
+        month: isAnnualRecap ? "All" : filterMonth,
+        year: filterYear,
+        search: searchQuery,
+        annual: isAnnualRecap ? "true" : "false"
+      });
+
+      const response = await fetch(`/api/export-excel?${queryParams.toString()}`, {
+        method: "GET",
+        headers: {
+          "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Gagal mengunduh berkas laporan dari server.");
+      }
+
+      // Memproses hasil response blob menjadi file unduhan di browser
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = isAnnualRecap 
+        ? `SIPERBANG_REKAP_TAHUNAN_${filterYear}.xlsx`
+        : `SIPERBANG_REKAP_BULANAN_${filterMonth}_${filterYear}.xlsx`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      // Bersihkan elemen temporary di DOM
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
       setExportSuccess(true);
       setTimeout(() => setExportSuccess(false), 4000);
-    }, 2000);
+    } catch (error) {
+      console.error("Proses ekspor gagal:", error);
+      alert("Terjadi kesalahan saat mengekspor laporan ke Excel.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const formatIDR = (num: number) => {
@@ -115,7 +154,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
         </div>
 
         <button
-          onClick={handleSimulateExport}
+          onClick={handleRealExport}
           disabled={isExporting || reportRows.length === 0}
           className={`px-4 py-2 rounded text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs ${
             reportRows.length === 0

@@ -29,9 +29,12 @@
             <div class="flex justify-between h-16">
                 <!-- Logo & Brand -->
                 <div class="flex items-center gap-8">
-                    <a href="/" class="flex items-center gap-2">
-                        <img src="/logo.png" alt="SIPERBANG Logo" class="h-9 w-auto" onerror="this.src='https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600'">
-                        <span class="text-lg font-extrabold text-slate-800 tracking-tight">SIPERBANG</span>
+                    <a href="/" class="flex items-center gap-3">
+                        <img src="/logo.png" alt="SIPERBANG Logo" class="h-12 w-auto" onerror="this.src='https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600'">
+                        <div class="flex flex-col">
+                            <span class="text-xl font-extrabold text-slate-800 tracking-tight leading-none">SIPERBANG</span>
+                            <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Sistem Informasi Persediaan Barang</span>
+                        </div>
                     </a>
                     
                     <!-- Desktop Nav Links -->
@@ -59,9 +62,11 @@
                         </span>
                     </div>
                     
-                    <a href="/" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 shadow-xs transition-colors">
-                        <span>← Kembali ke Dashboard</span>
-                    </a>
+                    <button onclick="window.history.back()" type="button" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white border-2 border-slate-300 hover:bg-slate-50 hover:border-slate-400 text-slate-900 transition-all shadow-sm hover:shadow-md cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
