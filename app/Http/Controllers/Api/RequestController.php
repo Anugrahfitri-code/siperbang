@@ -118,7 +118,7 @@ class RequestController extends Controller
             'qtyAvailable'        => 'required|integer|min:0',
             'qtyFulfilled'        => 'required|integer|min:0',
             'deductStock'         => 'nullable|array',
-            'deductStock.code'    => 'required_with:deductStock|string',
+            'deductStock.code'    => 'required_with:deductStock|string|exists:stock_items,code',
             'deductStock.qtyToDeduct' => 'required_with:deductStock|integer|min:0',
         ]);
 
@@ -139,6 +139,18 @@ class RequestController extends Controller
             $qtyRequested  = $itemRequest->qty_requested;
             $qtyToProcure  = max(0, $qtyRequested - $qtyFulfilled);
 
+            // Auto-set status based on fulfillment if not explicitly set
+            $finalStatus = $validated['status'];
+            if ($finalStatus === 'Dicek') {
+                if ($qtyFulfilled === $qtyRequested && $qtyToProcure === 0) {
+                    $finalStatus = 'Terpenuhi';
+                } elseif ($qtyFulfilled > 0 && $qtyFulfilled < $qtyRequested) {
+                    $finalStatus = 'Terpenuhi Sebagian';
+                } elseif ($qtyFulfilled === 0) {
+                    $finalStatus = 'Perlu Pengadaan';
+                }
+            }
+
             // Stock deduction — only once, guarded by stock_allocated flag
             if (
                 isset($validated['deductStock']) &&
@@ -158,7 +170,7 @@ class RequestController extends Controller
             }
 
             $itemRequest->update([
-                'status'          => $validated['status'],
+                'status'          => $finalStatus,
                 'qty_available'   => $validated['qtyAvailable'],
                 'qty_fulfilled'   => $qtyFulfilled,
                 'qty_to_procure'  => $qtyToProcure,
@@ -258,7 +270,7 @@ class RequestController extends Controller
             'unitPrice'    => 'required|numeric|min:0',
             'isTaxed'      => 'required|boolean',
             'taxRate'      => 'required_if:isTaxed,true|numeric|min:0|max:100',
-            'invoiceNo'    => 'nullable|string|max:100',
+            'invoiceNo'    => 'nullable|string|max:100|unique:procurements,invoice_no',
             'bastName'     => 'nullable|string|max:255',
             'bastDate'     => 'nullable|date',
             'contractNo'   => 'nullable|string|max:100',
@@ -273,6 +285,26 @@ class RequestController extends Controller
         if ($validated['qtyProcured'] > $maxProcure) {
             return response()->json([
                 'message' => "Jumlah pengadaan ({$validated['qtyProcured']}) melebihi sisa kebutuhan yang perlu diadakan ({$maxProcure}).",
+            ], 422);
+        }
+
+        // Guard: validate unit price is reasonable
+        if ($validated['unitPrice'] <= 0) {
+            return response()->json([
+                'message' => "Harga satuan harus lebih dari 0.",
+            ], 422);
+        }
+
+        // Guard: validate vendor/store name is provided based on method
+        if ($validated['method'] === 'Pengadaan Vendor' && empty($validated['vendorName'])) {
+            return response()->json([
+                'message' => "Nama vendor wajib diisi untuk pengadaan vendor.",
+            ], 422);
+        }
+
+        if ($validated['method'] === 'Pengadaan Sendiri (Toko)' && empty($validated['storeName'])) {
+            return response()->json([
+                'message' => "Nama toko wajib diisi untuk pengadaan sendiri.",
             ], 422);
         }
 

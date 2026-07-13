@@ -33,7 +33,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
     e.preventDefault();
     if (!itemName.trim() || qty <= 0) return;
 
-    onAddRequest({
+onAddRequest({
       section,
       itemName,
       qtyRequested: Number(qty),

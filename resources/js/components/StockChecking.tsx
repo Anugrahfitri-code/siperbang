@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ItemRequest, RequestStatus, StockItem } from "../types";
-import { SearchCode, CheckCircle, AlertTriangle, Play, HelpCircle, Package, ArrowRight, ShieldAlert } from "lucide-react";
+import { SearchCode, CheckCircle, AlertTriangle, Play, HelpCircle, Package, ArrowRight, ShieldAlert, Truck, ShoppingCart } from "lucide-react";
+import { DistributionProcurement } from "./DistributionProcurement";
 
 interface StockCheckingProps {
   requests: ItemRequest[];
@@ -13,14 +14,41 @@ interface StockCheckingProps {
     logMessage: string,
     deductStock?: { code: string; qtyToDeduct: number }
   ) => void;
+  onDistribute: (reqId: string, data: {
+    stockItemId: string;
+    qtyDistributed: number;
+    distributedBy: string;
+    notes?: string;
+  }) => void;
+  onProcure: (reqId: string, data: {
+    method: "Pengadaan Vendor" | "Pengadaan Sendiri (Toko)";
+    vendorName?: string;
+    storeName?: string;
+    qtyProcured: number;
+    unitPrice: number;
+    isTaxed: boolean;
+    taxRate: number;
+    invoiceNo?: string;
+    bastName?: string;
+    bastDate?: string;
+    contractNo?: string;
+    processedBy: string;
+  }) => void;
+  onCompleteProcurement: (reqId: string, procurementId: string, processedBy: string) => void;
+  currentUser: string;
 }
 
 export const StockChecking: React.FC<StockCheckingProps> = ({
   requests,
   stockList,
   onUpdateStatus,
+  onDistribute,
+  onProcure,
+  onCompleteProcurement,
+  currentUser,
 }) => {
   const [selectedRequest, setSelectedRequest] = useState<ItemRequest | null>(null);
+  const [selectedForAction, setSelectedForAction] = useState<ItemRequest | null>(null);
   const [qtyAvailable, setQtyAvailable] = useState<number>(0);
   const [qtyFulfilled, setQtyFulfilled] = useState<number>(0);
 
@@ -92,6 +120,8 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
         return "bg-emerald-50 text-emerald-800 border-emerald-200";
       case RequestStatus.TERPENUHI_SEBAGIAN:
         return "bg-amber-50 text-amber-700 border-amber-200";
+      case RequestStatus.SIAP_DIDISTRIBUSIKAN:
+        return "bg-blue-50 text-blue-800 border-blue-200";
       case RequestStatus.PERLU_PENGADAAN:
         return "bg-rose-50 text-rose-800 border-rose-200";
       case RequestStatus.DALAM_PENGADAAN:
@@ -200,11 +230,26 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                         Proses Cek Stok
                       </button>
                     ) : (
-                      <div className="text-right text-xs">
-                        <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Status Pemenuhan:</span>
-                        <span className="font-extrabold text-slate-700">
-                          {req.qtyFulfilled} / {req.qtyRequested} {req.unit}
-                        </span>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right text-xs">
+                          <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Status Pemenuhan:</span>
+                          <span className="font-extrabold text-slate-700">
+                            {req.qtyFulfilled} / {req.qtyRequested} {req.unit}
+                          </span>
+                        </div>
+                        {(req.status === RequestStatus.TERPENUHI || 
+                          req.status === RequestStatus.TERPENUHI_SEBAGIAN ||
+                          req.status === RequestStatus.SIAP_DIDISTRIBUSIKAN ||
+                          req.status === RequestStatus.PERLU_PENGADAAN ||
+                          req.status === RequestStatus.DALAM_PENGADAAN) && (
+                          <button
+                            onClick={() => setSelectedForAction(req)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-1.5 rounded transition-all flex items-center gap-1 shadow-xs"
+                          >
+                            {req.qtyFulfilled > 0 ? <Truck size={11} /> : <ShoppingCart size={11} />}
+                            Proses
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -314,6 +359,35 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
               >
                 Konfirmasi Pemenuhan
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Distribution & Procurement Modal */}
+      {selectedForAction && (
+        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded border border-slate-200 shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-slide-up">
+            <div className="sticky top-0 bg-white border-b border-slate-100 p-4 flex justify-between items-center">
+              <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">
+                Proses Distribusi & Pengadaan
+              </h3>
+              <button
+                onClick={() => setSelectedForAction(null)}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <CheckCircle size={20} />
+              </button>
+            </div>
+            <div className="p-5">
+              <DistributionProcurement
+                request={selectedForAction}
+                stockList={stockList}
+                onDistribute={onDistribute}
+                onProcure={onProcure}
+                onCompleteProcurement={onCompleteProcurement}
+                currentUser={currentUser}
+              />
             </div>
           </div>
         </div>

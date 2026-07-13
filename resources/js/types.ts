@@ -23,6 +23,7 @@ export enum RequestStatus {
   DICEK = "Dicek",
   TERPENUHI = "Terpenuhi",
   TERPENUHI_SEBAGIAN = "Terpenuhi Sebagian",
+  SIAP_DIDISTRIBUSIKAN = "Siap Didistribusikan",
   PERLU_PENGADAAN = "Perlu Pengadaan",
   DALAM_PENGADAAN = "Dalam Pengadaan",
   DITOLAK = "Ditolak",
@@ -42,12 +43,19 @@ export interface ItemRequest {
   qtyRequested: number;
   qtyAvailable: number; // stok tersedia saat pengecekan
   qtyFulfilled: number; // jumlah terpenuhi
+  qtyToProcure: number; // jumlah yang perlu diadakan
+  stockAllocated: boolean; // apakah stok sudah dialokasikan
   unit: string; // satuan (rim, pak, buah, dll)
   status: RequestStatus;
   notes: string;
   date: string;
   requester: string;
   lastUpdated: string;
+  stockItemId?: string;
+  procurementMethod?: ProcurementMethod;
+  vendorName?: string;
+  distribution?: Distribution;
+  procurements?: Procurement[];
 }
 
 export interface StockItem {
@@ -58,6 +66,36 @@ export interface StockItem {
   qty: number;
   unit: string;
   lastUpdated: string;
+}
+
+export interface Distribution {
+  id: string;
+  itemRequestId: string;
+  stockItemId: string;
+  qtyDistributed: number;
+  distributedBy: string;
+  distributedAt: string;
+  notes?: string;
+}
+
+export interface Procurement {
+  id: string;
+  itemRequestId: string;
+  method: ProcurementMethod;
+  vendorName?: string;
+  storeName?: string;
+  qtyProcured: number;
+  unitPrice: number;
+  totalPrice: number;
+  isTaxed: boolean;
+  taxRate: number;
+  status: "Diproses" | "Diterima" | "Dibatalkan";
+  invoiceNo?: string;
+  bastName?: string;
+  bastDate?: string;
+  contractNo?: string;
+  processedBy: string;
+  procurementDate: string;
 }
 
 export interface ReceiptItem {

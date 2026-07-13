@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\StokPengadaanController;
 
 // Web Entry Point for React
 Route::get('/', function () {
@@ -38,23 +37,6 @@ Route::post('/api/logout', function (Request $request) {
     $request->session()->invalidate();
     $request->session()->regenerateToken();
     return response()->json(['message' => 'Logout successful']);
-});
-
-
-Route::prefix('stok-pengadaan')->group(function () {
-
-    Route::get('/', [StokPengadaanController::class, 'index'])
-        ->name('stok-pengadaan.index');
-
-    Route::get('/{id}', [StokPengadaanController::class, 'cekStok'])
-        ->name('stok-pengadaan.cek');
-
-    Route::post('/{id}/distribusi', [StokPengadaanController::class, 'prosesDistribusi'])
-        ->name('stok-pengadaan.distribusi');
-
-    Route::post('/{id}/pengadaan', [StokPengadaanController::class, 'prosesPengadaan'])
-        ->name('stok-pengadaan.pengadaan');
-
 });
 
 Route::middleware('auth')->group(function () {

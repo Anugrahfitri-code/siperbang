@@ -5,7 +5,6 @@
 
 import React, { useState, useEffect } from "react";
 import { UserRole, UserAccount, ItemRequest, StockItem, ReceiptData, HistoryLog as LogType, RequestStatus, ProcurementMethod } from "./types";
-import { INITIAL_STOCK, INITIAL_REQUESTS } from "./data";
 import { Navbar } from "./components/Navbar";
 import { DashboardStats } from "./components/DashboardStats";
 import { BonDigitalForm } from "./components/BonDigitalForm";
@@ -62,12 +61,19 @@ export default function App() {
             qtyRequested: r.qty_requested,
             qtyAvailable: r.qty_available,
             qtyFulfilled: r.qty_fulfilled,
+            qtyToProcure: r.qty_to_procure || 0,
+            stockAllocated: r.stock_allocated || false,
             unit: r.unit,
             status: r.status,
             notes: r.notes,
             date: r.date,
             requester: r.requester,
-            lastUpdated: r.last_updated
+            lastUpdated: r.last_updated,
+            stockItemId: r.stock_item_id ? String(r.stock_item_id) : undefined,
+            procurementMethod: r.procurement_method,
+            vendorName: r.vendor_name,
+            distribution: r.distribution,
+            procurements: r.procurements || []
           })));
         }
 
@@ -320,6 +326,93 @@ export default function App() {
     addLog(currentUser, "Tambah Kuitansi", `Menambahkan kuitansi manual/baru dari ${newReceipt.storeName} senilai ${formatIDR(newReceipt.total)}.`);
   };
 
+  // 5. Handle Distribution
+  const handleDistribute = async (reqId: string, data: {
+    stockItemId: string;
+    qtyDistributed: number;
+    distributedBy: string;
+    notes?: string;
+  }) => {
+    try {
+      const response = await fetch(`/api/requests/${reqId}/distribute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (response.ok) {
+        const updated = await response.json();
+        setRequests((prev) => prev.map((req) => req.id === reqId ? updated : req));
+        addLog(currentUser, "Distribusi Barang", `BON distribusi: ${data.qtyDistributed} unit oleh ${data.distributedBy}`);
+      } else {
+        const error = await response.json();
+        alert(error.message || "Gagal melakukan distribusi");
+      }
+    } catch (err) {
+      console.error("Distribution error:", err);
+      alert("Terjadi kesalahan saat melakukan distribusi");
+    }
+  };
+
+  // 6. Handle Procurement
+  const handleProcure = async (reqId: string, data: {
+    method: "Pengadaan Vendor" | "Pengadaan Sendiri (Toko)";
+    vendorName?: string;
+    storeName?: string;
+    qtyProcured: number;
+    unitPrice: number;
+    isTaxed: boolean;
+    taxRate: number;
+    invoiceNo?: string;
+    bastName?: string;
+    bastDate?: string;
+    contractNo?: string;
+    processedBy: string;
+  }) => {
+    try {
+      const response = await fetch(`/api/requests/${reqId}/procure`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (response.ok) {
+        const updated = await response.json();
+        setRequests((prev) => prev.map((req) => req.id === reqId ? updated : req));
+        addLog(currentUser, "Pengadaan Barang", `BON pengadaan: ${data.qtyProcured} unit via ${data.method}`);
+      } else {
+        const error = await response.json();
+        alert(error.message || "Gagal membuat pengadaan");
+      }
+    } catch (err) {
+      console.error("Procurement error:", err);
+      alert("Terjadi kesalahan saat membuat pengadaan");
+    }
+  };
+
+  // 7. Handle Complete Procurement
+  const handleCompleteProcurement = async (reqId: string, procurementId: string, processedBy: string) => {
+    try {
+      const response = await fetch(`/api/requests/${reqId}/complete-procurement`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ procurementId, processedBy }),
+      });
+      
+      if (response.ok) {
+        const updated = await response.json();
+        setRequests((prev) => prev.map((req) => req.id === reqId ? updated : req));
+        addLog(currentUser, "Terima Pengadaan", `BON pengadaan #${procurementId} diterima`);
+      } else {
+        const error = await response.json();
+        alert(error.message || "Gagal menyelesaikan pengadaan");
+      }
+    } catch (err) {
+      console.error("Complete procurement error:", err);
+      alert("Terjadi kesalahan saat menyelesaikan pengadaan");
+    }
+  };
+
   const formatIDR = (num: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -444,6 +537,10 @@ export default function App() {
                   requests={requests}
                   stockList={stock}
                   onUpdateStatus={handleUpdateStatus}
+                  onDistribute={handleDistribute}
+                  onProcure={handleProcure}
+                  onCompleteProcurement={handleCompleteProcurement}
+                  currentUser={currentUser}
                 />
               )}
 
@@ -622,6 +719,10 @@ export default function App() {
                 requests={requests}
                 stockList={stock}
                 onUpdateStatus={handleUpdateStatus}
+                onDistribute={handleDistribute}
+                onProcure={handleProcure}
+                onCompleteProcurement={handleCompleteProcurement}
+                currentUser={currentUser}
               />
             )}
 
