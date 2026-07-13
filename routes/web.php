@@ -64,38 +64,48 @@ Route::middleware('auth')->group(function () {
 
 // Protected API Routes
 Route::middleware('auth')->prefix('api')->group(function () {
-    // Stocks
-    Route::get('/stocks', [\App\Http\Controllers\Api\StockController::class, 'index']);
-    Route::post('/stocks/bulk', [\App\Http\Controllers\Api\StockController::class, 'bulkStore']);
-    
+    // ---- Semua Authenticated User ----
     // Requests
     Route::get('/requests', [\App\Http\Controllers\Api\RequestController::class, 'index']);
-    Route::post('/requests', [\App\Http\Controllers\Api\RequestController::class, 'store']);
-    Route::put('/requests/{itemRequest}/status', [\App\Http\Controllers\Api\RequestController::class, 'updateStatus']);
-    Route::post('/requests/{itemRequest}/distribute', [\App\Http\Controllers\Api\RequestController::class, 'distribute']);
-    Route::post('/requests/{itemRequest}/procure', [\App\Http\Controllers\Api\RequestController::class, 'procure']);
-    Route::post('/requests/{itemRequest}/complete-procurement', [\App\Http\Controllers\Api\RequestController::class, 'completeProcurement']);
-    
-    // Receipts
-    Route::get('/receipts', [\App\Http\Controllers\Api\ReceiptController::class, 'index']);
-    Route::post('/receipts', [\App\Http\Controllers\Api\ReceiptController::class, 'store']);
-    Route::put('/receipts/{receipt}', [\App\Http\Controllers\Api\ReceiptController::class, 'update']);
     
     // Logs
     Route::get('/logs', [\App\Http\Controllers\Api\LogController::class, 'index']);
     Route::post('/logs', [\App\Http\Controllers\Api\LogController::class, 'store']);
-    
-    // Users
-    Route::get('/users', [\App\Http\Controllers\Api\UserController::class, 'index']);
-    Route::post('/users', [\App\Http\Controllers\Api\UserController::class, 'store']);
-    Route::put('/users/{user}', [\App\Http\Controllers\Api\UserController::class, 'update']);
-    Route::delete('/users/{user}', [\App\Http\Controllers\Api\UserController::class, 'destroy']);
-    // Logs
-    Route::get('/logs', [\App\Http\Controllers\Api\LogController::class, 'index']);
-    Route::post('/logs', [\App\Http\Controllers\Api\LogController::class, 'store']);
-    
-    // Export Laporan (Tambahkan baris ini di VS Code-mu)
-    Route::get('/export-excel', [\App\Http\Controllers\Api\LogController::class, 'exportExcel']);
+
+    // ---- Ketua Tim & Superadmin ----
+    Route::middleware('role:Ketua Tim,Superadmin')->group(function () {
+        Route::post('/requests', [\App\Http\Controllers\Api\RequestController::class, 'store']);
+    });
+
+    // ---- Petugas Persediaan & Superadmin ----
+    Route::middleware('role:Petugas Persediaan,Superadmin')->group(function () {
+        // Stocks
+        Route::get('/stocks', [\App\Http\Controllers\Api\StockController::class, 'index']);
+        Route::post('/stocks/bulk', [\App\Http\Controllers\Api\StockController::class, 'bulkStore']);
+        
+        // Request Actions
+        Route::put('/requests/{itemRequest}/status', [\App\Http\Controllers\Api\RequestController::class, 'updateStatus']);
+        Route::post('/requests/{itemRequest}/distribute', [\App\Http\Controllers\Api\RequestController::class, 'distribute']);
+        Route::post('/requests/{itemRequest}/procure', [\App\Http\Controllers\Api\RequestController::class, 'procure']);
+        Route::post('/requests/{itemRequest}/complete-procurement', [\App\Http\Controllers\Api\RequestController::class, 'completeProcurement']);
+        
+        // Receipts
+        Route::get('/receipts', [\App\Http\Controllers\Api\ReceiptController::class, 'index']);
+        Route::post('/receipts', [\App\Http\Controllers\Api\ReceiptController::class, 'store']);
+        Route::put('/receipts/{receipt}', [\App\Http\Controllers\Api\ReceiptController::class, 'update']);
+        
+        // Export
+        Route::get('/export-excel', [\App\Http\Controllers\Api\LogController::class, 'exportExcel']);
+    });
+
+    // ---- Superadmin Only ----
+    Route::middleware('role:Superadmin')->group(function () {
+        // Users
+        Route::get('/users', [\App\Http\Controllers\Api\UserController::class, 'index']);
+        Route::post('/users', [\App\Http\Controllers\Api\UserController::class, 'store']);
+        Route::put('/users/{user}', [\App\Http\Controllers\Api\UserController::class, 'update']);
+        Route::delete('/users/{user}', [\App\Http\Controllers\Api\UserController::class, 'destroy']);
+    });
 });
 
 // Fallback for React Router (if using client-side routing)
