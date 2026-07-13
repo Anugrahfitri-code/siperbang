@@ -88,7 +88,7 @@ class StokUploadController extends Controller
     public function riwayat()
     {
         $this->authorizeRole('Petugas Persediaan');
-        $batches = StokUpload::with('user')->orderBy('created_at', 'desc')->get();
+        $batches = StokUpload::with('user')->orderBy('created_at', 'desc')->paginate(15);
         return view('stok-upload.riwayat', compact('batches'));
     }
 

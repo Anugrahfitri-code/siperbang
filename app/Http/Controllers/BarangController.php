@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barang;
+use App\Models\KategoriBarang;
 use Illuminate\Http\Request;
 
 class BarangController extends Controller
@@ -10,11 +11,28 @@ class BarangController extends Controller
     /**
      * Show master barang catalog (Petugas Persediaan only).
      */
-    public function index()
+    public function index(Request $request)
     {
         $this->authorizeRole('Petugas Persediaan');
-        $items = Barang::orderBy('name')->get();
-        return view('master-barang.index', compact('items'));
+
+        $query = Barang::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('kategori_id')) {
+            $query->where('category', $request->kategori_id);
+        }
+
+        $barangs  = $query->orderBy('name')->paginate(20)->withQueryString();
+        $kategoris = KategoriBarang::orderBy('nama')->get();
+
+        return view('master-barang.index', compact('barangs', 'kategoris'));
     }
 
     /**

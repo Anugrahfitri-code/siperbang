@@ -25,8 +25,8 @@
                 <select name="kategori_id" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     <option value="">Semua Kategori</option>
                     @foreach($kategoris as $kat)
-                        <option value="{{ $kat->id }}" {{ request('kategori_id') == $kat->id ? 'selected' : '' }}>
-                            {{ $kat->name }}
+                        <option value="{{ $kat->nama }}" {{ request('kategori_id') == $kat->nama ? 'selected' : '' }}>
+                            {{ $kat->nama }}
                         </option>
                     @endforeach
                 </select>
@@ -69,18 +69,18 @@
                             {{ $barang->name }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ $barang->kategori ? $barang->kategori->name : '-' }}
+                            {{ $barang->category ?? '-' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                             {{ $barang->unit }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold {{ $barang->quantity > 0 ? 'text-green-600' : 'text-red-600' }}">
-                            {{ number_format($barang->quantity, 0, ',', '.') }}
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold {{ $barang->qty > 0 ? 'text-green-600' : 'text-red-600' }}">
+                            {{ number_format($barang->qty, 0, ',', '.') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                            @if($barang->quantity > 5)
+                            @if($barang->qty > 5)
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Tersedia</span>
-                            @elseif($barang->quantity > 0 && $barang->quantity <= 5)
+                            @elseif($barang->qty > 0 && $barang->qty <= 5)
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Stok Terbatas</span>
                             @else
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Tidak Tersedia</span>

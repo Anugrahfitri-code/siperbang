@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\StokPengadaanController;
 
 // Web Entry Point for React
 Route::get('/', function () {
@@ -39,6 +40,23 @@ Route::post('/api/logout', function (Request $request) {
     return response()->json(['message' => 'Logout successful']);
 });
 
+
+Route::prefix('stok-pengadaan')->group(function () {
+
+    Route::get('/', [StokPengadaanController::class, 'index'])
+        ->name('stok-pengadaan.index');
+
+    Route::get('/{id}', [StokPengadaanController::class, 'cekStok'])
+        ->name('stok-pengadaan.cek');
+
+    Route::post('/{id}/distribusi', [StokPengadaanController::class, 'prosesDistribusi'])
+        ->name('stok-pengadaan.distribusi');
+
+    Route::post('/{id}/pengadaan', [StokPengadaanController::class, 'prosesPengadaan'])
+        ->name('stok-pengadaan.pengadaan');
+
+});
+
 Route::middleware('auth')->group(function () {
     // Stok Upload Module
     Route::get('/stok-upload', [\App\Http\Controllers\StokUploadController::class, 'index'])->name('stok-upload.index');
@@ -51,6 +69,11 @@ Route::middleware('auth')->group(function () {
     // Verifikasi Kode Persediaan
     Route::get('/stok-upload/{id}/verifikasi', [\App\Http\Controllers\VerifikasiKodePersediaanController::class, 'verifikasi'])->name('stok-upload.verifikasi.index');
     Route::post('/stok-upload/{id}/verifikasi', [\App\Http\Controllers\VerifikasiKodePersediaanController::class, 'postVerifikasi'])->name('stok-upload.verifikasi.store');
+
+    // Perbaiki Data (user edits invalid rows)
+    Route::get('/stok-upload/{id}/perbaiki', [\App\Http\Controllers\PerbaikiDataController::class, 'index'])->name('stok-upload.perbaiki.index');
+    Route::post('/stok-upload/{id}/perbaiki', [\App\Http\Controllers\PerbaikiDataController::class, 'store'])->name('stok-upload.perbaiki.store');
+    Route::post('/stok-upload/{id}/ajukan-ulang', [\App\Http\Controllers\PerbaikiDataController::class, 'ajukanUlang'])->name('stok-upload.ajukan-ulang');
 
     // Master Barang
     Route::get('/master-barang', [\App\Http\Controllers\BarangController::class, 'index'])->name('master-barang.index');
