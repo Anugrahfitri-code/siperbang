@@ -18,11 +18,49 @@ import { LoginScreen } from "./components/LoginScreen";
 import { Sidebar } from "./components/Sidebar";
 import { RequesterStockList } from "./components/RequesterStockList";
 import { UserManagement } from "./components/UserManagement";
-import { LayoutDashboard, FileSpreadsheet, ClipboardList, Package, Receipt, History, AlertCircle, Info, ChevronRight, CheckSquare } from "lucide-react";
+import { LayoutDashboard, FileSpreadsheet, ClipboardList, Package, Receipt, History, AlertCircle, Info, ChevronRight, CheckSquare, Loader2 } from "lucide-react";
+import { apiFetch } from "./api";
+
+type AuthenticatedUser = {
+  id: number | string;
+  name: string;
+  username: string;
+  role: UserRole;
+  section?: string | null;
+};
+
+const normalizeRequestStatus = (status: string): RequestStatus => {
+  const statusMap: Record<string, RequestStatus> = {
+    DIAJUKAN: RequestStatus.DIAJUKAN,
+    DICEK: RequestStatus.DICEK,
+    TERPENUHI: RequestStatus.TERPENUHI,
+
+    TERPENUHI_SEBAGIAN: RequestStatus.TERPENUHI_SEBAGIAN,
+    "TERPENUHI SEBAGIAN": RequestStatus.TERPENUHI_SEBAGIAN,
+
+    PERLU_PENGADAAN: RequestStatus.PERLU_PENGADAAN,
+    "PERLU PENGADAAN": RequestStatus.PERLU_PENGADAAN,
+
+    DALAM_PENGADAAN: RequestStatus.DALAM_PENGADAAN,
+    "DALAM PENGADAAN": RequestStatus.DALAM_PENGADAAN,
+
+    DITOLAK: RequestStatus.DITOLAK,
+    SELESAI: RequestStatus.SELESAI,
+  };
+
+  return statusMap[status.toUpperCase()] ?? (status as RequestStatus);
+};
+
+const toDateOnly = (
+  value: string | null | undefined
+): string => {
+  return value ? value.substring(0, 10) : "";
+};
 
 export default function App() {
   // Roles & Authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [currentRole, setCurrentRole] = useState<UserRole>(UserRole.PETUGAS_PERSERDIAN);
   const [currentUser, setCurrentUser] = useState("Iwan Setiawan (Petugas Persediaan)");
 
@@ -39,18 +77,62 @@ export default function App() {
   const [requesterTab, setRequesterTab] = useState<"bon" | "monitoring" | "history" | "stock">("bon");
   const [superadminTab, setSuperadminTab] = useState<"users" | "dashboard" | "checking" | "stock_manage" | "ocr" | "report" | "bon" | "monitoring" | "stock_catalog" | "history">("users");
 
+  // Memulihkan sesi Laravel ketika browser di-refresh.
+useEffect(() => {
+  let cancelled = false;
+
+  const restoreSession = async () => {
+    try {
+      const response = await apiFetch("/api/user");
+
+      if (!response.ok) {
+        if (response.status !== 401) {
+          console.error(
+            "Gagal memeriksa sesi login:",
+            response.status
+          );
+        }
+
+        return;
+      }
+
+      const user =
+        (await response.json()) as AuthenticatedUser;
+
+      if (!cancelled) {
+        setCurrentRole(user.role);
+        setCurrentUser(`${user.name} (${user.role})`);
+        setIsLoggedIn(true);
+      }
+    } catch (error) {
+      console.error("Gagal memulihkan sesi login:", error);
+    } finally {
+      if (!cancelled) {
+        setAuthChecked(true);
+      }
+    }
+  };
+
+  restoreSession();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
+  
   // Load initial databases
   useEffect(() => {
     // Fetch initial data from API
     const loadData = async () => {
       try {
-        const [reqRes, stockRes, recRes, logRes, userRes] = await Promise.all([
-          fetch('/api/requests'),
-          fetch('/api/stocks'),
-          fetch('/api/receipts'),
-          fetch('/api/logs'),
-          fetch('/api/users')
-        ]);
+        const [reqRes, stockRes, recRes, logRes, userRes] =
+          await Promise.all([
+            apiFetch("/api/requests"),
+            apiFetch("/api/stocks"),
+            apiFetch("/api/receipts"),
+            apiFetch("/api/logs"),
+            apiFetch("/api/users"),
+          ]);
         
         if (reqRes.ok) {
           const reqs = await reqRes.json();
@@ -59,15 +141,15 @@ export default function App() {
             bonNo: r.bon_no,
             section: r.section,
             itemName: r.item_name,
-            qtyRequested: r.qty_requested,
-            qtyAvailable: r.qty_available,
-            qtyFulfilled: r.qty_fulfilled,
+            qtyRequested: Number(r.qty_requested ?? 0),
+            qtyAvailable: Number(r.qty_available ?? 0),
+            qtyFulfilled: Number(r.qty_fulfilled ?? 0),
             unit: r.unit,
-            status: r.status,
-            notes: r.notes,
-            date: r.date,
+            status: normalizeRequestStatus(r.status),
+            notes: r.notes ?? "",
+            date: toDateOnly(r.date),
             requester: r.requester,
-            lastUpdated: r.last_updated
+            lastUpdated: toDateOnly(r.last_updated),
           })));
         }
 
@@ -186,21 +268,67 @@ export default function App() {
   // --- ACTIONS ---
 
   // 1. Submit a new BON Digital Request
-  const handleAddRequest = (newReq: Omit<ItemRequest, "id" | "bonNo" | "status" | "qtyAvailable" | "qtyFulfilled" | "lastUpdated">) => {
-    const countToday = requests.length + 1;
-    const formattedBonNo = `BON/2026/07/${String(countToday).padStart(3, "0")}`;
+  const handleAddRequest = async (
+    newReq: Omit<
+      ItemRequest,
+      | "id"
+      | "bonNo"
+      | "status"
+      | "qtyAvailable"
+      | "qtyFulfilled"
+      | "lastUpdated"
+    >
+  ): Promise<void> => {
+    const response = await apiFetch("/api/requests", {
+      method: "POST",
+      body: JSON.stringify(newReq),
+    });
+    const data: any = await response
+      .json()
+      .catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 401) {
+        setIsLoggedIn(false);
 
-    const requestWithId: ItemRequest = {
-      ...newReq,
-      id: "req-" + Math.random().toString(36).substring(2, 9),
-      bonNo: formattedBonNo,
-      status: RequestStatus.DIAJUKAN,
-      qtyAvailable: 0,
-      qtyFulfilled: 0,
-      lastUpdated: new Date().toISOString().split("T")[0],
+        throw new Error(
+          "Sesi login berakhir. Silakan masuk kembali."
+        );
+      }
+      const validationMessage =
+        data.errors &&
+        typeof data.errors === "object"
+          ? Object.values(
+              data.errors as Record<string, string[]>
+            )
+              .flat()
+              .join(" ")
+          : "";
+      throw new Error(
+        validationMessage ||
+          data.message ||
+          "BON gagal disimpan ke database."
+      );
+    }
+
+    const savedRequest: ItemRequest = {
+      id: String(data.id),
+      bonNo: data.bon_no,
+      section: data.section,
+      itemName: data.item_name,
+      qtyRequested: Number(data.qty_requested),
+      qtyAvailable: Number(data.qty_available ?? 0),
+      qtyFulfilled: Number(data.qty_fulfilled ?? 0),
+      unit: data.unit,
+      status: normalizeRequestStatus(data.status),
+      notes: data.notes ?? "",
+      date: toDateOnly(data.date),
+      requester: data.requester,
+      lastUpdated: toDateOnly(data.last_updated),
     };
-
-    setRequests((prev) => [requestWithId, ...prev]);
+    setRequests((previousRequests) => [
+      savedRequest,
+      ...previousRequests,
+    ]);
     addLog(
       currentUser,
       "Ajukan Kebutuhan",
@@ -320,6 +448,25 @@ export default function App() {
     addLog(currentUser, "Tambah Kuitansi", `Menambahkan kuitansi manual/baru dari ${newReceipt.storeName} senilai ${formatIDR(newReceipt.total)}.`);
   };
 
+  const handleLogout = async () => {
+    try {
+      const response = await apiFetch("/api/logout", {
+        method: "POST",
+      });
+    if (!response.ok) {
+      throw new Error(
+        "Logout gagal diproses oleh server."
+      );
+    }
+    window.location.assign("/");
+  } catch (error) {
+    console.error(error);
+    window.alert(
+      "Logout gagal. Silakan coba kembali."
+    );
+  }
+};
+
   const formatIDR = (num: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -328,15 +475,38 @@ export default function App() {
     }).format(num);
   };
 
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-600">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <Loader2
+            size={18}
+            className="animate-spin"
+          />
+
+          Memeriksa sesi login...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       {!isLoggedIn ? (
-        <LoginScreen 
-          onLogin={(role) => {
-            handleRoleChange(role);
+        <LoginScreen
+          onLogin={(user) => {
+            setCurrentRole(user.role);
+            setCurrentUser(
+              `${user.name} (${user.role})`
+            );
             setIsLoggedIn(true);
-            addLog("System", "Login Berhasil", `User login sebagai ${role}`);
-          }} 
+
+            addLog(
+              "System",
+              "Login Berhasil",
+              `User login sebagai ${user.role}`
+            );
+          }}
         />
       ) : (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -345,7 +515,7 @@ export default function App() {
             currentRole={currentRole}
             onChangeRole={handleRoleChange}
             currentUser={currentUser}
-            onLogout={() => setIsLoggedIn(false)}
+            onLogout={handleLogout}
             onToggleSidebar={() => setIsSidebarOpen(true)}
           />
 

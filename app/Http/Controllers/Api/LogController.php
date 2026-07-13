@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\HistoryLog;
+use App\Models\Receipt;
 use Illuminate\Http\Request;
 
 class LogController extends Controller
@@ -23,5 +24,88 @@ class LogController extends Controller
 
         $log = HistoryLog::create($validated);
         return response()->json($log, 201);
+    }
+
+    /**
+     * Fitur Ekspor Rekap Kuitansi Berformat Spreadsheet Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        $year = $request->query('year', '2026');
+        $month = $request->query('month', 'All');
+        $search = $request->query('search', '');
+        $isAnnual = $request->query('annual') === 'true';
+
+        // 1. Ambil data kuitansi yang hanya berstatus tervalidasi (is_verified = true)
+        $query = Receipt::with('items')->where('is_verified', true);
+
+        // Filter Berdasarkan Tahun
+        if ($year !== 'All') {
+            $query->whereYear('date', $year);
+        }
+
+        // Filter Berdasarkan Bulan (dilewati jika Rekap Tahunan aktif)
+        if (!$isAnnual && $month !== 'All') {
+            $query->whereMonth('date', $month);
+        }
+
+        // Pencarian Teks Masing-masing Field
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('store_name', 'like', "%{$search}%")
+                  ->orWhere('invoice_no', 'like', "%{$search}%")
+                  ->orWhereHas('items', function($subQ) use ($search) {
+                      $subQ->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $receipts = $query->orderBy('date', 'desc')->get();
+
+        // 2. Setup Header Excel ke bentuk CSV Stream agar langsung terbaca sebagai Spreadsheet
+        $filename = $isAnnual ? "SIPERBANG_REKAP_TAHUNAN_{$year}.csv" : "SIPERBANG_REKAP_BULANAN_{$month}_{$year}.csv";
+        
+        $headers = [
+            "Content-Type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=\"{$filename}\"",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+
+        // 3. Proses streaming data baris per baris
+        $callback = function() use ($receipts, $isAnnual) {
+            $file = fopen('php://output', 'w');
+            
+            // Tulis Header Kolom
+            fputcsv($file, ['No Nota', 'Tanggal', 'Nama Toko', 'Nama Barang', 'Jumlah', 'Harga Satuan', 'Subtotal', 'PPN', 'Total', 'BAST Nama', 'BAST Tanggal', 'Tanggal Buku']);
+
+            foreach ($receipts as $rc) {
+                foreach ($rc->items as $it) {
+                    $subtotal = $it->qty * $it->price;
+                    $taxAmount = $rc->is_taxed ? round($subtotal * ($rc->tax_rate / 100)) : 0;
+                    $total = $subtotal + $taxAmount;
+
+                    // EKSEKUSI ATURAN PRD: Kosongkan kolom BAST dan tanggal buku jika rekap tahunan aktif
+                    fputcsv($file, [
+                        $rc->invoice_no,
+                        $rc->date,
+                        $rc->store_name,
+                        $it->name,
+                        $it->qty,
+                        $it->price,
+                        $subtotal,
+                        $taxAmount,
+                        $total,
+                        $isAnnual ? '' : ($rc->bast_name ?? '-'),
+                        $isAnnual ? '' : ($rc->bast_date ?? '-'),
+                        $isAnnual ? '' : $rc->date
+                    ]);
+                }
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

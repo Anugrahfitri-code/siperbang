@@ -10,4 +10,9 @@ class HistoryLog extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function user(){
+        
+    return $this->belongsTo(User::class, 'actor', 'name'); // Menghubungkan log dengan data user
+}
 }
