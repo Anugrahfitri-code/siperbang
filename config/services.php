@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'ocr' => [
+        'url' => env('OCR_SERVICE_URL', 'http://127.0.0.1:8001'),
+        'token' => env('OCR_SERVICE_TOKEN'),
+        'timeout' => env('OCR_SERVICE_TIMEOUT', 180),
+        'max_upload_size' => 10240,
+    ],
+
 ];
