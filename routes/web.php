@@ -15,7 +15,7 @@ Route::get('/api/user', function (Request $request) {
         return response()->json(Auth::user());
     }
     return response()->json(['message' => 'Unauthenticated'], 401);
-});
+}); 
 
 // Auth Routes
 Route::post('/api/login', function (Request $request) {
@@ -90,6 +90,12 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::post('/users', [\App\Http\Controllers\Api\UserController::class, 'store']);
     Route::put('/users/{user}', [\App\Http\Controllers\Api\UserController::class, 'update']);
     Route::delete('/users/{user}', [\App\Http\Controllers\Api\UserController::class, 'destroy']);
+    // Logs
+    Route::get('/logs', [\App\Http\Controllers\Api\LogController::class, 'index']);
+    Route::post('/logs', [\App\Http\Controllers\Api\LogController::class, 'store']);
+    
+    // Export Laporan (Tambahkan baris ini di VS Code-mu)
+    Route::get('/export-excel', [\App\Http\Controllers\Api\LogController::class, 'exportExcel']);
 });
 
 // Fallback for React Router (if using client-side routing)

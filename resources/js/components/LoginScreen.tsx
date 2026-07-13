@@ -2,9 +2,18 @@ import React, { useState } from "react";
 import { UserRole } from "../types";
 import { ShieldCheck, LogIn, Loader2 } from "lucide-react";
 import { SiperbangLogo } from "./Logos";
+import { apiFetch } from "../api";
+
+interface AuthenticatedUser {
+  id: number | string;
+  name: string;
+  username: string;
+  role: UserRole;
+  section?: string | null;
+}
 
 interface LoginScreenProps {
-  onLogin: (role: UserRole) => void;
+  onLogin: (user: AuthenticatedUser) => void;
 }
 
 export function LoginScreen({ onLogin }: LoginScreenProps) {
@@ -19,19 +28,15 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/login', {
+      const response = await apiFetch("/api/login", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
         body: JSON.stringify({ username, password })
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        onLogin(data.user.role as UserRole);
+        onLogin(data.user as AuthenticatedUser);
       } else {
         setError(data.message || "Login gagal. Periksa kembali username dan password Anda.");
       }
