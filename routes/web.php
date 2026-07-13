@@ -94,6 +94,13 @@ Route::middleware('auth')->prefix('api')->group(function () {
         Route::post('/receipts', [\App\Http\Controllers\Api\ReceiptController::class, 'store']);
         Route::put('/receipts/{receipt}', [\App\Http\Controllers\Api\ReceiptController::class, 'update']);
         
+        // Receipt Documents (OCR)
+        Route::get('/receipt-documents', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'index']);
+        Route::post('/receipt-documents', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'store']);
+        Route::get('/receipt-documents/{receiptDocument}', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'show']);
+        Route::put('/receipt-documents/{receiptDocument}/verify', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'verify']);
+        Route::post('/receipt-documents/{receiptDocument}/retry', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'retry']);
+        
         // Export
         Route::get('/export-excel', [\App\Http\Controllers\Api\LogController::class, 'exportExcel']);
     });
