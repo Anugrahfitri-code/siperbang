@@ -21,7 +21,11 @@ class ReceiptDocumentController extends Controller
 
     public function show(ReceiptDocument $receiptDocument)
     {
-        return response()->json($receiptDocument);
+        $data = $receiptDocument->toArray();
+        if (isset($data['parsed_result']) && isset($data['raw_result']['items'])) {
+            $data['parsed_result']['items'] = $data['raw_result']['items'];
+        }
+        return response()->json($data);
     }
 
     public function store(Request $request)
@@ -47,16 +51,16 @@ class ReceiptDocumentController extends Controller
         $fullPath = Storage::disk('local')->path($path);
         $sha256 = hash_file('sha256', $fullPath);
 
-        $existing = ReceiptDocument::where('sha256', $sha256)->first();
-        if ($existing) {
-            return response()->json([
-                'message' => 'Document already uploaded',
-                'data' => [
-                    'id' => $existing->id,
-                    'status' => $existing->status->value
-                ]
-            ], 200);
-        }
+        // $existing = ReceiptDocument::where('sha256', $sha256)->first();
+        // if ($existing) {
+        //     return response()->json([
+        //         'message' => 'Document already uploaded',
+        //         'data' => [
+        //             'id' => $existing->id,
+        //             'status' => $existing->status->value
+        //         ]
+        //     ], 200);
+        // }
 
         $document = ReceiptDocument::create([
             'uploaded_by' => $request->user()?->id,
