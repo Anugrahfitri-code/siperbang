@@ -62,15 +62,19 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
 
         const extractValue = (field?: OcrField<any>, defaultVal: any = "") => field?.value ?? defaultVal;
 
+        const extractedTaxAmount = extractValue(p.tax_amount, 0);
+        const extractedTaxRate = extractValue(p.tax_rate, 0);
+        const hasTax = extractedTaxAmount > 0;
+
         const newDraft: ReceiptData = {
           id: "rc-draft-" + data.id,
           invoiceNo: extractValue(p.invoice_no),
           storeName: extractValue(p.store_name),
           date: extractValue(p.date),
-          isTaxed: false,
-          taxRate: 11,
+          isTaxed: hasTax,
+          taxRate: hasTax ? extractedTaxRate : 11,
           subtotal: extractValue(p.subtotal, 0),
-          taxAmount: extractValue(p.tax_amount, 0),
+          taxAmount: extractedTaxAmount,
           total: extractValue(p.total, 0),
           isVerified: data.status === "verified",
           status: data.status === "verified" ? "Dokumen Valid" : "Menunggu Verifikasi",
@@ -90,6 +94,8 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         setStoreName(newDraft.storeName);
         setInvoiceNo(newDraft.invoiceNo);
         setDate(newDraft.date);
+        setIsTaxed(newDraft.isTaxed);
+        setTaxRate(newDraft.taxRate);
         setItems(newDraft.items);
         setBastName(newDraft.bastName || "");
         setBastDate(newDraft.bastDate || "");
@@ -645,7 +651,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   <thead>
                     <tr className="bg-slate-50 text-slate-600 text-[9px] font-bold uppercase tracking-wider border-b border-slate-200">
                       <th className="px-3 py-2">Nama Barang</th>
-                      <th className="px-3 py-2 w-16 text-center">Jumlah</th>
+                      <th className="px-3 py-2 w-24 text-center">Jumlah</th>
                       <th className="px-3 py-2 w-24">Harga Satuan (Rp)</th>
                       <th className="px-3 py-2 w-24 text-right">Subtotal</th>
                       <th className="px-3 py-2 w-10 text-center">Aksi</th>

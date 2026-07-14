@@ -8,12 +8,13 @@ class ExtractedValue(BaseModel):
 
 class DocumentData(BaseModel):
     store_name: ExtractedValue
-    invoice_number: ExtractedValue
-    transaction_date: ExtractedValue
+    invoice_no: ExtractedValue
+    date: ExtractedValue
     subtotal: ExtractedValue
     tax_rate: ExtractedValue
     tax_amount: ExtractedValue
     total: ExtractedValue
+    items: Optional[List[dict]] = []
 
 class LineData(BaseModel):
     text: str

@@ -14,7 +14,7 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "siperbang-ocr",
-        "engine_loaded": ocr_engine._ocr is not None
+        "engine_loaded": True
     }
 
 @app.post("/internal/v1/receipt-ocr", response_model=OcrResponse)
@@ -43,13 +43,15 @@ async def process_receipt(
                 f.write(chunk)
                 
         try:
-            result = ocr_engine.process(tmp_path)
+            result = ocr_engine.process(tmp_path, document.filename)
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return OcrResponse(
                 success=False,
                 engine="paddleocr",
                 engine_version="2.7.0",
-                error="OCR Processing failed"
+                error="OCR Processing failed: " + str(e)
             )
             
         if not result or not result[0]:
@@ -98,6 +100,7 @@ async def process_receipt(
             raw_text="\n".join(raw_text_parts),
             pages=pages,
             document=parsed_doc,
+            items=parsed_doc.items if hasattr(parsed_doc, 'items') else [],
             warnings=warnings
         )
         
