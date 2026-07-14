@@ -52,10 +52,8 @@ Route::middleware('auth')->group(function () {
     // Unified stepper (replaces preview + verifikasi + perbaiki pages)
     Route::get('/stok-upload/{id}/stepper',      [$ctrl, 'stepper']        )->name('stok-upload.stepper');
 
-    // Step 2 — Pemeriksaan Data
-    Route::post('/stok-upload/{id}/fixes',        [$ctrl, 'saveFixes']      )->name('stok-upload.fixes');
-    Route::post('/stok-upload/{id}/ajukan-ulang', [$ctrl, 'ajukanUlang']    )->name('stok-upload.ajukan-ulang');
-    Route::get('/stok-upload/{id}/errors.csv',    [$ctrl, 'downloadErrors'] )->name('stok-upload.download-errors');
+    // Step 2 — Pemeriksaan Data (read-only, no inline editing)
+    // errors are shown on the upload page (index), not the stepper
 
     // Step 3 — Verifikasi Kode
     Route::post('/stok-upload/{id}/verifikasi',  [$ctrl, 'saveVerifikasi'] )->name('stok-upload.verifikasi.store');

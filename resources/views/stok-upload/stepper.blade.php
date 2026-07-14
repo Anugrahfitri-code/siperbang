@@ -109,123 +109,27 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
 {{-- Action toolbar --}}
 <div class="flex flex-wrap gap-2 mb-5">
     <a href="{{ route('stok-upload.stepper', ['id' => $batch->id, 'step' => 3]) }}"
-       class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors
-       {{ $errorRows->count() > 0 ? 'opacity-50 pointer-events-none' : '' }}">
+       class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors">
         Lanjut Verifikasi Kode →
-    </a>
-    @if($errorRows->count() === 0)
-    <form action="{{ route('stok-upload.ajukan-ulang', $batch->id) }}" method="POST">
-        @csrf
-        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors">
-            Ajukan Ulang ke Verifikasi
-        </button>
-    </form>
-    @endif
-    <a href="{{ route('stok-upload.download-errors', $batch->id) }}"
-       class="px-4 py-2 border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 rounded-lg">
-        ↓ Unduh Daftar Error (.csv)
     </a>
     <a href="{{ route('stok-upload.index') }}"
        class="px-4 py-2 border border-amber-300 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-lg">
-        ↺ Upload Ulang File Baru
+        ↺ Upload File Baru
     </a>
 </div>
 
-{{-- Error rows with inline fix form --}}
+{{-- Error rows — READ ONLY, no inline editing --}}
 @if($errorRows->count() > 0)
-<div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden mb-6">
-    <div class="px-5 py-3 bg-rose-50 border-b border-rose-100 flex items-center justify-between">
-        <h3 class="text-xs font-extrabold text-rose-800 uppercase tracking-wider flex items-center gap-2">
-            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Baris Bermasalah ({{ $errorRows->count() }} baris)
-        </h3>
-    </div>
-    <form action="{{ route('stok-upload.fixes', $batch->id) }}" method="POST">
-        @csrf
-        {{-- Error detail table --}}
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 uppercase tracking-wider">
-                        <th class="px-4 py-3">Sheet / Baris</th>
-                        <th class="px-4 py-3">Nama Barang</th>
-                        <th class="px-4 py-3">Kolom Bermasalah</th>
-                        <th class="px-4 py-3">Penyebab Error</th>
-                        <th class="px-4 py-3">Saran Perbaikan</th>
-                        <th class="px-4 py-3">Kode Persediaan</th>
-                        <th class="px-3 py-3">Qty</th>
-                        <th class="px-3 py-3">Satuan</th>
-                        <th class="px-3 py-3">Harga (Rp)</th>
-                        <th class="px-3 py-3">Pajak</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @foreach($errorRows as $i => $row)
-                    <tr class="hover:bg-rose-50/30 transition-colors align-top">
-                        <td class="px-4 py-3 whitespace-nowrap font-mono text-[11px] text-slate-500">
-                            {{ $row->sheet_name }}<br>Baris {{ $row->no_urut }}
-                            <input type="hidden" name="rows[{{ $i }}][detail_id]" value="{{ $row->id }}">
-                        </td>
-                        <td class="px-4 py-3 min-w-[160px]">
-                            <input type="text" name="rows[{{ $i }}][nama_barang]" value="{{ old("rows.{$i}.nama_barang", $row->nama_barang) }}"
-                                   required class="w-full px-2 py-1.5 rounded border border-slate-200 text-xs focus:ring-1 focus:ring-indigo-400">
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap text-xs font-bold text-rose-700">
-                            {{ $row->errorColumnLabel() ?? ($row->error_column ?? '—') }}
-                        </td>
-                        <td class="px-4 py-3 text-xs text-rose-700 max-w-[200px]">
-                            @foreach($row->parsedErrors() as $err)
-                            <p class="mb-0.5">• {{ $err }}</p>
-                            @endforeach
-                        </td>
-                        <td class="px-4 py-3 text-xs text-indigo-700 max-w-[200px]">
-                            {{ $row->fixSuggestion() }}
-                            @if($row->suggested_kode_persediaan && $row->suggested_kode_persediaan !== $row->kode_persediaan_excel)
-                            <button type="button" onclick="document.getElementById('kode_{{ $i }}').value='{{ $row->suggested_kode_persediaan }}'"
-                                    class="mt-1 px-1.5 py-0.5 bg-indigo-600 text-white text-[10px] font-bold rounded hover:bg-indigo-700">
-                                ✓ Pakai {{ $row->suggested_kode_persediaan }}
-                            </button>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3 min-w-[130px]">
-                            <select id="kode_{{ $i }}" name="rows[{{ $i }}][kode_persediaan]"
-                                    class="w-full px-2 py-1.5 rounded border border-slate-200 bg-white text-xs font-mono focus:ring-1 focus:ring-indigo-400">
-                                <option value="">-- Pilih --</option>
-                                @foreach($masterCodes as $mc)
-                                <option value="{{ $mc->kode }}" {{ ($row->verified_kode_persediaan ?? $row->kode_persediaan_excel) === $mc->kode ? 'selected' : '' }}>
-                                    {{ $mc->kode }} — {{ $mc->nama_barang }}
-                                </option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td class="px-3 py-3 min-w-[70px]">
-                            <input type="number" name="rows[{{ $i }}][qty]" value="{{ $row->qty }}" min="1" required
-                                   class="w-full px-2 py-1.5 rounded border border-slate-200 text-xs focus:ring-1 focus:ring-indigo-400">
-                        </td>
-                        <td class="px-3 py-3 min-w-[80px]">
-                            <input type="text" name="rows[{{ $i }}][unit]" value="{{ $row->unit }}" required
-                                   class="w-full px-2 py-1.5 rounded border border-slate-200 text-xs focus:ring-1 focus:ring-indigo-400">
-                        </td>
-                        <td class="px-3 py-3 min-w-[110px]">
-                            <input type="number" name="rows[{{ $i }}][price_unit]" value="{{ (int)$row->price_unit }}" min="0" required
-                                   class="w-full px-2 py-1.5 rounded border border-slate-200 text-xs focus:ring-1 focus:ring-indigo-400">
-                        </td>
-                        <td class="px-3 py-3 min-w-[80px]">
-                            <select name="rows[{{ $i }}][is_taxed]" class="w-full px-2 py-1.5 rounded border border-slate-200 bg-white text-xs focus:ring-1 focus:ring-indigo-400">
-                                <option value="0" {{ !$row->is_taxed ? 'selected' : '' }}>Nett</option>
-                                <option value="1" {{ $row->is_taxed ? 'selected' : '' }}>PPN 11%</option>
-                            </select>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        <div class="px-5 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
-            <button type="submit" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors">
-                Simpan Perbaikan
-            </button>
-        </div>
+<div class="bg-rose-50 border border-rose-200 rounded-xl p-5 text-center">
+    <svg class="h-10 w-10 text-rose-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <p class="text-sm font-extrabold text-rose-800">Batch ini tidak seharusnya ada di sini.</p>
+    <p class="text-xs text-rose-600 mt-1">Sistem menolak upload ketika ada error. Jika batch ini sudah terlanjur tersimpan, hapus dan upload ulang file yang sudah diperbaiki.</p>
+    <form action="{{ route('stok-upload.destroy', $batch->id) }}" method="POST" class="mt-4"
+          onsubmit="return confirm('Hapus batch ini dan upload ulang file Excel yang sudah diperbaiki?')">
+        @csrf @method('DELETE')
+        <button class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors">
+            Hapus & Upload Ulang
+        </button>
     </form>
 </div>
 @endif
@@ -309,16 +213,6 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
 <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden mb-6">
     <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
         <h3 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Verifikasi Kode Persediaan</h3>
-        <div class="flex gap-2">
-            <button type="button" onclick="setAllAction('Setuju')"
-                    class="px-3 py-1 rounded bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100">
-                ✓ Setujui Semua
-            </button>
-            <button type="button" onclick="setAllAction('Tolak')"
-                    class="px-3 py-1 rounded bg-rose-50 border border-rose-200 text-[10px] font-bold text-rose-700 hover:bg-rose-100">
-                ✗ Tolak Semua
-            </button>
-        </div>
     </div>
 
     <form action="{{ route('stok-upload.verifikasi.store', $batch->id) }}" method="POST" id="formVerifikasi">
@@ -330,9 +224,7 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
                         <th class="px-4 py-3">Sheet / No</th>
                         <th class="px-4 py-3">Nama Barang</th>
                         <th class="px-4 py-3">Kode dari Excel</th>
-                        <th class="px-4 py-3">Kode Saran Sistem</th>
-                        <th class="px-4 py-3 min-w-[200px]">Kode Terverifikasi</th>
-                        <th class="px-4 py-3">Keputusan</th>
+                        <th class="px-4 py-3 min-w-[260px]">Kode Terverifikasi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -349,51 +241,23 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
                         <td class="px-4 py-3 whitespace-nowrap font-mono text-[11px] text-slate-500">
                             {{ $row->sheet_name }}<br>Baris {{ $row->no_urut }}
                             <input type="hidden" name="items[{{ $i }}][detail_id]" value="{{ $row->id }}">
+                            <input type="hidden" name="items[{{ $i }}][action]" value="Setuju">
                         </td>
                         <td class="px-4 py-3 font-semibold text-slate-800">{{ $row->nama_barang }}</td>
                         <td class="px-4 py-3 font-mono text-[11px] text-slate-600">
                             {{ $row->kode_persediaan_excel ?? '—' }}
                         </td>
-                        <td class="px-4 py-3">
-                            @if($row->suggested_kode_persediaan && $row->suggested_kode_persediaan !== $row->kode_persediaan_excel)
-                                <span class="font-mono text-[11px] text-indigo-700 font-bold">{{ $row->suggested_kode_persediaan }}</span>
-                                <button type="button"
-                                        onclick="applySuggestion({{ $i }}, '{{ $row->suggested_kode_persediaan }}')"
-                                        class="ml-1 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold rounded hover:bg-indigo-700">
-                                    Pakai
-                                </button>
-                            @else
-                                <span class="text-slate-400 text-[11px]">—</span>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3 min-w-[200px]">
+                        <td class="px-4 py-3 min-w-[260px]">
                             <select id="kode_v_{{ $i }}" name="items[{{ $i }}][kode_persediaan]"
                                     class="w-full px-2 py-1.5 rounded border border-slate-200 bg-white text-[11px] font-mono focus:ring-1 focus:ring-indigo-400">
                                 <option value="">-- Pilih Kode --</option>
                                 @foreach($masterCodes as $mc)
                                 <option value="{{ $mc->kode }}"
                                     {{ ($row->verified_kode_persediaan ?? $row->kode_persediaan_excel) === $mc->kode ? 'selected' : '' }}>
-                                    {{ $mc->kode }} — {{ Str::limit($mc->nama_barang, 35) }}
+                                    {{ $mc->kode }} — {{ Str::limit($mc->nama_barang, 40) }}
                                 </option>
                                 @endforeach
                             </select>
-                        </td>
-                        <td class="px-4 py-3">
-                            <div class="flex gap-1.5" id="action_btns_{{ $i }}">
-                                @foreach(['Setuju' => 'emerald', 'Perbaiki' => 'indigo', 'Tolak' => 'rose'] as $act => $color)
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="items[{{ $i }}][action]" value="{{ $act }}"
-                                           id="radio_{{ $i }}_{{ $act }}"
-                                           {{ $rowStatus === $act || ($act === 'Setuju' && $rowStatus === 'Pending') ? 'checked' : '' }}
-                                           class="sr-only peer/radio">
-                                    <span class="px-2 py-1 rounded text-[10px] font-bold border transition-all
-                                        peer-checked/radio:bg-{{ $color }}-600 peer-checked/radio:text-white peer-checked/radio:border-{{ $color }}-600
-                                        bg-white text-{{ $color }}-700 border-{{ $color }}-200 hover:bg-{{ $color }}-50">
-                                        {{ $act }}
-                                    </span>
-                                </label>
-                                @endforeach
-                            </div>
                         </td>
                     </tr>
                     @endforeach
@@ -403,7 +267,7 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
 
         <div class="px-5 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap justify-between items-center gap-3">
             <p class="text-xs text-slate-500">
-                Pilih <strong>Setuju</strong> untuk menerima kode, <strong>Perbaiki</strong> untuk mengganti kode, atau <strong>Tolak</strong> untuk mengabaikan baris.
+                Pastikan kode terverifikasi sudah sesuai dengan nama barang sebelum menyimpan.
             </p>
             <div class="flex gap-3">
                 <a href="{{ route('stok-upload.stepper', ['id' => $batch->id, 'step' => 2]) }}"

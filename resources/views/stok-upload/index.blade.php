@@ -16,6 +16,45 @@
 
     <!-- Upload Box Form -->
     <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
+
+        {{-- ── Upload Rejected: error details ── --}}
+        @if(session('upload_rejected') && session('upload_errors'))
+        @php $uploadErrors = session('upload_errors'); @endphp
+        <div class="mb-6 rounded-xl border border-rose-200 overflow-hidden">
+            <div class="bg-rose-600 px-5 py-3.5 flex items-center gap-3">
+                <svg class="h-5 w-5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div class="flex-1">
+                    <p class="text-sm font-extrabold text-white">File ditolak — {{ session('upload_error_count') }} baris bermasalah dari {{ session('upload_total_count') }} baris total</p>
+                    <p class="text-xs text-rose-100 mt-0.5">Tidak ada data yang disimpan. Perbaiki file Excel Anda sesuai daftar di bawah, lalu upload ulang.</p>
+                </div>
+            </div>
+            <div class="bg-rose-50 px-5 py-4 divide-y divide-rose-100">
+                @foreach($uploadErrors as $err)
+                <div class="py-3 flex gap-4 items-start">
+                    <div class="shrink-0 text-[10px] font-mono font-bold text-rose-500 bg-rose-100 px-2 py-1 rounded mt-0.5 whitespace-nowrap">
+                        {{ $err['sheet'] }}<br>Baris {{ $err['no_urut'] ?? '?' }}
+                    </div>
+                    <div class="flex-1">
+                        @if($err['nama'] !== '(kosong)')
+                        <p class="text-xs font-bold text-slate-800 mb-1">{{ $err['nama'] }}</p>
+                        @endif
+                        @foreach($err['messages'] as $msg)
+                        <p class="text-xs text-rose-700 flex items-start gap-1.5">
+                            <span class="text-rose-400 mt-0.5 shrink-0">•</span>{{ $msg }}
+                        </p>
+                        @endforeach
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            <div class="bg-amber-50 border-t border-amber-200 px-5 py-3 flex items-center gap-2 text-xs text-amber-800">
+                <svg class="h-4 w-4 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span><strong>Langkah selanjutnya:</strong> buka file Excel Anda, perbaiki baris yang tercantum di atas, simpan, lalu upload kembali melalui form di bawah.</span>
+            </div>
+        </div>
+        @endif
         <form action="{{ route('stok-upload.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
             @csrf
             
