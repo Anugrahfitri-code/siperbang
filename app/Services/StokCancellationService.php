@@ -54,7 +54,7 @@ class StokCancellationService
             throw new \Exception("Tidak ada histori stok yang dapat dibalik untuk batch ini. Mungkin finalisasi tidak menghasilkan perubahan stok.");
         }
 
-        $results = ['reversed' => 0, 'skipped' => 0];
+        $results = ['reversed' => 0, 'skipped' => 0, 'clamped' => 0];
 
         DB::transaction(function () use ($batch, $originalHistories, $reason, $actor, $userId, &$results) {
 
@@ -66,38 +66,43 @@ class StokCancellationService
                     continue;
                 }
 
-                // Safety check: reversing would subtract qty_change from current qty
-                $newQty = $barang->qty - $history->qty_change;
+                // Calculate the reversal qty.
+                // If current stock is already below qty_change (e.g. stock was consumed
+                // after upload), we clamp to 0 and record the shortfall in notes.
+                // We never block the cancellation because of this — the upload
+                // must always be cancellable regardless of current stock level.
+                $rawNewQty  = $barang->qty - $history->qty_change;
+                $newQty     = max(0, $rawNewQty);
+                $shortfall  = $rawNewQty < 0 ? abs($rawNewQty) : 0;
 
-                if ($newQty < 0) {
-                    throw new \Exception(
-                        "Pembatalan akan membuat stok '{$barang->name}' (kode: {$barang->code}) " .
-                        "menjadi negatif ({$newQty}). Stok saat ini: {$barang->qty}, " .
-                        "Qty yang akan dibalik: {$history->qty_change}. " .
-                        "Pastikan stok tidak sudah terpakai sebelum membatalkan upload ini."
-                    );
+                $notes = "Pembatalan batch #{$batch->id}. Alasan: {$reason}";
+                if ($shortfall > 0) {
+                    $notes .= " | Catatan: stok '{$barang->name}' sudah terpakai "
+                        . "{$shortfall} unit sebelum pembatalan, stok disetel ke 0.";
                 }
 
-                // Apply the reversal
                 $barang->update([
                     'qty'          => $newQty,
                     'last_updated' => now(),
                 ]);
 
-                // Write a reversal stok_history row
                 StockHistory::create([
                     'stock_item_id'  => $history->stock_item_id,
                     'stok_upload_id' => $batch->id,
                     'qty_change'     => -$history->qty_change,
-                    'qty_before'     => $history->qty_after,   // reversed perspective
+                    'qty_before'     => $barang->getOriginal('qty'),
                     'qty_after'      => $newQty,
                     'type'           => 'Pembatalan Upload',
-                    'notes'          => "Pembatalan batch #{$batch->id}. Alasan: {$reason}",
+                    'notes'          => $notes,
                     'is_reversal'    => true,
                     'reversal_of_id' => $history->id,
                 ]);
 
-                $results['reversed']++;
+                if ($shortfall > 0) {
+                    $results['clamped']++;
+                } else {
+                    $results['reversed']++;
+                }
             }
 
             // Mark batch as cancelled
@@ -113,7 +118,9 @@ class StokCancellationService
                 'user_id'     => $userId,
                 'action'      => 'Batalkan Transaksi Upload',
                 'description' => "Membatalkan batch upload #{$batch->id} ({$batch->file_name_original}). "
-                    . "Membalik {$results['reversed']} item stok. Alasan: {$reason}",
+                    . "Dibalik: {$results['reversed']} item, "
+                    . "Disetel ke 0 (stok sudah terpakai): {$results['clamped']} item. "
+                    . "Alasan: {$reason}",
                 'ip_address'  => request()->ip(),
             ]);
 
@@ -121,7 +128,9 @@ class StokCancellationService
             HistoryLog::create([
                 'actor'   => $actor,
                 'action'  => 'Batalkan Transaksi Upload',
-                'details' => "Batch #{$batch->id} dibatalkan. {$results['reversed']} item stok dibalik. Alasan: {$reason}",
+                'details' => "Batch #{$batch->id} dibatalkan. "
+                    . "Dibalik: {$results['reversed']}, Disetel 0: {$results['clamped']} item. "
+                    . "Alasan: {$reason}",
             ]);
         });
 

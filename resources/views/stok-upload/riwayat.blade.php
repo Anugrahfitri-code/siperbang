@@ -97,19 +97,7 @@ $statusColors = [
                     <td class="px-5 py-4 whitespace-nowrap text-right">
                         <div class="flex items-center justify-end gap-2 flex-wrap">
 
-                            @if($batch->status === SU::STATUS_DRAFT)
-                                <a href="{{ route('stok-upload.stepper', ['id' => $batch->id, 'step' => 2]) }}"
-                                   class="btn-action bg-slate-600 hover:bg-slate-700 text-white">
-                                    Lanjutkan
-                                </a>
-
-                            @elseif($batch->status === SU::STATUS_PERLU_PERBAIKAN)
-                                <a href="{{ route('stok-upload.stepper', ['id' => $batch->id, 'step' => 2]) }}"
-                                   class="btn-action bg-rose-600 hover:bg-rose-700 text-white">
-                                    Perbaiki Data
-                                </a>
-
-                            @elseif($batch->status === SU::STATUS_MENUNGGU_VERIFIKASI)
+                            @if($batch->status === SU::STATUS_MENUNGGU_VERIFIKASI)
                                 <a href="{{ route('stok-upload.stepper', ['id' => $batch->id, 'step' => 3]) }}"
                                    class="btn-action bg-amber-500 hover:bg-amber-600 text-white">
                                     Verifikasi Kode
@@ -133,10 +121,10 @@ $statusColors = [
                                 </button>
 
                             @elseif($batch->status === SU::STATUS_DIBATALKAN)
-                                <a href="{{ route('stok-upload.stepper', ['id' => $batch->id, 'step' => 4]) }}"
-                                   class="btn-action border border-slate-200 text-slate-500 hover:bg-slate-50">
-                                    Lihat Detail
-                                </a>
+                                {{-- Dibatalkan: no action allowed, show info text only --}}
+                                <span class="text-[11px] text-slate-400 italic">
+                                    Dibatalkan — tidak dapat dibuka
+                                </span>
                             @endif
 
                             {{-- Hapus (soft) — only non-finalised --}}

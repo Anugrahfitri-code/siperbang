@@ -8,6 +8,7 @@ use App\Models\StokUploadDetail;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ExcelPersediaanImportService
 {
@@ -51,225 +52,376 @@ class ExcelPersediaanImportService
         foreach ($sheetNames as $sheetName) {
             $sheet = $spreadsheet->getSheetByName($sheetName);
             
-            // 1. Extract supplier from Row 1 to 3 Column A
+            // ── 1. Extract supplier name ─────────────────────────────
+            // Scan rows 1–5, any column A or B, for a cell containing "SUPPLIER"
+            // Handles: A1=0 (numeric noise), multi-row headers, varied placement.
             $supplierName = 'Unknown Supplier';
-            for ($i = 1; $i <= 3; $i++) {
-                $supplierRaw = $sheet->getCell('A' . $i)->getValue();
-                if ($supplierRaw && str_contains(strtoupper($supplierRaw), 'SUPPLIER')) {
-                    $parts = explode(':', $supplierRaw);
-                    $supplierName = isset($parts[1]) ? trim($parts[1]) : trim($supplierRaw);
+            for ($i = 1; $i <= 5; $i++) {
+                foreach (['A', 'B', 'C'] as $col) {
+                    $cellVal = $sheet->getCell($col . $i)->getValue();
+                    // Only check string cells — skip numeric values like 0
+                    if (!is_string($cellVal) || $cellVal === '') {
+                        continue;
+                    }
+                    if (stripos($cellVal, 'SUPPLIER') !== false) {
+                        $parts = explode(':', $cellVal, 2);
+                        $supplierName = isset($parts[1]) ? trim($parts[1]) : trim($cellVal);
+                        break 2;
+                    }
+                }
+            }
+
+            // ── 2. Detect header row (rows 1–15) ────────────────────
+            // Look for the row that contains recognisable column headers:
+            // "Kode" (any col), "Nama" (any col), "Jumlah"/"Qty", "Satuan", "Harga"
+            $headerRow       = 4; // safe fallback
+            $headerColMap    = [];  // ['no'=>'A','kode'=>'B','nama'=>'C', ...]
+            $maxScanRow      = min(15, $sheet->getHighestRow());
+
+            for ($r = 1; $r <= $maxScanRow; $r++) {
+                $found   = [];
+                $highCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString(
+                    $sheet->getHighestColumn($r)
+                );
+
+                for ($c = 1; $c <= min($highCol, 12); $c++) {
+                    $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                    $val       = $sheet->getCell($colLetter . $r)->getValue();
+                    if (!is_string($val) || $val === '') {
+                        continue;
+                    }
+                    $v = strtolower(trim($val));
+                    if (str_contains($v, 'kode'))                     $found['kode']   = $colLetter;
+                    elseif (str_contains($v, 'nama'))                 $found['nama']   = $colLetter;
+                    elseif (in_array($v, ['no','no.','nomor','#']))   $found['no']     = $colLetter;
+                    elseif (str_contains($v, 'jumlah') || $v==='qty') $found['qty']    = $colLetter;
+                    elseif (str_contains($v, 'satuan') || $v==='sat') $found['unit']   = $colLetter;
+                    elseif (str_contains($v, 'harga'))                $found['harga']  = $colLetter;
+                    elseif (str_contains($v, 'pajak'))                $found['pajak']  = $colLetter;
+                    elseif (str_contains($v, 'total'))                $found['total']  = $colLetter;
+                }
+
+                // Require at least "kode" + "nama" to confirm this is the header row
+                if (isset($found['kode'], $found['nama'])) {
+                    $headerRow    = $r;
+                    $headerColMap = $found;
                     break;
                 }
             }
 
-            // 2. Identify layout type from headers dynamically
-            $headerRow = 4;
-            for ($r = 1; $r <= 10; $r++) {
-                $valB = $sheet->getCell('B' . $r)->getValue();
-                $valC = $sheet->getCell('C' . $r)->getValue();
-                if ((is_string($valB) && stripos($valB, 'kode') !== false) || (is_string($valC) && stripos($valC, 'nama') !== false)) {
-                    $headerRow = $r;
-                    break;
-                }
-            }
-            
-            $colGHeader = trim($sheet->getCell('G' . $headerRow)->getValue() ?? '');
-            $colIHeader = trim($sheet->getCell('I' . $headerRow)->getValue() ?? '');
-            
-            // If Column G is "Harga Satuan + Pajak" or Col I is "Pajak", it is taxed format
-            $isTaxedFormat = (str_contains(strtolower($colGHeader), 'pajak') || str_contains(strtolower($colIHeader), 'pajak') || !empty($colIHeader));
+            // ── 3. Resolve column letters from header map ────────────
+            // Fall back to standard positions if dynamic detection missed a column.
+            $colNo    = $headerColMap['no']    ?? 'A';
+            $colKode  = $headerColMap['kode']  ?? 'B';
+            $colNama  = $headerColMap['nama']  ?? 'C';
+            $colQty   = $headerColMap['qty']   ?? 'D';
+            $colUnit  = $headerColMap['unit']  ?? 'E';
+            $colHarga = $headerColMap['harga'] ?? 'F';
 
+            // Detect taxed vs nett format
+            // Taxed format has a "Harga Satuan + Pajak" column and/or a "Pajak" column
+            $isTaxedFormat = isset($headerColMap['pajak']);
+
+            // For taxed: G=harga+pajak, H=total, I=pajak rate
+            // For nett:  G=total
+            if ($isTaxedFormat) {
+                // Find the "harga+pajak" column — it's the harga column or the one after harga
+                $colHargaPajak = $headerColMap['pajak'] ?? null;
+                // Re-scan to find exact "harga satuan + pajak" or "harga + pajak"
+                $highCol2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString(
+                    $sheet->getHighestColumn($headerRow)
+                );
+                for ($c = 1; $c <= min($highCol2, 12); $c++) {
+                    $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                    $val = strtolower(trim($sheet->getCell($colLetter . $headerRow)->getValue() ?? ''));
+                    if (str_contains($val, 'harga') && str_contains($val, 'pajak')) {
+                        $colHargaPajak = $colLetter;
+                    }
+                    if (str_contains($val, 'total')) {
+                        $colTotal = $colLetter;
+                    }
+                    if ($val === 'pajak' || str_ends_with($val, 'pajak')) {
+                        $colPajakRate = $colLetter;
+                    }
+                }
+                $colHargaPajak  = $colHargaPajak  ?? 'G';
+                $colTotal       = $colTotal       ?? 'H';
+                $colPajakRate   = $colPajakRate   ?? 'I';
+            } else {
+                $colTotal = $headerColMap['total'] ?? 'G';
+            }
+
+            // ── 4. Process data rows ─────────────────────────────────
             $highestRow = $sheet->getHighestRow();
 
-            // 3. Process rows starting from headerRow + 1
+            // Helper: get cell value as string, fully trimmed (handles numeric, null, formula)
+            $cellStr = function (string $colRow) use ($sheet): string {
+                $cell = $sheet->getCell($colRow);
+                $val  = $cell->getValue();
+                // Resolve formula to calculated value
+                if (is_string($val) && str_starts_with($val, '=')) {
+                    $val = $cell->getCalculatedValue();
+                }
+                return trim((string) ($val ?? ''));
+            };
+
+            // Helper: clean numeric value — strips "Rp", spaces, dots (thousands), commas
+            $cleanNum = function ($rawVal) use ($sheet): float {
+                $val = $rawVal;
+                if (is_string($val) && str_starts_with(trim($val), '=')) {
+                    // Resolve formula
+                    $val = 0; // fallback; caller should use getCalculatedValue separately
+                }
+                if (is_numeric($val)) return floatval($val);
+                if (is_string($val)) {
+                    // Strip "Rp", currency prefix, thousand separators, then parse
+                    $clean = preg_replace('/[Rr][Pp]\.?\s*/u', '', $val);
+                    // Remove thousand separators (dot before groups of 3) and replace decimal comma
+                    $clean = preg_replace('/\.(?=\d{3})/', '', $clean); // remove thousand dot
+                    $clean = str_replace(',', '.', $clean);             // decimal comma → dot
+                    $clean = preg_replace('/[^\d.]/', '', $clean);      // keep only digits & dot
+                    return is_numeric($clean) ? floatval($clean) : 0;
+                }
+                return 0;
+            };
+
+            // Helper: resolve a cell to its numeric value, handling formulas
+            $cellNum = function (string $colRow) use ($sheet, $cleanNum): float {
+                $cell = $sheet->getCell($colRow);
+                $val  = $cell->getValue();
+                if (is_string($val) && str_starts_with(trim($val), '=')) {
+                    $val = $cell->getCalculatedValue();
+                }
+                return $cleanNum($val);
+            };
+
             for ($row = $headerRow + 1; $row <= $highestRow; $row++) {
-                $noVal = $sheet->getCell('A' . $row)->getValue();
-                $kodeVal = $sheet->getCell('B' . $row)->getValue();
-                $namaVal = $sheet->getCell('C' . $row)->getValue();
-                $qtyVal = $sheet->getCell('D' . $row)->getValue();
-                $unitVal = $sheet->getCell('E' . $row)->getValue();
-                $priceVal = $sheet->getCell('F' . $row)->getValue();
 
-                // Skip completely empty rows
-                if (empty($noVal) && empty($kodeVal) && empty($namaVal) && empty($qtyVal) && empty($unitVal) && empty($priceVal)) {
+                // ── Read & trim all data-column values ──────────────
+                $noStr    = $cellStr($colNo    . $row);
+                $kodeStr  = $cellStr($colKode  . $row);
+                $namaStr  = $cellStr($colNama  . $row);
+                $qtyStr   = $cellStr($colQty   . $row);
+                $unitStr  = $cellStr($colUnit  . $row);
+                $hargaStr = $cellStr($colHarga . $row);
+                $totalStr = $cellStr(($isTaxedFormat ? ($colTotal ?? 'H') : ($colTotal ?? 'G')) . $row);
+
+                // ── Skip: all data columns empty after trim ──────────
+                if ($noStr === '' && $kodeStr === '' && $namaStr === ''
+                    && $qtyStr === '' && $unitStr === '' && $hargaStr === '') {
                     continue;
                 }
 
-                // Identify total row (A, B, C empty, but Total column has value)
-                $totalCol = $isTaxedFormat ? 'H' : 'G';
-                $totalValExcelRaw = $sheet->getCell($totalCol . $row)->getValue();
-                if (empty($noVal) && empty($kodeVal) && empty($namaVal) && !empty($totalValExcelRaw)) {
-                    // This is the total row of the sheet, skip processing as a data row
+                // ── Skip: total/subtotal row — kode+nama+qty empty but total present
+                //    Also skip any row where kode looks like a label (contains letters
+                //    that are not a valid code pattern) AND nama+qty+unit are all empty.
+                if ($kodeStr === '' && $namaStr === '' && $qtyStr === '' && $unitStr === '' && $totalStr !== '') {
+                    continue; // grand-total / sub-total row
+                }
+
+                // ── Skip: rows that are clearly section headers inside data
+                //    (no numeric qty, no kode, but nama looks like a heading)
+                $looksLikeHeader = ($kodeStr === '' && $qtyStr === '' && $unitStr === '' && $hargaStr === '');
+                if ($looksLikeHeader) {
                     continue;
                 }
 
-                // If it's a data row
+                // ── This is a real data row ──────────────────────────
                 $totalRowsCount++;
-                // errorDetails collected below
 
-                // Helper to clean "Rp", commas, and spaces
-                $cleanNum = function($val) {
-                    if (is_numeric($val)) return floatval($val);
-                    if (is_string($val)) {
-                        $clean = preg_replace('/[Rr]p|\s|,/', '', $val);
-                        return is_numeric($clean) ? floatval($clean) : 0;
-                    }
-                    return 0;
-                };
+                $excelRowLabel = "baris {$row}"; // actual Excel row number for error messages
 
-                // Standardize values
-                $noUrut = $noVal ? $cleanNum($noVal) : null;
-                $kodePersediaan = $kodeVal ? trim(strval($kodeVal)) : null;
-                $namaBarang = $namaVal ? trim(strval($namaVal)) : '';
-                $qty = $qtyVal ? $cleanNum($qtyVal) : 0;
-                $unit = $unitVal ? trim(strval($unitVal)) : '';
-                
-                // Get calculated values for price and totals to resolve Excel formulas
-                $priceUnit = $priceVal ? $cleanNum($priceVal) : 0;
-                if ($priceVal && str_starts_with(strval($priceVal), '=')) {
-                    $priceUnit = $cleanNum($sheet->getCell('F' . $row)->getCalculatedValue());
-                }
+                $noUrut         = $noStr !== '' ? (int) $cleanNum($noStr) : null;
+                $kodePersediaan = $kodeStr !== '' ? $kodeStr : null;
+                $namaBarang     = $namaStr;
+                $qty            = $qtyStr  !== '' ? (int) $cleanNum($qtyStr)  : 0;
+                $unit           = $unitStr;
+                $priceUnit      = $hargaStr !== '' ? $cellNum($colHarga . $row) : 0;
 
-                $priceUnitTaxed = null;
-                $totalExcel = 0;
-                $taxRate = 1.11; // 11% Tax multiplier
+                // ── Calculate prices and totals ──────────────────────
+                $priceUnitTaxed  = null;
+                $totalExcel      = 0;
+                $calculatedTotal = 0;
+                $defaultTaxRate  = 1.11;
 
                 if ($isTaxedFormat) {
-                    $taxVal = $sheet->getCell('I' . $row)->getValue();
-                    if ($taxVal && str_starts_with(strval($taxVal), '=')) {
-                        // resolve formula e.g. =111/100
-                        $resolvedTax = floatval($sheet->getCell('I' . $row)->getCalculatedValue());
-                        if ($resolvedTax > 0) {
-                            $taxRate = $resolvedTax;
-                        }
-                    } elseif (is_numeric($taxVal)) {
-                        $taxRate = floatval($taxVal);
+                    // Read actual tax rate from pajak column
+                    $taxRateRaw = $cellNum(($colPajakRate ?? 'I') . $row);
+                    $taxRate    = ($taxRateRaw > 0) ? $taxRateRaw : $defaultTaxRate;
+
+                    $priceUnitTaxed  = $cellNum(($colHargaPajak ?? 'G') . $row);
+                    if ($priceUnitTaxed <= 0) {
+                        $priceUnitTaxed = round($priceUnit * $taxRate, 2);
                     }
 
-                    // Get calculated taxed unit price
-                    $priceUnitTaxedVal = $sheet->getCell('G' . $row)->getValue();
-                    if ($priceUnitTaxedVal && str_starts_with(strval($priceUnitTaxedVal), '=')) {
-                        $calculated = $cleanNum($sheet->getCell('G' . $row)->getCalculatedValue());
-                        $priceUnitTaxed = $calculated > 0 ? $calculated : ($priceUnit * $taxRate);
-                    } else {
-                        $priceUnitTaxed = is_numeric($priceUnitTaxedVal) ? floatval($priceUnitTaxedVal) : ($priceUnit * $taxRate);
-                    }
+                    $calculatedTotal = round($qty * $priceUnitTaxed, 2);
+                    $totalExcel      = $cellNum(($colTotal ?? 'H') . $row);
+                    if ($totalExcel <= 0) $totalExcel = $calculatedTotal;
 
-                    // System calculation
-                    $calculatedTotal = $qty * ($priceUnit * $taxRate);
-
-                    // Excel total
-                    $totalExcelVal = $sheet->getCell('H' . $row)->getValue();
-                    if ($totalExcelVal && str_starts_with(strval($totalExcelVal), '=')) {
-                        $calculated = $cleanNum($sheet->getCell('H' . $row)->getCalculatedValue());
-                        $totalExcel = $calculated > 0 ? $calculated : $calculatedTotal;
-                    } else {
-                        $totalExcel = $totalExcelVal ? $cleanNum($totalExcelVal) : 0;
-                    }
                 } else {
-                    // System calculation
-                    $calculatedTotal = $qty * $priceUnit;
-
-                    // Excel total
-                    $totalExcelVal = $sheet->getCell('G' . $row)->getValue();
-                    if ($totalExcelVal && str_starts_with(strval($totalExcelVal), '=')) {
-                        $calculated = $cleanNum($sheet->getCell('G' . $row)->getCalculatedValue());
-                        $totalExcel = $calculated > 0 ? $calculated : $calculatedTotal;
-                    } else {
-                        $totalExcel = $totalExcelVal ? $cleanNum($totalExcelVal) : 0;
-                    }
+                    $priceUnitTaxed  = $priceUnit;
+                    $calculatedTotal = round($qty * $priceUnit, 2);
+                    $totalExcel      = $cellNum(($colTotal ?? 'G') . $row);
+                    if ($totalExcel <= 0) $totalExcel = $calculatedTotal;
                 }
 
-                // --- VALIDATIONS (with per-column error tracking) ---
+                // ── Validations ──────────────────────────────────────
                 $errorDetails = []; // ['column' => 'B', 'message' => '...']
 
-                if (empty($kodePersediaan)) {
-                    $errorDetails[] = ['column' => 'B', 'message' => 'Kode persediaan wajib ada.'];
+                if ($kodePersediaan === null || $kodePersediaan === '') {
+                    $errorDetails[] = ['column' => $colKode,
+                        'message' => "Baris Excel {$row}: Kode persediaan wajib diisi."];
                 }
-                if (empty($namaBarang)) {
-                    $errorDetails[] = ['column' => 'C', 'message' => 'Nama barang wajib ada.'];
+                if ($namaBarang === '') {
+                    $errorDetails[] = ['column' => $colNama,
+                        'message' => "Baris Excel {$row}: Nama barang wajib diisi."];
                 }
                 if ($qty <= 0) {
-                    $errorDetails[] = ['column' => 'D', 'message' => 'Jumlah wajib angka dan lebih dari 0.'];
+                    $errorDetails[] = ['column' => $colQty,
+                        'message' => "Baris Excel {$row}: Jumlah harus berupa angka lebih dari 0."];
                 }
-                if (empty($unit)) {
-                    $errorDetails[] = ['column' => 'E', 'message' => 'Satuan wajib ada.'];
+                if ($unit === '') {
+                    $errorDetails[] = ['column' => $colUnit,
+                        'message' => "Baris Excel {$row}: Satuan wajib diisi."];
                 }
                 if ($priceUnit <= 0) {
-                    $errorDetails[] = ['column' => 'F', 'message' => 'Harga satuan wajib angka lebih dari 0.'];
+                    $errorDetails[] = ['column' => $colHarga,
+                        'message' => "Baris Excel {$row}: Harga satuan harus berupa angka lebih dari 0."];
                 }
 
-                // Verify code match against master
-                if ($kodePersediaan) {
+                // Verify kode against master (only if kode provided)
+                if ($kodePersediaan !== null && $kodePersediaan !== '') {
                     $codeExists = KodePersediaan::where('kode', $kodePersediaan)->exists();
                     if (! $codeExists) {
-                        $errorDetails[] = ['column' => 'B', 'message' => 'Kode persediaan tidak cocok dengan aturan kategori.'];
+                        $errorDetails[] = ['column' => $colKode,
+                            'message' => "Baris Excel {$row}: Kode persediaan '{$kodePersediaan}' tidak ditemukan di master kode."];
                     }
-
-                    if (! isset($codeCounts[$kodePersediaan])) {
-                        $codeCounts[$kodePersediaan] = 0;
-                    }
-                    $codeCounts[$kodePersediaan]++;
+                    $codeCounts[$kodePersediaan] = ($codeCounts[$kodePersediaan] ?? 0) + 1;
                 }
 
-                // Check total discrepancies
-                if (abs(round($totalExcel) - round($calculatedTotal)) > 5) {
-                    $col = $isTaxedFormat ? 'H' : 'G';
+                // Check total discrepancy (only when both values are non-zero)
+                if ($totalExcel > 0 && $calculatedTotal > 0
+                    && abs(round($totalExcel) - round($calculatedTotal)) > 5) {
+                    $colT = $isTaxedFormat ? ($colTotal ?? 'H') : ($colTotal ?? 'G');
                     $errorDetails[] = [
-                        'column'  => $col,
-                        'message' => 'Total Excel (' . number_format($totalExcel, 2) . ') tidak sesuai hitungan sistem (' . number_format($calculatedTotal, 2) . ').',
+                        'column'  => $colT,
+                        'message' => "Baris Excel {$row}: Total Excel ("
+                            . number_format($totalExcel, 0, ',', '.')
+                            . ") tidak sesuai hitungan sistem ("
+                            . number_format($calculatedTotal, 0, ',', '.')
+                            . ").",
                     ];
                 }
 
-                // Determine suggested code
+                // Suggested code
                 $categoryName  = $this->kodeService->getCategoryByCode($kodePersediaan ?? '');
                 $suggestedCode = $this->kodeService->suggestCode($categoryName, $namaBarang);
 
                 $hasError         = count($errorDetails) > 0;
                 $statusValidation = $hasError ? 'Perlu Perbaikan' : 'Menunggu Verifikasi';
 
-                if ($hasError) {
-                    $errorRowsCount++;
-                } else {
-                    $validRowsCount++;
-                }
+                if ($hasError) { $errorRowsCount++; } else { $validRowsCount++; }
 
-                // Flatten error messages and collect first error column
                 $errorMessages = array_map(fn ($e) => $e['message'], $errorDetails);
                 $firstErrorCol = $hasError ? ($errorDetails[0]['column'] ?? null) : null;
 
                 $allRows[] = [
                     'sheet_name'                => $sheetName,
                     'supplier'                  => $supplierName,
-                    'no_urut'                   => $noUrut,
+                    'no_urut'                   => $noUrut ?? $row,   // actual Excel row as fallback
                     'kode_persediaan_excel'     => $kodePersediaan,
-                    'suggested_kode_persediaan' => $suggestedCode,
+                    'suggested_kode_persediaan' => $suggestedCode ?: null,
                     'nama_barang'               => $namaBarang,
                     'qty'                       => $qty,
                     'unit'                      => $unit,
                     'price_unit'                => $priceUnit,
-                    'price_unit_taxed'          => $priceUnitTaxed,
+                    'price_unit_taxed'          => $priceUnitTaxed ?? $priceUnit,
                     'total_excel'               => $totalExcel,
                     'total_calculated'          => $calculatedTotal,
                     'is_taxed'                  => $isTaxedFormat,
                     'status_validation'         => $statusValidation,
                     'status_verification'       => 'Pending',
-                    'verified_kode_persediaan'  => $kodePersediaan ?: $suggestedCode,
+                    // Never fall back to a hardcoded dummy code — leave null if missing
+                    'verified_kode_persediaan'  => $kodePersediaan ?: null,
                     'notes_error'               => $hasError ? implode(' | ', $errorMessages) : null,
                     'error_column'              => $firstErrorCol,
                     'is_duplicate'              => false,
+                    // Store actual Excel row number for display in UI
+                    '_excel_row'                => $row,
                 ];
             }
         }
 
-        // 4. Resolve duplicates and save to database
+        // ── Save to database or reject if there are errors ──────
+        // If any row has a validation error the entire upload is rejected.
+        // The user must fix the Excel file and re-upload.
+
+        // Also reject if no data rows were found at all (empty / unrecognised file)
+        if ($totalRowsCount === 0) {
+            // Delete the batch header that was created at the start
+            $uploadBatch->forceDelete();
+            Storage::delete('private/uploads/' . $storedFileName);
+
+            session()->flash('upload_errors', [[
+                'sheet'    => '—',
+                'no_urut'  => '—',
+                'nama'     => '(tidak ada data)',
+                'messages' => ['File Excel tidak mengandung baris data yang dapat dibaca. Pastikan format kolom sudah sesuai petunjuk.'],
+            ]]);
+            session()->flash('upload_error_count', 0);
+            session()->flash('upload_total_count', 0);
+
+            throw new \App\Exceptions\ExcelValidationException(
+                "File ditolak: tidak ada baris data yang berhasil dibaca.",
+                []
+            );
+        }
+
+        if ($errorRowsCount > 0) {
+            // Delete the batch header — nothing should remain on disk or DB
+            $uploadBatch->forceDelete();
+            Storage::delete('private/uploads/' . $storedFileName);
+
+            // Build a structured error list for the caller to display
+            $errorList = array_values(array_filter(
+                array_map(fn ($r) => $r['notes_error'] ?? null, $allRows)
+            ));
+
+            // Attach sheet+row context to each error message
+            $detailedErrors = [];
+            foreach ($allRows as $r) {
+                if (!empty($r['notes_error'])) {
+                    $detailedErrors[] = [
+                        'sheet'    => $r['sheet_name'],
+                        'no_urut'  => $r['no_urut'],
+                        'nama'     => $r['nama_barang'] ?: '(kosong)',
+                        'messages' => explode(' | ', $r['notes_error']),
+                    ];
+                }
+            }
+
+            // Store in session so the upload form can display them
+            session()->flash('upload_errors', $detailedErrors);
+            session()->flash('upload_error_count', $errorRowsCount);
+            session()->flash('upload_total_count', $totalRowsCount);
+
+            throw new \App\Exceptions\ExcelValidationException(
+                "File ditolak: ditemukan {$errorRowsCount} baris dengan data tidak valid. " .
+                "Perbaiki file Excel Anda dan upload ulang.",
+                $detailedErrors
+            );
+        }
+
+        // All rows are valid — save to database
         DB::transaction(function () use ($uploadBatch, $allRows, $codeCounts, $totalRowsCount, $validRowsCount, $errorRowsCount) {
             foreach ($allRows as $rowData) {
                 $code = $rowData['kode_persediaan_excel'] ?? null;
                 if ($code && isset($codeCounts[$code]) && $codeCounts[$code] > 1) {
                     $rowData['is_duplicate'] = true;
-                    // Do not mark as error or change status for duplicate codes
                 }
+
+                // Remove internal helper key before saving
+                unset($rowData['_excel_row']);
 
                 $uploadBatch->details()->create($rowData);
             }

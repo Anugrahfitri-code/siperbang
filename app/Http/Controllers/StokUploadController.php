@@ -10,6 +10,7 @@ use App\Models\StokUploadDetail;
 use App\Services\ExcelPersediaanImportService;
 use App\Services\StokCancellationService;
 use App\Services\StokFinalizationService;
+use App\Exceptions\ExcelValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -43,7 +44,11 @@ class StokUploadController extends Controller
         try {
             $batch = $this->importService->import($fullPath, $originalName, $storedName);
             return redirect()->route('stok-upload.stepper', $batch->id)
-                ->with('success', 'File Excel berhasil diunggah. Periksa hasil validasi di bawah.');
+                ->with('success', 'File Excel berhasil diunggah dan semua data valid. Lanjutkan ke verifikasi kode.');
+        } catch (ExcelValidationException $e) {
+            // File rejected — errors already flashed to session by the service
+            return redirect()->route('stok-upload.index')
+                ->with('upload_rejected', true);
         } catch (\Exception $e) {
             return redirect()->back()
                 ->withErrors(['file_excel' => 'Gagal memproses file: ' . $e->getMessage()]);
@@ -61,6 +66,12 @@ class StokUploadController extends Controller
         $batch = StokUpload::with(['details' => fn ($q) => $q->orderBy('sheet_name')->orderBy('no_urut'), 'user'])
             ->findOrFail($id);
 
+        // Block access to cancelled batches entirely
+        if ($batch->status === StokUpload::STATUS_DIBATALKAN) {
+            return redirect()->route('stok-upload.riwayat')
+                ->with('error', "Batch #{$batch->id} sudah dibatalkan dan tidak dapat dibuka. Upload file baru untuk menambah stok.");
+        }
+
         // Determine which step to display; URL param ?step overrides
         $step = $request->integer('step', $batch->resolveNextStep());
         $step = max(1, min(4, $step));
@@ -72,132 +83,6 @@ class StokUploadController extends Controller
         return view('stok-upload.stepper', compact(
             'batch', 'step', 'masterCodes', 'errorRows', 'validRows'
         ));
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    // STEP 2 — Save inline data fixes
-    // ──────────────────────────────────────────────────────────────
-
-    public function saveFixes(Request $request, int $id)
-    {
-        $this->authorizeRole('Petugas Persediaan');
-        $batch = StokUpload::findOrFail($id);
-
-        if ($batch->status === StokUpload::STATUS_SELESAI) {
-            return redirect()->route('stok-upload.stepper', $id)
-                ->with('error', 'Batch sudah difinalisasi dan tidak dapat diubah.');
-        }
-
-        $request->validate([
-            'rows'                   => 'required|array',
-            'rows.*.detail_id'       => 'required|integer|exists:stok_upload_details,id',
-            'rows.*.kode_persediaan' => 'nullable|string|max:50',
-            'rows.*.nama_barang'     => 'required|string|max:255',
-            'rows.*.qty'             => 'required|integer|min:1',
-            'rows.*.unit'            => 'required|string|max:50',
-            'rows.*.price_unit'      => 'required|numeric|min:0',
-            'rows.*.is_taxed'        => 'nullable|boolean',
-        ]);
-
-        foreach ($request->input('rows', []) as $input) {
-            $detail = StokUploadDetail::where('stok_upload_id', $batch->id)
-                ->where('id', $input['detail_id'])
-                ->firstOrFail();
-
-            $isTaxed         = ! empty($input['is_taxed']);
-            $priceUnit       = (float) $input['price_unit'];
-            $qty             = (int)   $input['qty'];
-            $priceUnitTaxed  = $isTaxed ? round($priceUnit * 1.11, 2) : $priceUnit;
-            $totalCalculated = round($priceUnitTaxed * $qty, 2);
-            $kode            = $input['kode_persediaan'] ?? $detail->kode_persediaan_excel;
-
-            $detail->update([
-                'kode_persediaan_excel'    => $kode,
-                'verified_kode_persediaan' => $kode,
-                'nama_barang'              => $input['nama_barang'],
-                'qty'                      => $qty,
-                'unit'                     => $input['unit'],
-                'price_unit'               => $priceUnit,
-                'price_unit_taxed'         => $priceUnitTaxed,
-                'total_calculated'         => $totalCalculated,
-                'is_taxed'                 => $isTaxed,
-                'status_validation'        => 'Menunggu Verifikasi',
-                'status_verification'      => 'Setuju',
-                'notes_error'              => null,
-                'error_column'             => null,
-            ]);
-        }
-
-        $this->syncBatchStats($batch);
-
-        AuditLog::create([
-            'user_id'     => auth()->id(),
-            'action'      => 'Perbaiki Data Upload',
-            'description' => "Memperbaiki data pada batch #{$batch->id}.",
-            'ip_address'  => $request->ip(),
-        ]);
-
-        return redirect()
-            ->route('stok-upload.stepper', ['id' => $batch->id, 'step' => 2])
-            ->with('success', 'Perbaikan berhasil disimpan.');
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    // STEP 2 — Re-submit after fixes (Ajukan Ulang)
-    // ──────────────────────────────────────────────────────────────
-
-    public function ajukanUlang(Request $request, int $id)
-    {
-        $this->authorizeRole('Petugas Persediaan');
-        $batch = StokUpload::with('details')->findOrFail($id);
-
-        $remaining = $batch->details->where('status_validation', 'Perlu Perbaikan')->count();
-        if ($remaining > 0) {
-            return redirect()
-                ->route('stok-upload.stepper', ['id' => $id, 'step' => 2])
-                ->with('error', "Masih ada {$remaining} baris yang belum diperbaiki.");
-        }
-
-        $batch->update([
-            'status'       => StokUpload::STATUS_MENUNGGU_VERIFIKASI,
-            'current_step' => StokUpload::STEP_VERIFIKASI,
-        ]);
-
-        return redirect()
-            ->route('stok-upload.stepper', ['id' => $id, 'step' => 3])
-            ->with('success', 'Data diajukan ke tahap Verifikasi Kode.');
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    // STEP 2 — Download error CSV
-    // ──────────────────────────────────────────────────────────────
-
-    public function downloadErrors(int $id)
-    {
-        $this->authorizeRole('Petugas Persediaan');
-        $batch = StokUpload::with('details')->findOrFail($id);
-
-        $errorRows = $batch->details->where('status_validation', 'Perlu Perbaikan');
-
-        $csv = "Sheet,No. Baris,Kolom,Nama Barang,Kode Excel,Penyebab Error,Saran Perbaikan\n";
-        foreach ($errorRows as $row) {
-            $csv .= implode(',', [
-                $row->sheet_name,
-                $row->no_urut,
-                $row->errorColumnLabel() ?? $row->error_column ?? '-',
-                '"' . str_replace('"', '""', $row->nama_barang) . '"',
-                $row->kode_persediaan_excel ?? '-',
-                '"' . str_replace('"', '""', $row->notes_error ?? '-') . '"',
-                '"' . str_replace('"', '""', $row->fixSuggestion() ?? '-') . '"',
-            ]) . "\n";
-        }
-
-        $filename = "errors_batch_{$batch->id}_{$batch->upload_date->format('Ymd')}.csv";
-
-        return response($csv, 200, [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ]);
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -293,8 +178,11 @@ class StokUploadController extends Controller
 
         try {
             $results = $this->cancellationService->cancel($batch, $request->cancellation_reason);
-            return redirect()->route('stok-upload.riwayat')
-                ->with('success', "Batch #{$batch->id} berhasil dibatalkan. {$results['reversed']} item stok dibalik.");
+            $msg = "Batch #{$batch->id} berhasil dibatalkan. {$results['reversed']} item stok dibalik.";
+            if (($results['clamped'] ?? 0) > 0) {
+                $msg .= " {$results['clamped']} item stok disetel ke 0 karena sudah terpakai sebelum pembatalan.";
+            }
+            return redirect()->route('stok-upload.riwayat')->with('success', $msg);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
