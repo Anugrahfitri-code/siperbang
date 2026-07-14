@@ -25,7 +25,7 @@ class StockController extends Controller
         ]);
 
         foreach ($stocks as $stockData) {
-            $stock = StockItem::where('code', $stockData['code'])->first();
+            $stock = StockItem::where('code', $stockData['code'])->where('name', $stockData['name'])->first();
             if ($stock) {
                 $stock->update([
                     'qty' => $stock->qty + $stockData['qty'],

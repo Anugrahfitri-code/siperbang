@@ -24,7 +24,7 @@ class StokFinalizationService
      */
     public function finalize(StokUpload $batch): array
     {
-        if ($batch->status === 'Selesai') {
+        if ($batch->status === \App\Models\StokUpload::STATUS_SELESAI) {
             throw new \Exception("Batch upload ini sudah pernah difinalisasi.");
         }
 
@@ -48,8 +48,13 @@ class StokFinalizationService
             foreach ($approvedRows as $row) {
                 $code = $row->verified_kode_persediaan;
                 
-                // Lookup item by code in stock_items table
-                $barang = Barang::where('code', $code)->first();
+                // Match on BOTH code AND name — one code can cover multiple
+                // distinct products (e.g. Kantong sampah M / XL / L share
+                // code 1010305004).  Case-insensitive name match prevents
+                // duplicate-key collisions while still catching re-uploads.
+                $barang = Barang::where('code', $code)
+                    ->whereRaw('LOWER(name) = LOWER(?)', [$row->nama_barang])
+                    ->first();
 
                 if ($barang) {
                     // Update existing item stock
