@@ -105,7 +105,7 @@ class ExcelPersediaanImportService
 
                 // If it's a data row
                 $totalRowsCount++;
-                $errors = [];
+                // errorDetails collected below
 
                 // Helper to clean "Rp", commas, and spaces
                 $cleanNum = function($val) {
@@ -180,33 +180,33 @@ class ExcelPersediaanImportService
                     }
                 }
 
-                // --- VALIDATIONS ---
+                // --- VALIDATIONS (with per-column error tracking) ---
+                $errorDetails = []; // ['column' => 'B', 'message' => '...']
+
                 if (empty($kodePersediaan)) {
-                    $errors[] = "Kode persediaan wajib ada.";
+                    $errorDetails[] = ['column' => 'B', 'message' => 'Kode persediaan wajib ada.'];
                 }
                 if (empty($namaBarang)) {
-                    $errors[] = "Nama barang wajib ada.";
+                    $errorDetails[] = ['column' => 'C', 'message' => 'Nama barang wajib ada.'];
                 }
                 if ($qty <= 0) {
-                    $errors[] = "Jumlah wajib angka dan lebih dari 0.";
+                    $errorDetails[] = ['column' => 'D', 'message' => 'Jumlah wajib angka dan lebih dari 0.'];
                 }
                 if (empty($unit)) {
-                    $errors[] = "Satuan wajib ada.";
+                    $errorDetails[] = ['column' => 'E', 'message' => 'Satuan wajib ada.'];
                 }
                 if ($priceUnit <= 0) {
-                    $errors[] = "Harga satuan wajib angka.";
+                    $errorDetails[] = ['column' => 'F', 'message' => 'Harga satuan wajib angka lebih dari 0.'];
                 }
 
-                // Verify code match
+                // Verify code match against master
                 if ($kodePersediaan) {
-                    // Check if code exists in the master list
                     $codeExists = KodePersediaan::where('kode', $kodePersediaan)->exists();
-                    if (!$codeExists) {
-                        $errors[] = "Kode persediaan tidak cocok dengan aturan kategori.";
+                    if (! $codeExists) {
+                        $errorDetails[] = ['column' => 'B', 'message' => 'Kode persediaan tidak cocok dengan aturan kategori.'];
                     }
-                    
-                    // We no longer track duplicates as errors because a code can be used for multiple items.
-                    if (!isset($codeCounts[$kodePersediaan])) {
+
+                    if (! isset($codeCounts[$kodePersediaan])) {
                         $codeCounts[$kodePersediaan] = 0;
                     }
                     $codeCounts[$kodePersediaan]++;
@@ -214,39 +214,50 @@ class ExcelPersediaanImportService
 
                 // Check total discrepancies
                 if (abs(round($totalExcel) - round($calculatedTotal)) > 5) {
-                    $errors[] = "Total dari Excel (" . number_format($totalExcel, 2) . ") tidak sesuai dengan hitungan sistem (" . number_format($calculatedTotal, 2) . ").";
+                    $col = $isTaxedFormat ? 'H' : 'G';
+                    $errorDetails[] = [
+                        'column'  => $col,
+                        'message' => 'Total Excel (' . number_format($totalExcel, 2) . ') tidak sesuai hitungan sistem (' . number_format($calculatedTotal, 2) . ').',
+                    ];
                 }
 
                 // Determine suggested code
-                $categoryName = $this->kodeService->getCategoryByCode($kodePersediaan ?? '');
+                $categoryName  = $this->kodeService->getCategoryByCode($kodePersediaan ?? '');
                 $suggestedCode = $this->kodeService->suggestCode($categoryName, $namaBarang);
 
-                $statusValidation = count($errors) > 0 ? 'Perlu Perbaikan' : 'Menunggu Verifikasi';
-                if ($statusValidation === 'Menunggu Verifikasi') {
-                    $validRowsCount++;
-                } else {
+                $hasError         = count($errorDetails) > 0;
+                $statusValidation = $hasError ? 'Perlu Perbaikan' : 'Menunggu Verifikasi';
+
+                if ($hasError) {
                     $errorRowsCount++;
+                } else {
+                    $validRowsCount++;
                 }
 
+                // Flatten error messages and collect first error column
+                $errorMessages = array_map(fn ($e) => $e['message'], $errorDetails);
+                $firstErrorCol = $hasError ? ($errorDetails[0]['column'] ?? null) : null;
+
                 $allRows[] = [
-                    'sheet_name' => $sheetName,
-                    'supplier' => $supplierName,
-                    'no_urut' => $noUrut,
-                    'kode_persediaan_excel' => $kodePersediaan,
+                    'sheet_name'                => $sheetName,
+                    'supplier'                  => $supplierName,
+                    'no_urut'                   => $noUrut,
+                    'kode_persediaan_excel'     => $kodePersediaan,
                     'suggested_kode_persediaan' => $suggestedCode,
-                    'nama_barang' => $namaBarang,
-                    'qty' => $qty,
-                    'unit' => $unit,
-                    'price_unit' => $priceUnit,
-                    'price_unit_taxed' => $priceUnitTaxed,
-                    'total_excel' => $totalExcel,
-                    'total_calculated' => $calculatedTotal,
-                    'is_taxed' => $isTaxedFormat,
-                    'status_validation' => $statusValidation,
-                    'status_verification' => 'Pending',
-                    'verified_kode_persediaan' => $kodePersediaan ?: $suggestedCode,
-                    'notes_error' => count($errors) > 0 ? implode(' | ', $errors) : null,
-                    'is_duplicate' => false, // Will resolve after compiling counts
+                    'nama_barang'               => $namaBarang,
+                    'qty'                       => $qty,
+                    'unit'                      => $unit,
+                    'price_unit'                => $priceUnit,
+                    'price_unit_taxed'          => $priceUnitTaxed,
+                    'total_excel'               => $totalExcel,
+                    'total_calculated'          => $calculatedTotal,
+                    'is_taxed'                  => $isTaxedFormat,
+                    'status_validation'         => $statusValidation,
+                    'status_verification'       => 'Pending',
+                    'verified_kode_persediaan'  => $kodePersediaan ?: $suggestedCode,
+                    'notes_error'               => $hasError ? implode(' | ', $errorMessages) : null,
+                    'error_column'              => $firstErrorCol,
+                    'is_duplicate'              => false,
                 ];
             }
         }
@@ -263,17 +274,18 @@ class ExcelPersediaanImportService
                 $uploadBatch->details()->create($rowData);
             }
 
-            // Update batch metrics
-            $batchStatus = 'Menunggu Verifikasi';
+            // Update batch metrics — simplified statuses (no 'Sebagian Valid')
+            $batchStatus = StokUpload::STATUS_MENUNGGU_VERIFIKASI;
             if ($errorRowsCount > 0) {
-                $batchStatus = ($validRowsCount > 0) ? 'Sebagian Valid' : 'Perlu Perbaikan';
+                $batchStatus = StokUpload::STATUS_PERLU_PERBAIKAN;
             }
 
             $uploadBatch->update([
-                'rows_count' => $totalRowsCount,
-                'valid_rows_count' => $validRowsCount,
-                'error_rows_count' => $errorRowsCount,
-                'status' => $batchStatus,
+                'rows_count'        => $totalRowsCount,
+                'valid_rows_count'  => $validRowsCount,
+                'error_rows_count'  => $errorRowsCount,
+                'status'            => $batchStatus,
+                'current_step'      => $errorRowsCount > 0 ? StokUpload::STEP_PEMERIKSAAN : StokUpload::STEP_VERIFIKASI,
             ]);
         });
 

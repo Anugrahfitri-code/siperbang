@@ -48,11 +48,10 @@
         <!-- Data Table -->
         <div class="overflow-x-auto border rounded-lg">
             <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+                 <thead class="bg-gray-50">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kode Persediaan</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Barang</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Satuan</th>
                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Stok Tersedia</th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -67,9 +66,6 @@
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-500">
                             {{ $barang->name }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ $barang->category ?? '-' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                             {{ $barang->unit }}
@@ -92,7 +88,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                        <td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                             Data barang tidak ditemukan.
                         </td>
                     </tr>

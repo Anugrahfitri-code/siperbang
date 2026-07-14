@@ -15,6 +15,9 @@ class BarangController extends Controller
     {
         $this->authorizeRole('Petugas Persediaan');
 
+        // Query HANYA dari stock_items — barang yang sudah masuk stok.
+        // Kode persediaan master (yang belum pernah diupload) tidak ditampilkan
+        // agar user tidak bingung melihat barang stok 0 yang tidak relevan.
         $query = Barang::query();
 
         if ($request->filled('search')) {
@@ -29,8 +32,12 @@ class BarangController extends Controller
             $query->where('category', $request->kategori_id);
         }
 
-        $barangs  = $query->orderBy('name')->paginate(20)->withQueryString();
-        $kategoris = KategoriBarang::orderBy('nama')->get();
+        $barangs   = $query->orderBy('name')->paginate(20)->withQueryString();
+
+        // Hanya tampilkan kategori yang memang ada di stock_items
+        $kategoris = KategoriBarang::orderBy('nama')
+            ->whereIn('nama', Barang::distinct()->pluck('category'))
+            ->get();
 
         return view('master-barang.index', compact('barangs', 'kategoris'));
     }
