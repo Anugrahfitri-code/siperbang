@@ -70,7 +70,7 @@ class StokPengadaanController extends Controller
     public function index()
     {
         $requests = ItemRequest::with(['stockItem', 'distribution', 'procurements'])
-            ->whereNotIn('status', ['Selesai', 'Ditolak'])
+            ->whereNotIn('status', ['Selesai', 'Ditolak', 'Draft'])
             ->orderBy('created_at', 'desc')
             ->get();
 

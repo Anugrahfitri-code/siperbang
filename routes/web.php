@@ -83,14 +83,21 @@ Route::middleware('auth')->prefix('api')->group(function () {
     // ---- Semua Authenticated User ----
     // Requests
     Route::get('/requests', [\App\Http\Controllers\Api\RequestController::class, 'index']);
+    Route::get('/requests/bon', [\App\Http\Controllers\Api\RequestController::class, 'indexBons']);
+    Route::get('/requests/bon/{id}', [\App\Http\Controllers\Api\RequestController::class, 'showBon']);
     
     // Logs
     Route::get('/logs', [\App\Http\Controllers\Api\LogController::class, 'index']);
     Route::post('/logs', [\App\Http\Controllers\Api\LogController::class, 'store']);
 
+    // Stock search — read-only, accessible by all authenticated roles
+    Route::get('/stocks/search', [\App\Http\Controllers\Api\StockController::class, 'search']);
+
     // ---- Ketua Tim & Superadmin ----
-    Route::middleware('role:Ketua Tim,Superadmin')->group(function () {
+    Route::middleware('role:Ketua Tim,Ketua Tim Kerja,Superadmin')->group(function () {
         Route::post('/requests', [\App\Http\Controllers\Api\RequestController::class, 'store']);
+        Route::put('/requests/bon/{id}', [\App\Http\Controllers\Api\RequestController::class, 'updateDraft']);
+        Route::delete('/requests/bon/{id}', [\App\Http\Controllers\Api\RequestController::class, 'destroyDraft']);
     });
 
     // ---- Petugas Persediaan & Superadmin ----

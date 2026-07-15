@@ -99,6 +99,7 @@ class ExcelPersediaanImportService
                     elseif (str_contains($v, 'harga'))                $found['harga']  = $colLetter;
                     elseif (str_contains($v, 'pajak'))                $found['pajak']  = $colLetter;
                     elseif (str_contains($v, 'total'))                $found['total']  = $colLetter;
+                    elseif (str_contains($v, 'lokasi') || str_contains($v, 'location') || str_contains($v, 'rak') || str_contains($v, 'tempat')) $found['storage_location'] = $colLetter;
                 }
 
                 // Require at least "kode" + "nama" to confirm this is the header row
@@ -117,6 +118,7 @@ class ExcelPersediaanImportService
             $colQty   = $headerColMap['qty']   ?? 'D';
             $colUnit  = $headerColMap['unit']  ?? 'E';
             $colHarga = $headerColMap['harga'] ?? 'F';
+            $colStorageLocation = $headerColMap['storage_location'] ?? null;
 
             // Detect taxed vs nett format
             // Taxed format has a "Harga Satuan + Pajak" column and/or a "Pajak" column
@@ -205,6 +207,7 @@ class ExcelPersediaanImportService
                 $unitStr  = $cellStr($colUnit  . $row);
                 $hargaStr = $cellStr($colHarga . $row);
                 $totalStr = $cellStr(($isTaxedFormat ? ($colTotal ?? 'H') : ($colTotal ?? 'G')) . $row);
+                $storageLocationStr = $colStorageLocation ? $cellStr($colStorageLocation . $row) : null;
 
                 // ── Skip: all data columns empty after trim ──────────
                 if ($noStr === '' && $kodeStr === '' && $namaStr === ''
@@ -346,6 +349,7 @@ class ExcelPersediaanImportService
                     'notes_error'               => $hasError ? implode(' | ', $errorMessages) : null,
                     'error_column'              => $firstErrorCol,
                     'is_duplicate'              => false,
+                    'storage_location'          => $storageLocationStr,
                     // Store actual Excel row number for display in UI
                     '_excel_row'                => $row,
                 ];

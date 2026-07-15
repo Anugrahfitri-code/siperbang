@@ -14,7 +14,7 @@ interface SidebarProps {
   setOfficerTab: (tab: "dashboard" | "checking" | "stock" | "ocr" | "report" | "history") => void;
   
   requesterTab: string;
-  setRequesterTab: (tab: "bon" | "monitoring" | "history" | "stock") => void;
+  setRequesterTab: (tab: "dashboard" | "bon" | "monitoring" | "history" | "stock") => void;
 
   superadminTab: string;
   setSuperadminTab: (tab: "users" | "dashboard" | "checking" | "stock_manage" | "ocr" | "report" | "bon" | "monitoring" | "stock_catalog" | "history") => void;
@@ -341,6 +341,20 @@ export function Sidebar({
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-3 mb-3 mt-2">
                 Ketua Tim Kerja
               </span>
+
+              <button
+                onClick={() => handleRequesterTab("dashboard")}
+                className={`w-full flex items-center justify-between px-3.5 py-3 rounded text-xs font-bold transition-all border ${
+                  requesterTab === "dashboard"
+                    ? "bg-amber-400 text-slate-900 border-amber-400 shadow-xs"
+                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <LayoutDashboard size={16} />
+                  <span>Dashboard Ketua Tim</span>
+                </div>
+              </button>
 
               <button
                 onClick={() => handleRequesterTab("bon")}

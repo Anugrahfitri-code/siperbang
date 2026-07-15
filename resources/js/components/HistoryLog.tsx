@@ -9,46 +9,50 @@ interface HistoryLogProps {
 }
 
 export const HistoryLog: React.FC<HistoryLogProps> = ({ logs: incomingLogs }) => {
-  // 1. Definisikan Local State internal untuk mengelola data, loading, dan error
-  const [logs, setLogs] = useState<LogType[]>(incomingLogs || []);
-  const [loading, setLoading] = useState<boolean>(!incomingLogs);
-  const [error, setError] = useState<string | null>(null);
+  const [logs, setLogs]       = useState<LogType[]>(incomingLogs || []);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError]     = useState<string | null>(null);
 
-  // 2. Gunakan useEffect untuk menembak API backend jika data tidak dioper lewat props
+  // Always fetch fresh from DB when opened — so ALL roles see the same log
   useEffect(() => {
-    if (incomingLogs) {
-      setLogs(incomingLogs);
-      setLoading(false);
-      return;
-    }
-
     const fetchLogs = async () => {
       try {
         setLoading(true);
+        setError(null);
         const response = await fetch("/api/logs", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-          },
+          headers: { Accept: "application/json" },
+          credentials: "same-origin",
         });
 
         if (!response.ok) {
-          throw new Error(`Error: ${response.status} ${response.statusText}`);
+          throw new Error(`HTTP ${response.status}`);
         }
 
-        const data = await response.json();
-        setLogs(data);
+        const data: any[] = await response.json();
+        // Normalize backend shape → frontend shape
+        setLogs(data.map((l) => ({
+          id:        String(l.id),
+          timestamp: l.created_at ?? l.timestamp ?? "",
+          actor:     l.actor,
+          action:    l.action,
+          details:   l.details,
+        })));
       } catch (err: any) {
-        console.error("Gagal mengambil data log dari API:", err);
-        setError("Gagal memuat histori perubahan sistem.");
+        console.error("Gagal mengambil log:", err);
+        // Fall back to prop data if available
+        if (incomingLogs && incomingLogs.length > 0) {
+          setLogs(incomingLogs);
+        } else {
+          setError("Gagal memuat histori perubahan sistem.");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchLogs();
-  }, [incomingLogs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // fetch once on mount
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
@@ -56,12 +60,33 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ logs: incomingLogs }) =>
         <div className="bg-slate-50 text-slate-700 p-2.5 rounded border border-slate-200">
           <History size={18} />
         </div>
-        <div>
+        <div className="flex-1">
           <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Histori Perubahan & Audit Log</h2>
           <p className="text-[11px] text-slate-500">
-            Riwayat lengkap penambahan, pengurangan, perubahan status, dan verifikasi dokumen kuitansi
+            Riwayat lengkap semua tindakan dari seluruh pengguna sistem
           </p>
         </div>
+        <button
+          onClick={() => {
+            setLoading(true);
+            setError(null);
+            fetch("/api/logs", { headers: { Accept: "application/json" }, credentials: "same-origin" })
+              .then((r) => r.json())
+              .then((data: any[]) => setLogs(data.map((l) => ({
+                id: String(l.id), timestamp: l.created_at ?? l.timestamp ?? "",
+                actor: l.actor, action: l.action, details: l.details,
+              }))))
+              .catch(() => setError("Gagal memuat ulang log."))
+              .finally(() => setLoading(false));
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+          title="Muat ulang log"
+        >
+          <svg className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Refresh
+        </button>
       </div>
 
       {/* 3. Tampilkan UI state Loading jika data sedang dimuat dari API */}

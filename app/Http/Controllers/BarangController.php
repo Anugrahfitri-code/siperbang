@@ -23,8 +23,8 @@ class BarangController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%");
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('code', 'ilike', "%{$search}%");
             });
         }
 
@@ -63,9 +63,9 @@ class BarangController extends Controller
 
         $items = Barang::where('is_active', true)
             ->where(function($q) use ($queryStr) {
-                $q->where('name', 'like', "%{$queryStr}%")
-                  ->orWhere('code', 'like', "%{$queryStr}%")
-                  ->orWhere('category', 'like', "%{$queryStr}%");
+                $q->where('name',     'ilike', "%{$queryStr}%")
+                  ->orWhere('code',     'ilike', "%{$queryStr}%")
+                  ->orWhere('category', 'ilike', "%{$queryStr}%");
             })
             ->get();
 

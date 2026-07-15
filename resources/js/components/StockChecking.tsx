@@ -387,6 +387,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                 onProcure={onProcure}
                 onCompleteProcurement={onCompleteProcurement}
                 currentUser={currentUser}
+                onClose={() => setSelectedForAction(null)}
               />
             </div>
           </div>

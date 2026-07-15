@@ -23,6 +23,11 @@ class ItemRequest extends Model
 
     // ── Relationships ────────────────────────────────────────────
 
+    public function bonHeader()
+    {
+        return $this->belongsTo(BonHeader::class, 'bon_header_id');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -61,6 +66,8 @@ class ItemRequest extends Model
     public static function validStatuses(): array
     {
         return [
+            'Draft',
+            'Menunggu Verifikasi',
             'Diajukan',
             'Dicek',
             'Terpenuhi',
