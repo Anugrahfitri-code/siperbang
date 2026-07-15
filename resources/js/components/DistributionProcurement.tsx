@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ItemRequest, StockItem, RequestStatus, ProcurementMethod, Distribution, Procurement } from "../types";
-import { Truck, ShoppingCart, Package, CheckCircle, AlertTriangle, FileText, Calculator, Percent, Store, Building2 } from "lucide-react";
+import { Truck, ShoppingCart, Package, CheckCircle, AlertTriangle, FileText, Calculator, Percent, Store, Building2, X } from "lucide-react";
 
 interface DistributionProcurementProps {
   request: ItemRequest;
@@ -10,7 +10,7 @@ interface DistributionProcurementProps {
     qtyDistributed: number;
     distributedBy: string;
     notes?: string;
-  }) => void;
+  }) => Promise<void>;
   onProcure: (reqId: string, data: {
     method: ProcurementMethod;
     vendorName?: string;
@@ -24,9 +24,11 @@ interface DistributionProcurementProps {
     bastDate?: string;
     contractNo?: string;
     processedBy: string;
-  }) => void;
-  onCompleteProcurement: (reqId: string, procurementId: string, processedBy: string) => void;
+  }) => Promise<void>;
+  onCompleteProcurement: (reqId: string, procurementId: string, processedBy: string) => Promise<void>;
   currentUser: string;
+  /** Called after any successful action so parent can close the modal */
+  onClose?: () => void;
 }
 
 export const DistributionProcurement: React.FC<DistributionProcurementProps> = ({
@@ -36,11 +38,22 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
   onProcure,
   onCompleteProcurement,
   currentUser,
+  onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<"distribute" | "procure">("distribute");
   const [selectedStockItem, setSelectedStockItem] = useState<string>("");
-  const [qtyDistributed, setQtyDistributed] = useState<number>(0);
+  const [qtyDistributed, setQtyDistributed] = useState<number>(
+    request.qtyFulfilled > 0 ? request.qtyFulfilled : 1
+  );
   const [distributionNotes, setDistributionNotes] = useState<string>("");
+
+  // Action state
+  const [isLoading, setIsLoading]     = useState(false);
+  const [successInfo, setSuccessInfo] = useState<{
+    title: string;
+    lines: string[];
+  } | null>(null);
+  const [errorMsg, setErrorMsg]       = useState<string | null>(null);
 
   // Procurement form state
   const [procurementMethod, setProcurementMethod] = useState<ProcurementMethod>(ProcurementMethod.SENDIRI);
@@ -69,32 +82,71 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
     }
   }, [request.itemName, stockList]);
 
-  const handleDistribute = () => {
+  const handleDistribute = async () => {
     if (!selectedStockItem || qtyDistributed <= 0) return;
-    
-    onDistribute(request.id, {
-      stockItemId: selectedStockItem,
-      qtyDistributed,
-      distributedBy: currentUser,
-      notes: distributionNotes || undefined,
-    });
+    setIsLoading(true);
+    setErrorMsg(null);
+    try {
+      await onDistribute(request.id, {
+        stockItemId:    selectedStockItem,
+        qtyDistributed,
+        distributedBy:  currentUser,
+        notes:          distributionNotes || undefined,
+      });
+
+      const stockItem = stockList.find((s) => s.id === selectedStockItem);
+      setSuccessInfo({
+        title: "Distribusi Berhasil",
+        lines: [
+          `Barang: ${request.itemName}`,
+          `Jumlah didistribusikan: ${qtyDistributed} ${request.unit}`,
+          `Kepada: ${request.section}`,
+          `Oleh: ${currentUser}`,
+          stockItem ? `Stok tersisa: ${Math.max(0, stockItem.qty - qtyDistributed)} ${stockItem.unit}` : "",
+        ].filter(Boolean),
+      });
+    } catch (err: any) {
+      setErrorMsg(err?.message ?? "Distribusi gagal. Coba lagi.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleProcure = () => {
-    onProcure(request.id, {
-      method: procurementMethod,
-      vendorName: procurementMethod === ProcurementMethod.VENDOR ? vendorName : undefined,
-      storeName: procurementMethod === ProcurementMethod.SENDIRI ? storeName : undefined,
-      qtyProcured,
-      unitPrice,
-      isTaxed,
-      taxRate,
-      invoiceNo: invoiceNo || undefined,
-      bastName: bastName || undefined,
-      bastDate: bastDate || undefined,
-      contractNo: contractNo || undefined,
-      processedBy: currentUser,
-    });
+  const handleProcure = async () => {
+    setIsLoading(true);
+    setErrorMsg(null);
+    try {
+      await onProcure(request.id, {
+        method:      procurementMethod,
+        vendorName:  procurementMethod === ProcurementMethod.VENDOR  ? vendorName  : undefined,
+        storeName:   procurementMethod === ProcurementMethod.SENDIRI ? storeName   : undefined,
+        qtyProcured,
+        unitPrice,
+        isTaxed,
+        taxRate,
+        invoiceNo:   invoiceNo  || undefined,
+        bastName:    bastName   || undefined,
+        bastDate:    bastDate   || undefined,
+        contractNo:  contractNo || undefined,
+        processedBy: currentUser,
+      });
+
+      setSuccessInfo({
+        title: "Pengadaan Berhasil Dibuat",
+        lines: [
+          `Barang: ${request.itemName}`,
+          `Jumlah diadakan: ${qtyProcured} ${request.unit}`,
+          `Metode: ${procurementMethod}`,
+          procurementMethod === ProcurementMethod.VENDOR  ? `Vendor: ${vendorName}`  : `Toko: ${storeName}`,
+          `Total: ${formatIDR(totalPrice)}`,
+          invoiceNo ? `No. Invoice: ${invoiceNo}` : "",
+        ].filter(Boolean),
+      });
+    } catch (err: any) {
+      setErrorMsg(err?.message ?? "Pengadaan gagal dibuat. Coba lagi.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const formatIDR = (num: number) => {
@@ -132,6 +184,56 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+
+      {/* ── Success popup ───────────────────────────────────── */}
+      {successInfo && (
+        <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 overflow-hidden">
+          <div className="flex items-start gap-3 px-5 py-4">
+            <div className="bg-emerald-100 rounded-full p-2 shrink-0 mt-0.5">
+              <CheckCircle size={20} className="text-emerald-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-extrabold text-emerald-800 mb-2">
+                {successInfo.title}
+              </p>
+              <ul className="space-y-1">
+                {successInfo.lines.map((line, i) => (
+                  <li key={i} className="text-xs text-emerald-700 flex items-center gap-2">
+                    <span className="w-1 h-1 rounded-full bg-emerald-400 shrink-0" />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button
+              onClick={() => { setSuccessInfo(null); onClose?.(); }}
+              className="text-emerald-400 hover:text-emerald-600 transition-colors shrink-0"
+              aria-label="Tutup"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div className="px-5 py-3 bg-emerald-100/60 border-t border-emerald-200 flex justify-end">
+            <button
+              onClick={() => { setSuccessInfo(null); onClose?.(); }}
+              className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors"
+            >
+              Selesai
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Error banner ────────────────────────────────────── */}
+      {errorMsg && (
+        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 flex items-start gap-2">
+          <AlertTriangle size={15} className="text-rose-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-rose-700 font-semibold flex-1">{errorMsg}</p>
+          <button onClick={() => setErrorMsg(null)} className="text-rose-400 hover:text-rose-600">
+            <X size={13} />
+          </button>
+        </div>
+      )}
       <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
         <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded border border-indigo-150">
           <Package size={18} />
@@ -278,11 +380,18 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
 
               <button
                 onClick={handleDistribute}
-                disabled={!selectedStockItem || qtyDistributed <= 0}
+                disabled={!selectedStockItem || qtyDistributed <= 0 || isLoading}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold py-2.5 px-4 rounded transition-all shadow-xs flex items-center justify-center gap-2"
               >
-                <Truck size={14} />
-                Proses Distribusi
+                {isLoading ? (
+                  <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                ) : (
+                  <Truck size={14} />
+                )}
+                {isLoading ? "Memproses..." : "Proses Distribusi"}
               </button>
             </>
           )}

@@ -29,6 +29,7 @@ return new class extends Migration
             // Vendor name (only for Pengadaan Vendor)
             $table->string('vendor_name')->nullable()->after('procurement_method');
         });
+        
 
         // ── 2. distributions ────────────────────────────────────────────────
         // Records each time stock is physically distributed for a request.

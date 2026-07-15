@@ -65,6 +65,7 @@ class StokFinalizationService
                         'qty' => $qtyAfter,
                         'last_updated' => now(),
                         'last_upload_id' => $batch->id,
+                        'storage_location' => $row->storage_location ?? $barang->storage_location,
                     ]);
 
                     // Record history log
@@ -89,6 +90,7 @@ class StokFinalizationService
                         'category' => $category,
                         'qty' => $row->qty,
                         'unit' => $row->unit,
+                        'storage_location' => $row->storage_location,
                         'last_updated' => now(),
                         'is_active' => true,
                         'last_upload_id' => $batch->id,

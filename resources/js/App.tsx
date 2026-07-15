@@ -17,6 +17,7 @@ import { LoginScreen } from "./components/LoginScreen";
 import { Sidebar } from "./components/Sidebar";
 import { RequesterStockList } from "./components/RequesterStockList";
 import { UserManagement } from "./components/UserManagement";
+import { KetuaTimDashboard } from "./components/KetuaTimDashboard";
 import { LayoutDashboard, FileSpreadsheet, ClipboardList, Package, Receipt, History, AlertCircle, Info, ChevronRight, CheckSquare, Loader2 } from "lucide-react";
 import { apiFetch } from "./api";
 
@@ -56,6 +57,30 @@ const toDateOnly = (
   return value ? value.substring(0, 10) : "";
 };
 
+/** Normalize a raw API ItemRequest (snake_case) into the frontend shape (camelCase). */
+const normalizeRequest = (r: any): ItemRequest => ({
+  id:               String(r.id),
+  bonNo:            r.bon_no,
+  section:          r.section,
+  itemName:         r.item_name,
+  qtyRequested:     Number(r.qty_requested  ?? 0),
+  qtyAvailable:     Number(r.qty_available  ?? 0),
+  qtyFulfilled:     Number(r.qty_fulfilled  ?? 0),
+  qtyToProcure:     Number(r.qty_to_procure ?? 0),
+  stockAllocated:   Boolean(r.stock_allocated),
+  unit:             r.unit,
+  status:           normalizeRequestStatus(r.status ?? ""),
+  notes:            r.notes ?? "",
+  date:             toDateOnly(r.date),
+  requester:        r.requester,
+  lastUpdated:      toDateOnly(r.last_updated),
+  stockItemId:      r.stock_item_id ? String(r.stock_item_id) : undefined,
+  procurementMethod: r.procurement_method ?? undefined,
+  vendorName:       r.vendor_name ?? undefined,
+  distribution:     r.distribution   ?? undefined,
+  procurements:     r.procurements   ?? [],
+});
+
 export default function App() {
   // Roles & Authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -69,14 +94,19 @@ export default function App() {
   const [receipts, setReceipts] = useState<ReceiptData[]>([]);
   const [logs, setLogs] = useState<LogType[]>([]);
   const [users, setUsers] = useState<UserAccount[]>([]);
+  const [bons, setBons] = useState<any[]>([]);
+  const [editingDraft, setEditingDraft] = useState<any | null>(null);
+
+  const [requestsLoading, setRequestsLoading] = useState(true);
+  const [requestsError, setRequestsError] = useState<string | null>(null);
 
   // Navigation tab states
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [officerTab, setOfficerTab] = useState<"dashboard" | "checking" | "stock" | "ocr" | "report" | "history">(
     () => (localStorage.getItem("officerTab") as any) || "dashboard"
   );
-  const [requesterTab, setRequesterTab] = useState<"bon" | "monitoring" | "history" | "stock">(
-    () => (localStorage.getItem("requesterTab") as any) || "bon"
+  const [requesterTab, setRequesterTab] = useState<"dashboard" | "bon" | "monitoring" | "history" | "stock">(
+    () => (localStorage.getItem("requesterTab") as any) || "dashboard"
   );
   const [superadminTab, setSuperadminTab] = useState<"users" | "dashboard" | "checking" | "stock_manage" | "ocr" | "report" | "bon" | "monitoring" | "stock_catalog" | "history">(
     () => (localStorage.getItem("superadminTab") as any) || "users"
@@ -137,113 +167,127 @@ useEffect(() => {
   };
 }, []);
   
-  // Load initial databases
-  useEffect(() => {
-    // Fetch initial data from API
-    const loadData = async () => {
-      try {
-        const [reqRes, stockRes, recRes, logRes, userRes] =
-          await Promise.all([
-            apiFetch("/api/requests"),
-            apiFetch("/api/stocks"),
-            apiFetch("/api/receipts"),
-            apiFetch("/api/logs"),
-            apiFetch("/api/users"),
-          ]);
-        
-        if (reqRes.ok) {
-          const reqs = await reqRes.json();
-          setRequests(reqs.map((r: any) => ({
-            id: String(r.id),
-            bonNo: r.bon_no,
-            section: r.section,
-            itemName: r.item_name,
-            qtyRequested: Number(r.qty_requested ?? 0),
-            qtyAvailable: Number(r.qty_available ?? 0),
-            qtyFulfilled: Number(r.qty_fulfilled ?? 0),
-            qtyToProcure: Number(r.qty_to_procure ?? 0),
-            stockAllocated: Boolean(r.stock_allocated),
-            unit: r.unit,
-            status: normalizeRequestStatus(r.status),
-            notes: r.notes ?? "",
-            date: toDateOnly(r.date),
-            requester: r.requester,
-            lastUpdated: toDateOnly(r.last_updated),
-            stockItemId: r.stock_item_id
-              ? String(r.stock_item_id)
-              : undefined,
-            procurementMethod: r.procurement_method ?? undefined,
-            vendorName: r.vendor_name ?? undefined,
-            distribution: r.distribution ?? undefined,
-            procurements: r.procurements ?? [],
-          })));
-        }
+  // Fetch initial data from API
+  const loadData = async () => {
+    setRequestsLoading(true);
+    setRequestsError(null);
+    try {
+      const isKetuaTim = currentRole === UserRole.KETUA_TIM;
 
-        if (stockRes.ok) {
-          const stocks = await stockRes.json();
-          setStock(stocks.map((s: any) => ({
-            id: String(s.id),
-            category: s.category,
-            code: s.code,
-            name: s.name,
-            qty: s.qty,
-            unit: s.unit,
-            lastUpdated: s.last_updated
-          })));
-        }
+      const fetchRequests = apiFetch("/api/requests");
+      const fetchLogs = apiFetch("/api/logs");
 
-        if (userRes.ok) {
-          const fetchedUsers = await userRes.json();
-          setUsers(fetchedUsers.map((u: any) => ({
-            id: String(u.id),
-            name: u.name,
-            username: u.username,
-            role: u.role,
-            section: u.section,
-            status: u.status
-          })));
-        }
+      let fetchBons = Promise.resolve(null as any);
+      let fetchStocks = Promise.resolve(null as any);
+      let fetchReceipts = Promise.resolve(null as any);
+      let fetchUsers = Promise.resolve(null as any);
 
-        if (logRes.ok) {
-          const fetchedLogs = await logRes.json();
-          setLogs(fetchedLogs.map((l: any) => ({
-            id: String(l.id),
-            timestamp: l.created_at,
-            actor: l.actor,
-            action: l.action,
-            details: l.details
-          })));
-        }
-
-        if (recRes.ok) {
-          const fetchedReceipts = await recRes.json();
-          setReceipts(fetchedReceipts.map((r: any) => ({
-            id: String(r.id),
-            invoiceNo: r.invoice_no,
-            storeName: r.store_name,
-            date: r.date,
-            isTaxed: r.is_taxed,
-            taxRate: r.tax_rate,
-            subtotal: r.subtotal,
-            taxAmount: r.tax_amount,
-            total: r.total,
-            isVerified: r.is_verified,
-            status: r.status,
-            method: r.method,
-            bastName: r.bast_name,
-            bastDate: r.bast_date,
-            items: r.items || []
-          })));
-        }
-      } catch (err) {
-        console.error("Error fetching data:", err);
+      if (isKetuaTim) {
+        fetchBons = apiFetch("/api/requests/bon?all=true");
+      } else {
+        fetchStocks = apiFetch("/api/stocks");
+        fetchReceipts = apiFetch("/api/receipts");
+        fetchUsers = apiFetch("/api/users");
       }
-    };
-    
+
+      const [reqRes, logRes, bonRes, stockRes, recRes, userRes] =
+        await Promise.all([
+          fetchRequests,
+          fetchLogs,
+          fetchBons,
+          fetchStocks,
+          fetchReceipts,
+          fetchUsers,
+        ]);
+      
+      if (reqRes && reqRes.ok) {
+        const reqs = await reqRes.json();
+        setRequests(reqs.map(normalizeRequest));
+        setRequestsError(null);
+      } else {
+        setRequestsError("Gagal mengambil data pengajuan dari server.");
+      }
+
+      if (bonRes && bonRes.ok) {
+        const fetchedBons = await bonRes.json();
+        setBons(fetchedBons);
+      }
+
+      if (stockRes && stockRes.ok) {
+        const stocks = await stockRes.json();
+        setStock(stocks.map((s: any) => ({
+          id: String(s.id),
+          category: s.category,
+          code: s.code,
+          name: s.name,
+          qty: s.qty,
+          unit: s.unit,
+          lastUpdated: s.last_updated
+        })));
+      } else {
+        setStock([]);
+      }
+
+      if (userRes && userRes.ok) {
+        const fetchedUsers = await userRes.json();
+        setUsers(fetchedUsers.map((u: any) => ({
+          id: String(u.id),
+          name: u.name,
+          username: u.username,
+          role: u.role,
+          section: u.section,
+          status: u.status
+        })));
+      } else {
+        setUsers([]);
+      }
+
+      if (logRes && logRes.ok) {
+        const fetchedLogs = await logRes.json();
+        setLogs(fetchedLogs.map((l: any) => ({
+          id: String(l.id),
+          timestamp: l.created_at,
+          actor: l.actor,
+          action: l.action,
+          details: l.details
+        })));
+      }
+
+      if (recRes && recRes.ok) {
+        const fetchedReceipts = await recRes.json();
+        setReceipts(fetchedReceipts.map((r: any) => ({
+          id: String(r.id),
+          invoiceNo: r.invoice_no,
+          storeName: r.store_name,
+          date: r.date,
+          isTaxed: r.is_taxed,
+          taxRate: r.tax_rate,
+          subtotal: r.subtotal,
+          taxAmount: r.tax_amount,
+          total: r.total,
+          isVerified: r.is_verified,
+          status: r.status,
+          method: r.method,
+          bastName: r.bast_name,
+          bastDate: r.bast_date,
+          items: r.items || []
+        })));
+      } else {
+        setReceipts([]);
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setRequestsError("Terjadi kesalahan koneksi saat memuat data.");
+    } finally {
+      setRequestsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (isLoggedIn) {
       loadData();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, currentRole]);
 
   // local storage sync removed
 
@@ -280,7 +324,8 @@ useEffect(() => {
   };
 
   // Log activity helper
-  const addLog = (actor: string, action: string, details: string) => {
+  // Helper: tulis log ke frontend state DAN backend DB
+  const addLog = async (actor: string, action: string, details: string) => {
     const newLog: LogType = {
       id: "log-" + Math.random().toString(36).substring(2, 9),
       timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
@@ -288,77 +333,62 @@ useEffect(() => {
       action,
       details,
     };
+    // Update local state immediately for instant UI feedback
     setLogs((prev) => [newLog, ...prev]);
+
+    // Persist to DB so ALL roles see this log
+    try {
+      await apiFetch("/api/logs", {
+        method: "POST",
+        body: JSON.stringify({ actor, action, details }),
+      });
+    } catch {
+      // Non-critical — log already in UI state
+    }
   };
 
   // --- ACTIONS ---
 
   // 1. Submit a new BON Digital Request
   const handleAddRequest = async (
-    newReq: Omit<
-      ItemRequest,
-      | "id"
-      | "bonNo"
-      | "status"
-      | "qtyAvailable"
-      | "qtyFulfilled"
-      | "lastUpdated"
-    >
+    payload: import("./components/BonDigitalForm").BonSubmitPayload
   ): Promise<void> => {
     const response = await apiFetch("/api/requests", {
       method: "POST",
-      body: JSON.stringify(newReq),
+      body: JSON.stringify(payload),
     });
-    const data: any = await response
-      .json()
-      .catch(() => ({}));
+    const data: any = await response.json().catch(() => ({}));
+
     if (!response.ok) {
       if (response.status === 401) {
         setIsLoggedIn(false);
-
-        throw new Error(
-          "Sesi login berakhir. Silakan masuk kembali."
-        );
+        throw new Error("Sesi login berakhir. Silakan masuk kembali.");
       }
       const validationMessage =
-        data.errors &&
-        typeof data.errors === "object"
-          ? Object.values(
-              data.errors as Record<string, string[]>
-            )
+        data.errors && typeof data.errors === "object"
+          ? Object.values(data.errors as Record<string, string[]>)
               .flat()
               .join(" ")
           : "";
       throw new Error(
-        validationMessage ||
-          data.message ||
-          "BON gagal disimpan ke database."
+        validationMessage || data.message || "BON gagal disimpan ke database."
       );
     }
 
-    const savedRequest: ItemRequest = {
-      id: String(data.id),
-      bonNo: data.bon_no,
-      section: data.section,
-      itemName: data.item_name,
-      qtyRequested: Number(data.qty_requested),
-      qtyAvailable: Number(data.qty_available ?? 0),
-      qtyFulfilled: Number(data.qty_fulfilled ?? 0),
-      unit: data.unit,
-      status: normalizeRequestStatus(data.status),
-      notes: data.notes ?? "",
-      date: toDateOnly(data.date),
-      requester: data.requester,
-      lastUpdated: toDateOnly(data.last_updated),
-    };
-    setRequests((previousRequests) => [
-      savedRequest,
-      ...previousRequests,
-    ]);
-    addLog(
+    // Backend returns BonHeader — refresh the bon list so monitoring tab updates
+    const bonRes = await apiFetch("/api/requests/bon?all=true");
+    if (bonRes.ok) {
+      const freshBons = await bonRes.json();
+      setBons(freshBons);
+    }
+
+    // Log: Ketua Tim kirim BON
+    const statusLabel = payload.status === "draft" ? "Simpan Draft" : "Kirim Pengajuan";
+    const itemCount   = payload.items.length;
+    await addLog(
       currentUser,
-      "Ajukan Kebutuhan",
-      `Mengajukan kebutuhan barang baru: ${newReq.itemName} sebanyak ${newReq.qtyRequested} ${newReq.unit} untuk seksi ${newReq.section}.`
+      statusLabel === "draft" ? "Simpan Draft BON" : "Kirim BON",
+      `${statusLabel} BON berhasil. ${itemCount} jenis barang diminta. Keperluan: "${payload.keperluan}".`
     );
   };
 
@@ -451,7 +481,7 @@ useEffect(() => {
         );
       }
 
-      addLog(currentUser, "Verifikasi Stok", logMessage);
+      await addLog(currentUser, "Verifikasi Stok", logMessage);
     } catch (err: any) {
       console.error(err);
       window.alert(err.message || "Terjadi kesalahan saat memverifikasi stok");
@@ -459,7 +489,7 @@ useEffect(() => {
   };
 
   // 4. Manual OCR Verified Invoice Saver
-  const handleVerifyReceipt = (id: string, verifiedReceipt: ReceiptData, logMsg: string) => {
+  const handleVerifyReceipt = async (id: string, verifiedReceipt: ReceiptData, logMsg: string) => {
     setReceipts((prev) => {
       // Check if it already exists as draft, or add as new verified
       const exists = prev.some((r) => r.id === id);
@@ -496,12 +526,12 @@ useEffect(() => {
       })
     );
 
-    addLog(currentUser, "Verifikasi Kuitansi", logMsg);
+    await addLog(currentUser, "Verifikasi Kuitansi", logMsg);
   };
 
-  const handleAddReceipt = (newReceipt: ReceiptData) => {
+  const handleAddReceipt = async (newReceipt: ReceiptData) => {
     setReceipts((prev) => [newReceipt, ...prev]);
-    addLog(currentUser, "Tambah Kuitansi", `Menambahkan kuitansi manual/baru dari ${newReceipt.storeName} senilai ${formatIDR(newReceipt.total)}.`);
+    await addLog(currentUser, "Tambah Kuitansi", `Menambahkan kuitansi manual/baru dari ${newReceipt.storeName} senilai ${formatIDR(newReceipt.total)}.`);
   };
 
   // 5. Handle Distribution
@@ -514,55 +544,32 @@ useEffect(() => {
       notes?: string;
     }
   ) => {
-    try {
-      const response = await apiFetch(
-        `/api/requests/${reqId}/distribute`,
-        {
-          method: "POST",
-          body: JSON.stringify(data),
-        }
-      );
+    const response = await apiFetch(
+      `/api/requests/${reqId}/distribute`,
+      { method: "POST", body: JSON.stringify(data) }
+    );
 
-      if (response.ok) {
-        const updated = await response.json();
+    const raw = await response.json().catch(() => ({}));
 
-        setRequests((prev) =>
-          prev.map((req) =>
-            req.id === reqId ? updated : req
-          )
-        );
-
-        addLog(
-          currentUser,
-          "Distribusi Barang",
-          `BON distribusi: ${data.qtyDistributed} unit oleh ${data.distributedBy}`
-        );
-      } else {
-        const error = await response
-          .json()
-          .catch(() => ({}));
-
-        window.alert(
-          error.message ||
-            "Gagal melakukan distribusi"
-        );
-      }
-    } catch (error) {
-      console.error("Distribution error:", error);
-
-      window.alert(
-        "Terjadi kesalahan saat melakukan distribusi"
-      );
+    if (!response.ok) {
+      throw new Error(raw.message || "Gagal melakukan distribusi");
     }
+
+    const updated = normalizeRequest(raw);
+    setRequests((prev) => prev.map((req) => req.id === reqId ? updated : req));
+
+    await addLog(
+      currentUser,
+      "Distribusi Barang",
+      `BON distribusi: ${data.qtyDistributed} unit dari stok oleh ${data.distributedBy}`
+    );
   };
 
   // 6. Handle Procurement
   const handleProcure = async (
     reqId: string,
     data: {
-      method:
-        | "Pengadaan Vendor"
-        | "Pengadaan Sendiri (Toko)";
+      method: "Pengadaan Vendor" | "Pengadaan Sendiri (Toko)";
       vendorName?: string;
       storeName?: string;
       qtyProcured: number;
@@ -576,46 +583,25 @@ useEffect(() => {
       processedBy: string;
     }
   ) => {
-    try {
-      const response = await apiFetch(
-        `/api/requests/${reqId}/procure`,
-        {
-          method: "POST",
-          body: JSON.stringify(data),
-        }
-      );
+    const response = await apiFetch(
+      `/api/requests/${reqId}/procure`,
+      { method: "POST", body: JSON.stringify(data) }
+    );
 
-      if (response.ok) {
-        const updated = await response.json();
+    const raw = await response.json().catch(() => ({}));
 
-        setRequests((prev) =>
-          prev.map((req) =>
-            req.id === reqId ? updated : req
-          )
-        );
-
-        addLog(
-          currentUser,
-          "Pengadaan Barang",
-          `BON pengadaan: ${data.qtyProcured} unit via ${data.method}`
-        );
-      } else {
-        const error = await response
-          .json()
-          .catch(() => ({}));
-
-        window.alert(
-          error.message ||
-            "Gagal membuat pengadaan"
-        );
-      }
-    } catch (error) {
-      console.error("Procurement error:", error);
-
-      window.alert(
-        "Terjadi kesalahan saat membuat pengadaan"
-      );
+    if (!response.ok) {
+      throw new Error(raw.message || "Gagal membuat pengadaan");
     }
+
+    const updated = normalizeRequest(raw);
+    setRequests((prev) => prev.map((req) => req.id === reqId ? updated : req));
+
+    await addLog(
+      currentUser,
+      "Pengadaan Barang",
+      `BON pengadaan: ${data.qtyProcured} unit via ${data.method}`
+    );
   };
 
   // 7. Handle Complete Procurement
@@ -624,52 +610,25 @@ useEffect(() => {
     procurementId: string,
     processedBy: string
   ) => {
-    try {
-      const response = await apiFetch(
-        `/api/requests/${reqId}/complete-procurement`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            procurementId,
-            processedBy,
-          }),
-        }
-      );
+    const response = await apiFetch(
+      `/api/requests/${reqId}/complete-procurement`,
+      { method: "POST", body: JSON.stringify({ procurementId, processedBy }) }
+    );
 
-      if (response.ok) {
-        const updated = await response.json();
+    const raw = await response.json().catch(() => ({}));
 
-        setRequests((prev) =>
-          prev.map((req) =>
-            req.id === reqId ? updated : req
-          )
-        );
-
-        addLog(
-          currentUser,
-          "Terima Pengadaan",
-          `BON pengadaan #${procurementId} diterima`
-        );
-      } else {
-        const error = await response
-          .json()
-          .catch(() => ({}));
-
-        window.alert(
-          error.message ||
-            "Gagal menyelesaikan pengadaan"
-        );
-      }
-    } catch (error) {
-      console.error(
-        "Complete procurement error:",
-        error
-      );
-
-      window.alert(
-        "Terjadi kesalahan saat menyelesaikan pengadaan"
-      );
+    if (!response.ok) {
+      throw new Error(raw.message || "Gagal menyelesaikan pengadaan");
     }
+
+    const updated = normalizeRequest(raw);
+    setRequests((prev) => prev.map((req) => req.id === reqId ? updated : req));
+
+    await addLog(
+      currentUser,
+      "Terima Pengadaan",
+      `Pengadaan #${procurementId} diterima. Barang masuk ke stok gudang.`
+    );
   };
 
   const handleLogout = async () => {
@@ -870,8 +829,18 @@ useEffect(() => {
              2. ROLE WORKSPACE: KETUA TIM KERJA (REQUESTER)
              ========================================================= */
           <div className="w-full space-y-6">
+            {requesterTab === "dashboard" && (
+              <KetuaTimDashboard
+                requests={requests}
+                loading={requestsLoading}
+                error={requestsError}
+                onRefresh={loadData}
+                currentUser={currentUser}
+              />
+            )}
+
             {requesterTab === "bon" && (
-              <BonDigitalForm onAddRequest={handleAddRequest} currentUser={currentUser} />
+              <BonDigitalForm onSubmit={handleAddRequest} currentUser={currentUser} />
             )}
 
               {requesterTab === "monitoring" && (
@@ -942,7 +911,7 @@ useEffect(() => {
                 </div>
               )}
 
-              {requesterTab === "stock" && <RequesterStockList stock={stock} />}
+              {requesterTab === "stock" && <RequesterStockList />}
 
               {requesterTab === "history" && <HistoryLog logs={logs} />}
             </div>
@@ -1046,7 +1015,7 @@ useEffect(() => {
             {superadminTab === "report" && <ReportExport receipts={receipts} />}
 
             {superadminTab === "bon" && (
-              <BonDigitalForm onAddRequest={handleAddRequest} currentUser={currentUser} />
+              <BonDigitalForm onSubmit={handleAddRequest} currentUser={currentUser} />
             )}
 
             {superadminTab === "monitoring" && (
