@@ -84,7 +84,6 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
       setIsExporting(true);
       setExportSuccess(false);
 
-      // Mengirim parameter filter aktif ke server backend
       const queryParams = new URLSearchParams({
         month: isAnnualRecap ? "All" : filterMonth,
         year: filterYear,
@@ -93,29 +92,30 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
       });
 
       const response = await fetch(`/api/export-excel?${queryParams.toString()}`, {
-        method: "GET",
-        headers: {
-          "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        },
+        method: "GET"
       });
 
       if (!response.ok) {
         throw new Error("Gagal mengunduh berkas laporan dari server.");
       }
 
-      // Memproses hasil response blob menjadi file unduhan di browser
-      const blob = await response.blob();
+      // 1. Ambil response dalam bentuk Teks (karena backend mengirim streaming CSV)
+      const csvText = await response.text();
+      
+      // 2. Bungkus teks tersebut ke dalam Blob dengan encoding data Spreadsheet Excel
+      const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
+      
+      // 3. Simpan sementara dengan ekstensi .csv agar Excel di komputermu bisa membacanya tanpa protes
       a.download = isAnnualRecap 
-        ? `SIPERBANG_REKAP_TAHUNAN_${filterYear}.xlsx`
-        : `SIPERBANG_REKAP_BULANAN_${filterMonth}_${filterYear}.xlsx`;
+        ? `SIPERBANG_REKAP_TAHUNAN_${filterYear}.csv`
+        : `SIPERBANG_REKAP_BULANAN_${filterMonth}_${filterYear}.csv`;
       
       document.body.appendChild(a);
       a.click();
       
-      // Bersihkan elemen temporary di DOM
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
