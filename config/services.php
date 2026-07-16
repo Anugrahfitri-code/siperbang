@@ -36,10 +36,33 @@ return [
     ],
 
     'ocr' => [
-        'url' => env('OCR_SERVICE_URL', 'http://127.0.0.1:8001'),
-        'token' => env('OCR_SERVICE_TOKEN'),
-        'timeout' => env('OCR_SERVICE_TIMEOUT', 180),
-        'max_upload_size' => 10240,
+        'url' => env(
+            'OCR_SERVICE_URL',
+            'http://127.0.0.1:8001',
+        ),
+
+        'token' => env(
+            'OCR_SERVICE_TOKEN',
+        ),
+
+        'timeout' => (int) env(
+            'OCR_SERVICE_TIMEOUT',
+            180,
+        ),
+
+        'connect_timeout' => (int) env(
+            'OCR_SERVICE_CONNECT_TIMEOUT',
+            10,
+        ),
+
+        /*
+         * Nilai ini memakai KB karena validation rule Laravel
+         * "max" untuk file menggunakan satuan kilobyte.
+         */
+        'max_upload_size_kb' => (int) env(
+            'OCR_UPLOAD_MAX_KB',
+            10240,
+        ),
     ],
 
 ];

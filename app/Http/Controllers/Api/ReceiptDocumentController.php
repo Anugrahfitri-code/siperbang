@@ -10,6 +10,7 @@ use App\Enums\ReceiptDocumentStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\JsonResponse;
 
 class ReceiptDocumentController extends Controller
 {
@@ -19,20 +20,71 @@ class ReceiptDocumentController extends Controller
         return response()->json($docs);
     }
 
-    public function show(ReceiptDocument $receiptDocument)
-    {
+    public function show(
+        ReceiptDocument $receiptDocument,
+    ): JsonResponse {
         $data = $receiptDocument->toArray();
-        if (isset($data['parsed_result']) && isset($data['raw_result']['items'])) {
-            $data['parsed_result']['items'] = $data['raw_result']['items'];
+
+        $rawResult = is_array(
+            $receiptDocument->raw_result,
+        )
+            ? $receiptDocument->raw_result
+            : [];
+
+        $parsedResult = is_array(
+            $receiptDocument->parsed_result,
+        )
+            ? $receiptDocument->parsed_result
+            : [];
+
+        if (
+            ! is_array(
+                $parsedResult['items']
+                ?? null,
+            )
+        ) {
+            $parsedResult['items'] = is_array(
+                $rawResult['items'] ?? null,
+            )
+                ? $rawResult['items']
+                : [];
         }
-        return response()->json($data);
+
+        if (
+            ! is_array(
+                $parsedResult['warnings']
+                ?? null,
+            )
+        ) {
+            $parsedResult['warnings'] = is_array(
+                $rawResult['warnings']
+                ?? null,
+            )
+                ? $rawResult['warnings']
+                : [];
+        }
+
+        /*
+         * Pages hanya ditambahkan saat endpoint detail dipanggil.
+         * Index tidak perlu mengirim seluruh bounding box.
+         */
+        $parsedResult['pages'] = is_array(
+            $rawResult['pages'] ?? null,
+        )
+            ? $rawResult['pages']
+            : [];
+
+        $data['parsed_result'] =
+            $parsedResult;
+
+        return response()->json(
+            $data
+        );
     }
 
     public function store(Request $request)
     {
-        \Illuminate\Support\Facades\Log::info('Upload endpoint hit', ['all' => $request->all(), 'files' => $request->allFiles()]);
-        
-        $maxSize = config('services.ocr.max_upload_size', 10240); // 10MB default
+        $maxSize = (int) config('services.ocr.max_upload_size_kb', 10240); // 10MB default
 
         $request->validate([
             'document' => [
@@ -72,7 +124,9 @@ class ReceiptDocumentController extends Controller
             'status' => ReceiptDocumentStatus::QUEUED,
         ]);
 
-        ProcessReceiptOcr::dispatch($document)->onQueue('ocr');
+        ProcessReceiptOcr::dispatch(
+            $document->id,
+        );
 
         return response()->json([
             'message' => 'Dokumen diterima dan sedang diproses.',
@@ -158,26 +212,67 @@ class ReceiptDocumentController extends Controller
         }
     }
 
-    public function retry(ReceiptDocument $receiptDocument)
-    {
-        if (!in_array($receiptDocument->status, [ReceiptDocumentStatus::FAILED, ReceiptDocumentStatus::UPLOADED])) {
-            return response()->json(['message' => 'Only failed or uploaded documents can be retried'], 400);
+    public function retry(
+        ReceiptDocument $receiptDocument,
+    ) {
+        $updated = ReceiptDocument::query()
+            ->whereKey(
+                $receiptDocument->id,
+            )
+            ->whereIn(
+                'status',
+                [
+                    ReceiptDocumentStatus::FAILED->value,
+                    ReceiptDocumentStatus::UPLOADED->value,
+                ],
+            )
+            ->update([
+                'status' =>
+                    ReceiptDocumentStatus::QUEUED->value,
+
+                'ocr_engine' => null,
+                'ocr_engine_version' => null,
+                'raw_text' => null,
+                'raw_result' => null,
+                'parsed_result' => null,
+                'overall_confidence' => null,
+                'error_message' => null,
+                'processed_at' => null,
+            ]);
+
+        if ($updated === 0) {
+            return response()->json([
+                'message' => (
+                    'Hanya dokumen berstatus failed '
+                    . 'atau uploaded yang dapat diproses ulang.'
+                ),
+            ], 409);
         }
 
-        $receiptDocument->update([
-            'status' => ReceiptDocumentStatus::QUEUED,
-            'error_message' => null,
-            'attempts' => $receiptDocument->attempts + 1,
-        ]);
+        ProcessReceiptOcr::dispatch(
+            $receiptDocument->id,
+        );
 
-        ProcessReceiptOcr::dispatch($receiptDocument)->onQueue('ocr');
+        $receiptDocument->refresh();
 
         return response()->json([
-            'message' => 'Document queued for retry',
+            'message' => (
+                'Dokumen dimasukkan kembali '
+                . 'ke antrean OCR.'
+            ),
             'data' => [
-                'id' => $receiptDocument->id,
-                'status' => $receiptDocument->status->value
-            ]
+                'id' =>
+                    $receiptDocument->id,
+
+                'status' =>
+                    $receiptDocument
+                        ->status
+                        ->value,
+
+                'attempts' =>
+                    $receiptDocument
+                        ->attempts,
+            ],
         ], 202);
     }
 }

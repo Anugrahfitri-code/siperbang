@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ReceiptData, ReceiptItem, ProcurementMethod, RequestStatus, ItemRequest, ParsedReceiptResult, OcrWarning, OcrField } from "../types";
-import { SAMPLE_RECEIPTS, SampleReceiptPayload } from "../data";
 import { apiFetch } from "../api";
-import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle } from "lucide-react";
+import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Cpu } from "lucide-react";
 
 interface ReceiptOCRProcessorProps {
   receipts: ReceiptData[];
@@ -21,8 +20,11 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   const [activeDraft, setActiveDraft] = useState<ReceiptData | null>(null);
   const [activeTab, setActiveTab] = useState<"pending" | "valid">("pending");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedMimeType, setSelectedMimeType] = useState<string | null>(null);
   const [activeDocumentId, setActiveDocumentId] = useState<number | null>(null);
   const [ocrWarnings, setOcrWarnings] = useState<OcrWarning[]>([]);
+  const [ocrStatus, setOcrStatus] = useState<string>("");
+  const [rawText, setRawText] = useState<string>("");
   const pollTimerRef = useRef<number | NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -36,58 +38,262 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   const [storeName, setStoreName] = useState("");
   const [invoiceNo, setInvoiceNo] = useState("");
   const [date, setDate] = useState("");
-  const [isTaxed, setIsTaxed] = useState(true);
-  const [taxRate, setTaxRate] = useState<number>(11);
+  const [isTaxed, setIsTaxed] = useState(false);
+  const [taxRate, setTaxRate] = useState<number>(0);
   const [method, setMethod] = useState<ProcurementMethod>(ProcurementMethod.SENDIRI);
   const [items, setItems] = useState<ReceiptItem[]>([]);
   const [bastName, setBastName] = useState("");
   const [bastDate, setBastDate] = useState("");
 
-  const pollDocumentStatus = async (id: number, attempts = 0) => {
-    if (attempts > 60) {
+  const normalizeWarnings = (warnings: Array<OcrWarning | string>): OcrWarning[] => {
+    return warnings.map((w) => {
+      if (typeof w === "string") {
+        return {
+          code: "legacy_warning",
+          field: null,
+          message: w,
+          severity: "warning",
+        };
+      }
+      return w;
+    });
+  };
+
+  const pollDocumentStatus = async (
+    id: number,
+    startedAt = Date.now()
+  ) => {
+    const elapsedMs = Date.now() - startedAt;
+    const SOFT_LIMIT_MS = 20_000;
+    const HARD_LIMIT_MS = 120_000;
+
+    if (elapsedMs > HARD_LIMIT_MS) {
       setIsScanning(false);
-      alert("Waktu tunggu OCR habis (Timeout).");
+      setOcrStatus("timeout");
+
+      alert(
+        "OCR tidak selesai dalam batas maksimal 2 menit. " +
+        "Proses ditandai gagal agar aplikasi tidak terus menunggu."
+      );
+
       return;
     }
 
     try {
       const res = await apiFetch(`/api/receipt-documents/${id}`);
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
       const data = await res.json();
 
       if (data.status === "needs_review" || data.status === "verified") {
         setIsScanning(false);
         setActiveDocumentId(id);
         const p: ParsedReceiptResult = data.parsed_result || { items: [], warnings: [], pages: [] };
-        setOcrWarnings(p.warnings || []);
 
-        const extractValue = (field?: OcrField<any>, defaultVal: any = "") => field?.value ?? defaultVal;
+        const normalizedWarnings = normalizeWarnings(
+          p.warnings || []
+        );
 
-        const extractedTaxAmount = extractValue(p.tax_amount, 0);
-        const extractedTaxRate = extractValue(p.tax_rate, 0);
-        const hasTax = extractedTaxAmount > 0;
+        setRawText(data.raw_text || "");
+
+        const extractValue = (
+          field?: OcrField<any>,
+          defaultVal: any = ""
+        ) => field?.value ?? defaultVal;
+
+        const numericValue = (
+          value: unknown,
+          fallback = 0
+        ): number => {
+          const parsed = Number(value);
+
+          return Number.isFinite(parsed)
+            ? parsed
+            : fallback;
+        };
+
+        const extractedTaxAmount = numericValue(
+          extractValue(p.tax_amount, 0)
+        );
+
+        const extractedTaxRate = numericValue(
+          extractValue(p.tax_rate, 0)
+        );
+
+        const hasTax =
+          extractedTaxAmount > 0;
+
+        const documentSubtotal = numericValue(
+          extractValue(p.subtotal, 0)
+        );
+
+        const documentTotal = numericValue(
+          extractValue(p.total, 0)
+        );
+
+        const documentAnchor =
+          documentSubtotal > 0
+            ? documentSubtotal
+            : (
+                !hasTax
+                  ? documentTotal
+                  : 0
+              );
+
+        const parsedItems = Array.isArray(
+          p.items
+        )
+          ? p.items
+          : [];
+
+        const safeItems = parsedItems.map(
+          (
+            it: any,
+            index: number
+          ) => {
+            const qty = numericValue(
+              extractValue(it.qty, 1),
+              1
+            );
+
+            const price = numericValue(
+              extractValue(it.price, 0)
+            );
+
+            const itemSubtotal = numericValue(
+              extractValue(it.subtotal, 0)
+            );
+
+            const expected =
+              qty > 0 && price > 0
+                ? qty * price
+                : 0;
+
+            const implausible = (
+              documentAnchor > 0
+              && expected >
+                documentAnchor * 5
+            );
+
+            if (!implausible) {
+              return {
+                id: `it-draft-${index}`,
+                name: extractValue(it.name),
+                qty,
+                price,
+                subtotal: itemSubtotal,
+              };
+            }
+
+            const warningAlreadyExists =
+              normalizedWarnings.some(
+                (warning) =>
+                  warning.code ===
+                  "frontend_plausibility_guard"
+              );
+
+            if (!warningAlreadyExists) {
+              normalizedWarnings.push({
+                code:
+                  "frontend_plausibility_guard",
+
+                field:
+                  `items.${index}`,
+
+                message:
+                  "Nilai item yang tidak masuk akal ditahan agar tidak menghasilkan subtotal miliaran.",
+
+                severity:
+                  "error",
+              });
+            }
+
+            /*
+             * Untuk satu item tanpa pajak,
+             * gunakan total sebagai anchor.
+             */
+            if (
+              parsedItems.length === 1
+              && documentAnchor > 0
+            ) {
+              return {
+                id: `it-draft-${index}`,
+                name: extractValue(it.name),
+                qty: 1,
+                price: documentAnchor,
+                subtotal: documentAnchor,
+              };
+            }
+
+            /*
+             * Untuk banyak item, jangan menebak.
+             * Kosongkan nominal dan minta verifikasi.
+             */
+            return {
+              id: `it-draft-${index}`,
+              name: extractValue(it.name),
+              qty: 1,
+              price: 0,
+              subtotal: 0,
+            };
+          }
+        );
+
+        setOcrWarnings(
+          normalizedWarnings
+        );
 
         const newDraft: ReceiptData = {
-          id: "rc-draft-" + data.id,
-          invoiceNo: extractValue(p.invoice_no),
-          storeName: extractValue(p.store_name),
-          date: extractValue(p.date),
-          isTaxed: hasTax,
-          taxRate: hasTax ? extractedTaxRate : 11,
-          subtotal: extractValue(p.subtotal, 0),
-          taxAmount: extractedTaxAmount,
-          total: extractValue(p.total, 0),
-          isVerified: data.status === "verified",
-          status: data.status === "verified" ? "Dokumen Valid" : "Menunggu Verifikasi",
-          method: ProcurementMethod.SENDIRI,
-          items: (p.items || []).map((it, index: number) => ({
-            id: "it-draft-" + index,
-            name: extractValue(it.name),
-            qty: extractValue(it.qty, 1),
-            price: extractValue(it.price, 0),
-            subtotal: extractValue(it.subtotal, 0),
-          })),
-          bastName: extractValue(p.store_name),
-          bastDate: extractValue(p.date),
+          id: `rc-draft-${data.id}`,
+
+          invoiceNo:
+            extractValue(p.invoice_no),
+
+          storeName:
+            extractValue(p.store_name),
+
+          date:
+            extractValue(p.date),
+
+          isTaxed:
+            hasTax,
+
+          taxRate:
+            hasTax
+              ? extractedTaxRate
+              : 0,
+
+          subtotal:
+            documentSubtotal,
+
+          taxAmount:
+            extractedTaxAmount,
+
+          total:
+            documentTotal,
+
+          isVerified:
+            data.status === "verified",
+
+          status:
+            data.status === "verified"
+              ? "Dokumen Valid"
+              : "Menunggu Verifikasi",
+
+          method:
+            ProcurementMethod.SENDIRI,
+
+          items:
+            safeItems,
+
+          bastName:
+            extractValue(p.store_name),
+
+          bastDate:
+            extractValue(p.date),
         };
 
         setActiveDraft(newDraft);
@@ -99,16 +305,36 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         setItems(newDraft.items);
         setBastName(newDraft.bastName || "");
         setBastDate(newDraft.bastDate || "");
-      } else if (data.status === "failed") {
+        return;
+      }
+
+      if (data.status === "failed") {
         setIsScanning(false);
         setActiveDocumentId(null);
+        setOcrStatus("failed");
         alert("Proses OCR gagal: " + (data.error_message || "Kesalahan tidak diketahui"));
-      } else {
-        pollTimerRef.current = setTimeout(() => pollDocumentStatus(id, attempts + 1), 2000);
+        return;
       }
+
+      if (
+        elapsedMs > SOFT_LIMIT_MS
+        && (
+          data.status === "queued"
+          || data.status === "processing"
+        )
+      ) {
+        setOcrStatus("processing_slow");
+      } else {
+        setOcrStatus(data.status);
+      }
+      pollTimerRef.current = setTimeout(
+        () => pollDocumentStatus(id, startedAt),
+        1000
+      );
     } catch (e) {
       console.error(e);
       setIsScanning(false);
+      setOcrStatus("error");
       alert("Terjadi kesalahan saat mengecek status OCR.");
     }
   };
@@ -116,12 +342,15 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   const handleFileUpload = async (file: File) => {
     if (isScanning) return;
     setIsScanning(true);
+    setOcrStatus("uploading");
     setActiveDraft(null);
     setOcrWarnings([]);
     setActiveDocumentId(null);
+    
     if (selectedImage) URL.revokeObjectURL(selectedImage);
-    const imageUrl = URL.createObjectURL(file);
-    setSelectedImage(imageUrl);
+    const fileUrl = URL.createObjectURL(file);
+    setSelectedImage(fileUrl);
+    setSelectedMimeType(file.type);
 
     try {
       const formData = new FormData();
@@ -146,65 +375,13 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       const data = await res.json();
       const docId = data.data ? data.data.id : (data.document ? data.document.id : data.id);
       if (!docId) throw new Error("Server response is missing document ID");
-      pollDocumentStatus(docId);
+      pollDocumentStatus(docId, Date.now());
     } catch (e: any) {
       console.error(e);
       setIsScanning(false);
+      setOcrStatus("error");
       alert("Gagal mengunggah dokumen OCR: " + (e.message || "Kesalahan tidak diketahui"));
     }
-  };
-
-  const handleTriggerOCR = (payload: SampleReceiptPayload, clearImage = true) => {
-    setIsScanning(true);
-    setActiveDraft(null);
-    setOcrWarnings([]);
-    setActiveDocumentId(null);
-    if (clearImage) {
-      if (selectedImage) URL.revokeObjectURL(selectedImage);
-      setSelectedImage(null);
-    }
-
-    setTimeout(() => {
-      setIsScanning(false);
-      const subtotal = payload.items.reduce((sum, item) => sum + item.qty * item.price, 0);
-      const taxAmount = payload.isTaxed ? Math.round(subtotal * (payload.taxRate / 100)) : 0;
-      const total = subtotal + taxAmount;
-
-      const newDraft: ReceiptData = {
-        id: "rc-draft-" + Math.random().toString(36).substring(2, 9),
-        invoiceNo: payload.invoiceNo,
-        storeName: payload.storeName,
-        date: payload.date,
-        isTaxed: payload.isTaxed,
-        taxRate: payload.taxRate,
-        subtotal,
-        taxAmount,
-        total,
-        isVerified: false,
-        status: "Menunggu Verifikasi",
-        method: payload.method,
-        items: payload.items.map((it, index) => ({
-          id: "it-draft-" + index,
-          name: it.name,
-          qty: it.qty,
-          price: it.price,
-          subtotal: it.qty * it.price,
-        })),
-        bastName: payload.storeName,
-        bastDate: payload.date,
-      };
-
-      setActiveDraft(newDraft);
-      setStoreName(newDraft.storeName);
-      setInvoiceNo(newDraft.invoiceNo);
-      setDate(newDraft.date);
-      setIsTaxed(newDraft.isTaxed);
-      setTaxRate(newDraft.taxRate);
-      setMethod(newDraft.method);
-      setItems(newDraft.items);
-      setBastName(newDraft.bastName || "");
-      setBastDate(newDraft.bastDate || "");
-    }, 1800);
   };
 
   const handleAddItem = () => {
@@ -247,28 +424,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     if (!activeDraft) return;
 
     if (!activeDocumentId) {
-      const finalReceipt: ReceiptData = {
-        ...activeDraft,
-        storeName,
-        invoiceNo,
-        date,
-        isTaxed,
-        taxRate: isTaxed ? Number(taxRate) : 0,
-        subtotal: calculatedSubtotal,
-        taxAmount: calculatedTaxAmount,
-        total: calculatedTotal,
-        isVerified: true,
-        status: "Dokumen Valid",
-        items,
-        method,
-        bastName,
-        bastDate,
-      };
-
-      const logMsg = `Verifikasi Kuitansi: Petugas memverifikasi kuitansi nomor ${invoiceNo} dari ${storeName}. Total belanja ${formatIDR(calculatedTotal)} dengan pajak PPN ${isTaxed ? `${taxRate}%` : "0% (Bebas Pajak)"}. BAST tercatat atas nama ${bastName || "-"} tanggal ${bastDate || "-"}.`;
-
-      onVerifyReceipt(activeDraft.id, finalReceipt, logMsg);
-      setActiveDraft(null);
+      alert("Simulasi dimatikan. Dokumen harus berasal dari server.");
       return;
     }
 
@@ -291,6 +447,9 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
 
       const res = await apiFetch(`/api/receipt-documents/${activeDocumentId}/verify`, {
         method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload)
       });
       
@@ -380,36 +539,6 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         </div>
       </div>
 
-      {/* Simulator Quick OCR Panel */}
-      <div className="bg-slate-50 rounded p-4 mb-6 border border-slate-200">
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2.5">
-          Simulasikan Pengunggahan & Pembacaan OCR (Pilih Struk di Bawah):
-        </span>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {SAMPLE_RECEIPTS.map((sample, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleTriggerOCR(sample)}
-              className="bg-white hover:bg-slate-50 border border-slate-200 rounded p-3 text-left transition-all hover:border-indigo-500 group"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <div className="bg-indigo-50 text-indigo-700 p-2 rounded border border-indigo-100 transition-all">
-                  <FileText size={14} />
-                </div>
-                <span className="text-xs font-bold text-slate-850 line-clamp-1">{sample.name}</span>
-              </div>
-              <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed mb-3 font-sans">
-                {sample.description}
-              </p>
-              <div className="flex justify-between items-center border-t border-slate-100 pt-2 text-[10px] font-bold text-indigo-600">
-                <span>Format: {sample.method}</span>
-                <span className="bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">Pajak: {sample.isTaxed ? `${sample.taxRate}%` : "Bebas"}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* File Drag Drop fallback */}
       <label className="block border border-dashed border-slate-200 rounded p-6 text-center hover:bg-slate-50/50 cursor-pointer mb-6 transition-all">
         <input 
@@ -431,9 +560,13 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       {isScanning && (
         <div className="flex flex-col items-center py-10 bg-slate-50 rounded border border-slate-200 mb-6">
           <RefreshCw className="animate-spin text-indigo-600 mb-3" size={24} />
-          <h3 className="text-xs font-bold text-slate-800">Mesin OCR Sedang Membaca Dokumen...</h3>
+          <h3 className="text-xs font-bold text-slate-800">
+            {ocrStatus === "uploading" ? "Mengunggah Dokumen..." : "Mesin OCR Sedang Membaca Dokumen..."}
+          </h3>
           <p className="text-[11px] text-slate-400 max-w-sm text-center mt-1 leading-relaxed">
-            Mengekstrak nama toko, nomor kuitansi, daftar barang belanjaan, subtotal, dan mendeteksi persentase PPN...
+            {ocrStatus === "uploading" 
+              ? "Sistem sedang mengunggah dokumen ke server sebelum diproses." 
+              : "Mengekstrak nama toko, nomor kuitansi, daftar barang belanjaan, subtotal, dan mendeteksi persentase PPN..."}
           </p>
         </div>
       )}
@@ -445,8 +578,12 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
           <div className="xl:col-span-5 bg-slate-50 border border-slate-200 rounded p-4 self-start">
             {selectedImage && (
               <div className="mb-4">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Foto Struk Asli:</span>
-                <img src={selectedImage} alt="Struk" className="w-full max-h-48 object-contain rounded border border-slate-200 shadow-sm" />
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Dokumen Asli:</span>
+                {selectedMimeType === "application/pdf" ? (
+                  <iframe src={selectedImage} className="w-full h-64 border border-slate-200 rounded" title="PDF Preview" />
+                ) : (
+                  <img src={selectedImage} alt="Struk" className="w-full max-h-48 object-contain rounded border border-slate-200 shadow-sm" />
+                )}
               </div>
             )}
             
@@ -523,6 +660,13 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                 DRAFT PEMBACAAN OCR
               </div>
             </div>
+
+            {rawText && (
+              <div className="mt-4 p-3 bg-slate-800 text-emerald-400 font-mono text-[9px] rounded whitespace-pre-wrap max-h-60 overflow-auto">
+                <div className="text-slate-400 mb-2 uppercase tracking-wider font-bold">DEBUG: Raw OCR Text</div>
+                {rawText}
+              </div>
+            )}
           </div>
 
           {/* RIGHT: Manual Override Form (Double Check) */}

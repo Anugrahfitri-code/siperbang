@@ -2,16 +2,33 @@
 
 namespace App\Exceptions;
 
-use Exception;
+use RuntimeException;
+use Throwable;
 
-class OcrServiceException extends Exception
+final class OcrServiceException extends RuntimeException
 {
-    protected array $contextData;
+    public function __construct(
+        string $message,
+        private readonly int $httpStatus = 0,
+        private readonly bool $retryable = false,
+        private readonly array $contextData = [],
+        ?Throwable $previous = null,
+    ) {
+        parent::__construct(
+            $message,
+            $httpStatus,
+            $previous,
+        );
+    }
 
-    public function __construct(string $message, int $code = 0, array $contextData = [], ?Exception $previous = null)
+    public function getHttpStatus(): int
     {
-        parent::__construct($message, $code, $previous);
-        $this->contextData = $contextData;
+        return $this->httpStatus;
+    }
+
+    public function isRetryable(): bool
+    {
+        return $this->retryable;
     }
 
     public function getContextData(): array

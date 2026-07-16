@@ -1,21 +1,43 @@
-from fastapi import Security, HTTPException, status
-from fastapi.security.api_key import APIKeyHeader
-from app.config import settings
+from __future__ import annotations
+
 import secrets
 
-api_key_header = APIKeyHeader(name="X-Service-Token", auto_error=False)
+from fastapi import HTTPException, Security, status
+from fastapi.security.api_key import APIKeyHeader
 
-async def verify_service_token(api_key_header: str = Security(api_key_header)):
-    if not api_key_header:
+from app.config import settings
+
+
+service_token_header = APIKeyHeader(
+    name="X-Service-Token",
+    auto_error=False,
+)
+
+
+async def verify_service_token(
+    provided_token: str | None = Security(
+        service_token_header
+    ),
+) -> str:
+    if not settings.service_token:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="OCR service token is not configured.",
+        )
+
+    if not provided_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing X-Service-Token header"
+            detail="Missing X-Service-Token header.",
         )
-    
-    # Secure comparison
-    if not secrets.compare_digest(api_key_header, settings.service_token):
+
+    if not secrets.compare_digest(
+        provided_token,
+        settings.service_token,
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid service token"
+            detail="Invalid service token.",
         )
-    return api_key_header
+
+    return provided_token
