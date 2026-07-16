@@ -133,11 +133,23 @@ export interface HistoryLog {
   details: string;
 }
 
-export type OcrStatus = "uploaded" | "queued" | "processing" | "needs_review" | "verified" | "failed";
+export type OcrStatus =
+  | "uploaded"
+  | "queued"
+  | "processing"
+  | "needs_review"
+  | "verified"
+  | "failed";
+
+export type OcrWarningSeverity =
+  | "info"
+  | "warning"
+  | "error";
 
 export interface OcrField<T> {
-  value: T;
-  confidence: number;
+  value: T | null;
+  confidence: number | null;
+  source: string | null;
 }
 
 export interface OcrLine {
@@ -147,13 +159,17 @@ export interface OcrLine {
 }
 
 export interface OcrPage {
-  page_num: number;
+  page: number;
+  width: number;
+  height: number;
   lines: OcrLine[];
 }
 
 export interface OcrWarning {
-  field: string;
+  code?: string;
+  field?: string | null;
   message: string;
+  severity?: OcrWarningSeverity;
 }
 
 export interface ParsedItem {
@@ -167,22 +183,34 @@ export interface ParsedReceiptResult {
   store_name?: OcrField<string>;
   invoice_no?: OcrField<string>;
   date?: OcrField<string>;
-  items: ParsedItem[];
   subtotal?: OcrField<number>;
+  tax_rate?: OcrField<number>;
   tax_amount?: OcrField<number>;
   total?: OcrField<number>;
-  warnings: OcrWarning[];
-  pages: OcrPage[];
+
+  items?: ParsedItem[];
+
+  warnings?: Array<
+    OcrWarning | string
+  >;
+
+  pages?: OcrPage[];
 }
 
 export interface ReceiptDocument {
   id: number;
   receipt_id?: number | null;
-  uploaded_by: number;
+  uploaded_by?: number | null;
   original_filename: string;
+  mime_type: string;
+  size_bytes: number;
   status: OcrStatus;
   raw_text?: string | null;
   parsed_result?: ParsedReceiptResult | null;
+  overall_confidence?: number | null;
   error_message?: string | null;
+  processed_at?: string | null;
+  verified_at?: string | null;
   created_at: string;
+  updated_at: string;
 }

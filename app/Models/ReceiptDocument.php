@@ -10,22 +10,44 @@ class ReceiptDocument extends Model
 {
     protected $guarded = [];
 
+    protected $hidden = [
+        'raw_result',
+        'storage_path',
+        'sha256',
+    ];
+
     protected $casts = [
-        'status' => ReceiptDocumentStatus::class,
-        'raw_result' => 'array',
-        'parsed_result' => 'array',
-        'processed_at' => 'datetime',
-        'verified_at' => 'datetime',
-        'overall_confidence' => 'float',
+        'status' =>
+            ReceiptDocumentStatus::class,
+
+        'raw_result' =>
+            'array',
+
+        'parsed_result' =>
+            'array',
+
+        'processed_at' =>
+            'datetime',
+
+        'verified_at' =>
+            'datetime',
+
+        'overall_confidence' =>
+            'float',
     ];
 
     public function receipt(): BelongsTo
     {
-        return $this->belongsTo(Receipt::class);
+        return $this->belongsTo(
+            Receipt::class
+        );
     }
 
     public function uploader(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'uploaded_by');
+        return $this->belongsTo(
+            User::class,
+            'uploaded_by',
+        );
     }
 }

@@ -720,13 +720,6 @@ useEffect(() => {
           />
 
           <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        {/* Dynamic Warning Alert */}
-        <div className="bg-indigo-50 border border-indigo-150 rounded p-4 mb-8 flex items-start gap-3">
-          <Info className="text-indigo-600 mt-0.5 flex-shrink-0" size={16} />
-          <div className="text-[11px] text-slate-600 leading-relaxed font-sans">
-            <span className="font-extrabold text-indigo-700">PROTOTIPE DESAIN UI:</span> Aplikasi ini mensimulasikan fungsionalitas penuh modul SIPERBANG yang direncanakan dibangun menggunakan <strong className="font-bold text-slate-800">Laravel 13</strong>. Anda dapat menguji modul login role, BON Digital, pengunggahan data Excel stok, pengecekan stok otomatis, pembacaan OCR kuitansi belanja dengan pajak toko yang dinamis (customizable), pencatatan BAST, serta ekspor rekap excel.
-          </div>
-        </div>
 
         {/* Stats Section */}
         <DashboardStats requests={requests} receipts={receipts} />
@@ -1097,7 +1090,7 @@ useEffect(() => {
       <footer className="bg-white border-t border-slate-200 py-6 mt-12 text-center text-[11px] text-slate-500 font-medium">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p>© 2026 BBPSDM Komunikasi dan Digital Makassar. Seluruh hak cipta dilindungi.</p>
-          <p className="mt-1 text-[9px] text-slate-400 font-bold uppercase tracking-wider">SIPERBANG v1.1 - Prototipe Antarmuka & Verifikasi Pajak Dinamis</p>
+          <p className="mt-1 text-[9px] text-slate-400 font-bold uppercase tracking-wider">SIPERBANG v1.1</p>
         </div>
       </footer>
     </div>
