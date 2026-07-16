@@ -15,7 +15,15 @@ class RoleMiddleware
      */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        if (! $request->user() || ! in_array($request->user()->role, $roles)) {
+        if (! $request->user()) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        if ($request->user()->role === 'Superadmin') {
+            return $next($request);
+        }
+
+        if (! in_array($request->user()->role, $roles)) {
             return response()->json(['message' => 'Forbidden - Anda tidak memiliki akses (Role tidak sesuai)'], 403);
         }
 

@@ -340,6 +340,9 @@ class StokUploadController extends Controller
         if (! auth()->check()) {
             abort(401, 'Silakan login terlebih dahulu.');
         }
+        if (auth()->user()->role === 'Superadmin') {
+            return;
+        }
         if (auth()->user()->role !== $role) {
             abort(403, "Akses ditolak. Halaman ini hanya untuk {$role}.");
         }
