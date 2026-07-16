@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ItemRequest, RequestStatus, StockItem } from "../types";
-import { SearchCode, CheckCircle, AlertTriangle, Play, HelpCircle, Package, ArrowRight, ShieldAlert, Truck, ShoppingCart } from "lucide-react";
+import { SearchCode, CheckCircle, AlertTriangle, Play, HelpCircle, Package, ArrowRight, ShieldAlert, Truck, ShoppingCart, XCircle, Loader2 } from "lucide-react";
 import { DistributionProcurement } from "./DistributionProcurement";
 
 interface StockCheckingProps {
@@ -19,7 +19,7 @@ interface StockCheckingProps {
     qtyDistributed: number;
     distributedBy: string;
     notes?: string;
-  }) => void;
+  }) => Promise<void>;
   onProcure: (reqId: string, data: {
     method: "Pengadaan Vendor" | "Pengadaan Sendiri (Toko)";
     vendorName?: string;
@@ -33,8 +33,10 @@ interface StockCheckingProps {
     bastDate?: string;
     contractNo?: string;
     processedBy: string;
-  }) => void;
-  onCompleteProcurement: (reqId: string, procurementId: string, processedBy: string) => void;
+  }) => Promise<void>;
+  onCompleteProcurement: (reqId: string, procurementId: string, processedBy: string) => Promise<void>;
+  /** Batalkan/tolak satu item request — berlaku untuk status apapun */
+  onReject: (reqId: string, alasan: string) => Promise<void>;
   currentUser: string;
 }
 
@@ -45,12 +47,19 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
   onDistribute,
   onProcure,
   onCompleteProcurement,
+  onReject,
   currentUser,
 }) => {
-  const [selectedRequest, setSelectedRequest] = useState<ItemRequest | null>(null);
+  const [selectedRequest,   setSelectedRequest]   = useState<ItemRequest | null>(null);
   const [selectedForAction, setSelectedForAction] = useState<ItemRequest | null>(null);
-  const [qtyAvailable, setQtyAvailable] = useState<number>(0);
-  const [qtyFulfilled, setQtyFulfilled] = useState<number>(0);
+  const [qtyAvailable,      setQtyAvailable]      = useState<number>(0);
+  const [qtyFulfilled,      setQtyFulfilled]      = useState<number>(0);
+
+  // ── Batalkan state ────────────────────────────────────────────
+  const [rejectTarget,  setRejectTarget]  = useState<ItemRequest | null>(null);
+  const [rejectAlasan,  setRejectAlasan]  = useState("");
+  const [rejectLoading, setRejectLoading] = useState(false);
+  const [rejectError,   setRejectError]   = useState<string | null>(null);
 
   const openChecker = (req: ItemRequest) => {
     // Find matching stock item
@@ -216,10 +225,25 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 justify-end">
+                  <div className="flex items-center gap-3 justify-end flex-wrap">
                     <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold border ${getStatusColor(req.status)}`}>
                       {req.status}
                     </span>
+
+                    {/* ── Tombol Batalkan — tampil untuk semua status kecuali Ditolak & Selesai ── */}
+                    {req.status !== RequestStatus.DITOLAK && req.status !== RequestStatus.SELESAI && (
+                      <button
+                        onClick={() => {
+                          setRejectTarget(req);
+                          setRejectAlasan("");
+                          setRejectError(null);
+                        }}
+                        className="border border-rose-200 text-rose-600 hover:bg-rose-50 text-[11px] font-bold px-3 py-1.5 rounded transition-all flex items-center gap-1"
+                      >
+                        <XCircle size={11} />
+                        Batalkan
+                      </button>
+                    )}
 
                     {isPendingCheck ? (
                       <button
@@ -237,7 +261,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                             {req.qtyFulfilled} / {req.qtyRequested} {req.unit}
                           </span>
                         </div>
-                        {(req.status === RequestStatus.TERPENUHI || 
+                        {(req.status === RequestStatus.TERPENUHI ||
                           req.status === RequestStatus.TERPENUHI_SEBAGIAN ||
                           req.status === RequestStatus.SIAP_DIDISTRIBUSIKAN ||
                           req.status === RequestStatus.PERLU_PENGADAAN ||
@@ -358,6 +382,114 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                 className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-3 rounded transition-all shadow-xs text-center"
               >
                 Konfirmasi Pemenuhan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Konfirmasi Batalkan ─────────────────────────── */}
+      {rejectTarget && (
+        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6">
+
+            {/* Header */}
+            <div className="flex items-start gap-3 mb-5">
+              <div className="bg-rose-100 rounded-full p-2 shrink-0">
+                <XCircle size={20} className="text-rose-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900">Batalkan Pengajuan</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {(rejectTarget.status as string) === "Terpenuhi Sebagian"
+                    ? "Hanya sisa barang yang belum terpenuhi yang akan dibatalkan. Barang yang sudah didistribusikan tidak dikembalikan ke gudang."
+                    : "Membatalkan pengajuan akan mengubah statusnya menjadi Ditolak. Jika stok sudah dialokasikan, stok akan dikembalikan ke gudang."
+                  }
+                </p>
+              </div>
+            </div>
+
+            {/* Info BON */}
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 mb-4 text-xs space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Nomor BON:</span>
+                <span className="font-mono font-bold text-slate-700">{rejectTarget.bonNo}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Nama Barang:</span>
+                <span className="font-bold text-indigo-700">{rejectTarget.itemName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Jumlah:</span>
+                <span className="font-bold text-slate-700">{rejectTarget.qtyRequested} {rejectTarget.unit}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Status saat ini:</span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getStatusColor(rejectTarget.status)}`}>
+                  {rejectTarget.status}
+                </span>
+              </div>
+            </div>
+
+            {/* Input alasan */}
+            <div className="mb-4">
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                Alasan Pembatalan <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={rejectAlasan}
+                onChange={(e) => {
+                  setRejectAlasan(e.target.value);
+                  setRejectError(null);
+                }}
+                placeholder="Contoh: Barang sudah tidak diperlukan, permintaan ditarik oleh pengaju..."
+                className={`w-full px-3 py-2 rounded-lg border text-xs text-slate-700 resize-none
+                  focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-rose-400
+                  ${rejectError ? "border-rose-400 bg-rose-50" : "border-slate-200 bg-slate-50"}`}
+              />
+              {rejectError && (
+                <p className="mt-1 text-[11px] text-rose-600 font-semibold flex items-center gap-1">
+                  <XCircle size={11} /> {rejectError}
+                </p>
+              )}
+              <p className="mt-1 text-[10px] text-slate-400">Minimal 3 karakter. Alasan ini akan dicatat.</p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 justify-end">
+              <button
+                disabled={rejectLoading}
+                onClick={() => { setRejectTarget(null); setRejectAlasan(""); setRejectError(null); }}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                disabled={rejectLoading}
+                onClick={async () => {
+                  if (!rejectAlasan.trim() || rejectAlasan.trim().length < 3) {
+                    setRejectError("Alasan pembatalan wajib diisi (minimal 3 karakter).");
+                    return;
+                  }
+                  setRejectLoading(true);
+                  setRejectError(null);
+                  try {
+                    await onReject(rejectTarget.id, rejectAlasan.trim());
+                    setRejectTarget(null);
+                    setRejectAlasan("");
+                  } catch (err: any) {
+                    setRejectError(err?.message ?? "Gagal membatalkan. Coba lagi.");
+                  } finally {
+                    setRejectLoading(false);
+                  }
+                }}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold shadow-sm disabled:opacity-50 transition-colors"
+              >
+                {rejectLoading
+                  ? <><Loader2 size={13} className="animate-spin" /> Membatalkan...</>
+                  : <><XCircle size={13} /> Konfirmasi Batalkan</>
+                }
               </button>
             </div>
           </div>

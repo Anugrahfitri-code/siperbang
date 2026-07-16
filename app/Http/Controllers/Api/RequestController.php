@@ -58,13 +58,30 @@ class RequestController extends Controller
 
         DB::beginTransaction();
         try {
-            $user = $request->user();
-            $section = $user->section ?? 'Tata Usaha';
+            $user      = $request->user();
+            $section   = $user->section ?? 'Tata Usaha';
             $requester = $user->name;
 
-            // Generate unique bon_no
-            $countToday = \App\Models\BonHeader::whereDate('created_at', today())->count() + 1;
-            $bonNo = 'BON/' . date('Y/m/') . str_pad($countToday, 3, '0', STR_PAD_LEFT);
+            // ── Generate unique bon_no dengan retry ──────────────────────
+            // Format: BON/YYYY/MM/DD/NNN  — unik per hari, aman dari race condition
+            $bonNo    = null;
+            $attempts = 0;
+            do {
+                $prefix     = 'BON/' . date('Y/m/d/');
+                $countToday = \App\Models\BonHeader::where('bon_no', 'like', $prefix . '%')->count();
+                $candidate  = $prefix . str_pad($countToday + 1, 3, '0', STR_PAD_LEFT);
+
+                // Cek apakah nomor sudah dipakai (handle race condition)
+                $exists = \App\Models\BonHeader::where('bon_no', $candidate)->exists();
+                if (!$exists) {
+                    $bonNo = $candidate;
+                }
+                $attempts++;
+            } while ($bonNo === null && $attempts < 10);
+
+            if ($bonNo === null) {
+                throw new \Exception('Gagal membuat nomor BON unik. Coba lagi.');
+            }
 
             // Create BonHeader
             $bonHeader = \App\Models\BonHeader::create([
@@ -379,7 +396,12 @@ class RequestController extends Controller
 
     public function indexBons(Request $request)
     {
-        $query = \App\Models\BonHeader::withCount('items')
+        $query = \App\Models\BonHeader::with(['items' => function ($q) {
+                // Sertakan stock_item_id agar frontend bisa pre-fill barang_id
+                $q->select('id', 'bon_header_id', 'stock_item_id', 'item_name',
+                            'unit', 'qty_requested', 'qty_fulfilled', 'status', 'notes');
+            }])
+            ->withCount('items')
             ->orderBy('date', 'desc')
             ->orderBy('id', 'desc');
 
@@ -548,6 +570,103 @@ class RequestController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Gagal menghapus draft: ' . $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Batalkan / tolak satu item request.
+     *
+     * Logika pengembalian stok:
+     * - Jika status = Terpenuhi Sebagian:
+     *     → Barang yang sudah didistribusikan (qty_fulfilled) TIDAK dikembalikan
+     *       karena sudah di tangan penerima.
+     *     → Hanya sisa yang belum terpenuhi (qty_to_procure) yang dibatalkan.
+     * - Selain itu:
+     *     → Jika stok sudah dialokasikan (stock_allocated = true), qty_fulfilled
+     *       dikembalikan ke stok gudang.
+     */
+    public function rejectItem(Request $request, ItemRequest $itemRequest)
+    {
+        $validated = $request->validate([
+            'alasan' => 'required|string|min:3|max:500',
+        ]);
+
+        if ($itemRequest->status === 'Ditolak') {
+            return response()->json(['message' => 'Pengajuan ini sudah dibatalkan sebelumnya.'], 422);
+        }
+
+        if ($itemRequest->status === 'Selesai') {
+            return response()->json(['message' => 'Pengajuan yang sudah selesai tidak dapat dibatalkan.'], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $isTerpenuhinSebagian = $itemRequest->status === 'Terpenuhi Sebagian';
+
+            if ($isTerpenuhinSebagian) {
+                // Hanya batalkan porsi yang BELUM terpenuhi.
+                // Stok yang sudah didistribusikan (qty_fulfilled) tidak dikembalikan.
+                // Tidak ada pengembalian stok ke gudang.
+                $notes = "Pembatalan sebagian: {$itemRequest->qty_fulfilled} {$itemRequest->unit} "
+                    . "sudah didistribusikan (tidak dikembalikan). "
+                    . "Sisa {$itemRequest->qty_to_procure} {$itemRequest->unit} yang belum diadakan dibatalkan. "
+                    . "Alasan: {$validated['alasan']}";
+            } else {
+                // Status lain: kembalikan stok jika sudah dialokasikan
+                if ($itemRequest->stock_allocated && $itemRequest->qty_fulfilled > 0) {
+                    $stockItem = $itemRequest->stock_item_id
+                        ? StockItem::lockForUpdate()->find($itemRequest->stock_item_id)
+                        : StockItem::lockForUpdate()
+                            ->whereRaw('LOWER(name) = LOWER(?)', [$itemRequest->item_name])
+                            ->first();
+
+                    if ($stockItem) {
+                        $stockItem->qty         += $itemRequest->qty_fulfilled;
+                        $stockItem->last_updated = today();
+                        $stockItem->save();
+                    }
+                }
+                $notes = "Alasan: {$validated['alasan']}";
+            }
+
+            $oldStatus = $itemRequest->status;
+
+            $itemRequest->update([
+                'status'          => 'Ditolak',
+                'verifier_notes'  => $validated['alasan'],
+                // Terpenuhi Sebagian: pertahankan qty_fulfilled (sudah didistribusikan)
+                // Status lain: nol-kan semua
+                'qty_fulfilled'   => $isTerpenuhinSebagian ? $itemRequest->qty_fulfilled : 0,
+                'qty_to_procure'  => 0,
+                'stock_allocated' => $isTerpenuhinSebagian ? $itemRequest->stock_allocated : false,
+                'last_updated'    => today(),
+            ]);
+
+            // Update parent BON header status
+            $bonHeader = $itemRequest->bonHeader;
+            if ($bonHeader) {
+                \App\Models\BonStatusHistory::create([
+                    'bon_header_id' => $bonHeader->id,
+                    'status_before' => $oldStatus,
+                    'status_after'  => 'Ditolak',
+                    'changed_by'    => $request->user()?->name ?? 'Petugas',
+                    'notes'         => "Pengajuan '{$itemRequest->item_name}' dibatalkan. {$notes}",
+                ]);
+                $bonHeader->update(['last_updated' => today()]);
+                $this->syncBonHeaderStatus($bonHeader);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => $isTerpenuhinSebagian
+                    ? 'Sisa pengajuan yang belum terpenuhi berhasil dibatalkan. Barang yang sudah didistribusikan tidak dikembalikan.'
+                    : 'Pengajuan berhasil dibatalkan.',
+                'data'    => $itemRequest->fresh(['distribution', 'procurements']),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 

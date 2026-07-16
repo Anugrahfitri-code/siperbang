@@ -18,6 +18,8 @@ import { Sidebar } from "./components/Sidebar";
 import { RequesterStockList } from "./components/RequesterStockList";
 import { UserManagement } from "./components/UserManagement";
 import { KetuaTimDashboard } from "./components/KetuaTimDashboard";
+import { BonMonitoringList, type BonHeaderRow } from "./components/BonMonitoringList";
+import type { BonDraft } from "./components/BonDigitalForm";
 import { LayoutDashboard, FileSpreadsheet, ClipboardList, Package, Receipt, History, AlertCircle, Info, ChevronRight, CheckSquare, Loader2 } from "lucide-react";
 import { apiFetch } from "./api";
 
@@ -389,6 +391,80 @@ useEffect(() => {
       currentUser,
       statusLabel === "draft" ? "Simpan Draft BON" : "Kirim BON",
       `${statusLabel} BON berhasil. ${itemCount} jenis barang diminta. Keperluan: "${payload.keperluan}".`
+    );
+  };
+
+  // 1b. Update existing draft (PUT /api/requests/bon/{id})
+  const handleUpdateDraft = async (
+    bonId: number,
+    payload: import("./components/BonDigitalForm").BonSubmitPayload
+  ): Promise<void> => {
+    const response = await apiFetch(`/api/requests/bon/${bonId}`, {
+      method: "PUT",
+      body:   JSON.stringify(payload),
+    });
+    const data: any = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      if (response.status === 401) { setIsLoggedIn(false); throw new Error("Sesi berakhir."); }
+      const msg = data.errors
+        ? Object.values(data.errors as Record<string, string[]>).flat().join(" ")
+        : data.message ?? "Gagal memperbarui draft.";
+      throw new Error(msg);
+    }
+
+    // Refresh bons list AND requests list so dashboard shows updated data
+    const [bonRes, reqRes] = await Promise.all([
+      apiFetch("/api/requests/bon?all=true"),
+      apiFetch("/api/requests"),
+    ]);
+    if (bonRes.ok) setBons(await bonRes.json());
+    if (reqRes.ok) {
+      const reqs = await reqRes.json();
+      setRequests(reqs.map(normalizeRequest));
+    }
+
+    // If submitted (not draft), clear editingDraft
+    if (payload.status !== "draft") setEditingDraft(null);
+
+    const label = payload.status === "draft" ? "Update Draft BON" : "Kirim BON (dari Draft)";
+    await addLog(currentUser, label,
+      `BON ${editingDraft?.bonNo ?? ""} ${payload.status === "draft" ? "diperbarui." : "dikirim ke verifikasi."}`);
+  };
+
+  // 1c. Delete a draft (DELETE /api/requests/bon/{id})
+  const handleDeleteDraft = async (bonId: number, bonNo: string): Promise<void> => {
+    const response = await apiFetch(`/api/requests/bon/${bonId}`, { method: "DELETE" });
+    if (!response.ok) {
+      const data: any = await response.json().catch(() => ({}));
+      throw new Error(data.message ?? "Gagal menghapus draft.");
+    }
+    setBons((prev) => prev.filter((b: any) => b.id !== bonId));
+    // Juga hapus dari requests state agar dashboard langsung sinkron
+    setRequests((prev) => prev.filter((r) => r.bonNo !== bonNo));
+    await addLog(currentUser, "Hapus Draft BON", `Draft ${bonNo} dihapus.`);
+  };
+
+  // 1d. Batalkan / tolak satu item request (POST /api/requests/{id}/reject)
+  const handleReject = async (reqId: string, alasan: string): Promise<void> => {
+    const response = await apiFetch(`/api/requests/${reqId}/reject`, {
+      method: "POST",
+      body:   JSON.stringify({ alasan }),
+    });
+    const data: any = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.message ?? "Gagal membatalkan pengajuan.");
+    }
+
+    // Refresh requests state
+    const updated = normalizeRequest(data.data ?? data);
+    setRequests((prev) => prev.map((r) => r.id === reqId ? updated : r));
+
+    await addLog(
+      currentUser,
+      "Batalkan Pengajuan",
+      `Pengajuan ${updated.bonNo} (${updated.itemName}) dibatalkan. Alasan: ${alasan}`
     );
   };
 
@@ -796,6 +872,7 @@ useEffect(() => {
                   onDistribute={handleDistribute}
                   onProcure={handleProcure}
                   onCompleteProcurement={handleCompleteProcurement}
+                  onReject={handleReject}
                   currentUser={currentUser}
                 />
               )}
@@ -829,11 +906,49 @@ useEffect(() => {
                 error={requestsError}
                 onRefresh={loadData}
                 currentUser={currentUser}
+                onEditDraft={(bonNo) => {
+                  // Cari BonHeader dari bons state berdasarkan bonNo
+                  const bon = (bons as any[]).find((b) => b.bon_no === bonNo || b.bonNo === bonNo);
+                  if (bon) {
+                    setEditingDraft({
+                      id:        bon.id,
+                      bonNo:     bon.bon_no ?? bon.bonNo,
+                      keperluan: bon.keperluan ?? "",
+                      catatan:   bon.catatan   ?? "",
+                      items:     (bon.items ?? []).map((it: any) => ({
+                        stockItemId:   it.stock_item_id ?? it.stockItemId ?? 0,
+                        namaBarang:    it.item_name     ?? it.namaBarang  ?? "",
+                        satuan:        it.unit          ?? it.satuan      ?? "",
+                        jumlahDiminta: it.qty_requested ?? it.jumlahDiminta ?? 1,
+                        catatan:       it.notes         ?? it.catatan     ?? "",
+                      })),
+                    });
+                    setRequesterTab("bon");
+                  }
+                }}
               />
             )}
 
             {requesterTab === "bon" && (
-              <BonDigitalForm onSubmit={handleAddRequest} currentUser={currentUser} />
+              <BonDigitalForm
+                onSubmit={async (payload) => {
+                  if (editingDraft) {
+                    // Edit mode → PUT
+                    await handleUpdateDraft(editingDraft.id, payload);
+                    // Kalau simpan draft: tetap di form edit
+                    // Kalau kirim: handleUpdateDraft sudah setEditingDraft(null)
+                  } else {
+                    // Buat baru → POST
+                    await handleAddRequest(payload);
+                  }
+                }}
+                currentUser={currentUser}
+                initialData={editingDraft}
+                onCancel={() => {
+                  setEditingDraft(null);
+                  setRequesterTab("monitoring");
+                }}
+              />
             )}
 
               {requesterTab === "monitoring" && (
@@ -988,6 +1103,7 @@ useEffect(() => {
                 onDistribute={handleDistribute}
                 onProcure={handleProcure}
                 onCompleteProcurement={handleCompleteProcurement}
+                onReject={handleReject}
                 currentUser={currentUser}
               />
             )}
