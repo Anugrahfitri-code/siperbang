@@ -98,12 +98,14 @@ class VerifikasiKodePersediaanController extends Controller
      */
     protected function authorizeRole(string $role)
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             abort(401, 'Silakan login terlebih dahulu.');
         }
-
+        if (auth()->user()->role === 'Superadmin') {
+            return;
+        }
         if (auth()->user()->role !== $role) {
-            abort(403, 'Akses ditolak. Halaman ini hanya boleh diakses oleh ' . $role);
+            abort(403, "Akses ditolak. Halaman ini hanya untuk {$role}.");
         }
     }
 }
