@@ -9,7 +9,8 @@ import {
   FileCheck,
   AlertCircle,
   Inbox,
-  Building
+  Building,
+  Edit3,
 } from "lucide-react";
 
 interface KetuaTimDashboardProps {
@@ -18,6 +19,8 @@ interface KetuaTimDashboardProps {
   error: string | null;
   onRefresh: () => Promise<void>;
   currentUser: string;
+  /** Called when user clicks Lanjutkan Draft on a draft row */
+  onEditDraft?: (bonNo: string) => void;
 }
 
 export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
@@ -26,6 +29,7 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
   error,
   onRefresh,
   currentUser,
+  onEditDraft,
 }) => {
   // Extract user section from currentUser string (e.g., "Budi Santoso (Ketua Tim TU)" -> "Tata Usaha" or similar)
   const sectionName = requests.length > 0 ? requests[0].section : "Unit Kerja Anda";
@@ -280,6 +284,7 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
                   <th className="py-3.5 px-5">Jumlah Dipenuhi</th>
                   <th className="py-3.5 px-5">Status</th>
                   <th className="py-3.5 px-5">Catatan / Detail</th>
+                  <th className="py-3.5 px-5">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
@@ -315,6 +320,19 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
                         <span className="text-[9px] text-indigo-600 font-bold block mt-1">
                           {req.procurementMethod} {req.vendorName ? `• ${req.vendorName}` : ""}
                         </span>
+                      )}
+                    </td>
+                    <td className="py-4 px-5 whitespace-nowrap">
+                      {(req.status as string) === "Draft" && onEditDraft ? (
+                        <button
+                          onClick={() => onEditDraft(req.bonNo)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold rounded-lg transition-colors"
+                        >
+                          <Edit3 size={11} />
+                          Lanjutkan Draft
+                        </button>
+                      ) : (
+                        <span className="text-slate-300 text-[11px]">—</span>
                       )}
                     </td>
                   </tr>

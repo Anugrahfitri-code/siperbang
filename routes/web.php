@@ -111,6 +111,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
         Route::post('/requests/{itemRequest}/distribute', [\App\Http\Controllers\Api\RequestController::class, 'distribute']);
         Route::post('/requests/{itemRequest}/procure', [\App\Http\Controllers\Api\RequestController::class, 'procure']);
         Route::post('/requests/{itemRequest}/complete-procurement', [\App\Http\Controllers\Api\RequestController::class, 'completeProcurement']);
+        Route::post('/requests/{itemRequest}/reject', [\App\Http\Controllers\Api\RequestController::class, 'rejectItem']);
         
         // Receipts
         Route::get('/receipts', [\App\Http\Controllers\Api\ReceiptController::class, 'index']);
