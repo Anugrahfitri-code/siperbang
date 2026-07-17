@@ -150,6 +150,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
             ]
         );
         Route::post('/receipt-documents/{receiptDocument}/retry', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'retry']);
+        Route::delete('/receipt-documents/{receiptDocument}', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'destroy']);
         
         // Export
         Route::get('/export-excel', [\App\Http\Controllers\Api\LogController::class, 'exportExcel']);

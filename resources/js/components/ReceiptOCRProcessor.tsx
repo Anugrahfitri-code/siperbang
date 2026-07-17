@@ -101,6 +101,24 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     );
   };
 
+  const handleDeleteDraft = async (id: number) => {
+    if (!confirm("Yakin ingin menghapus draft kuitansi ini? Aksi ini tidak dapat dibatalkan.")) return;
+    
+    try {
+      const res = await apiFetch(`/api/receipt-documents/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        throw new Error(await readApiError(res));
+      }
+      alert("Draft kuitansi berhasil dihapus.");
+      await loadPendingDocuments();
+    } catch (e: any) {
+      console.error(e);
+      alert("Gagal menghapus draft: " + (e.message || "Kesalahan server"));
+    }
+  };
+
   const loadPendingDocuments =
     async () => {
       try {
@@ -1195,18 +1213,28 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                         {formatIDR(doc.summary?.total || 0)}
                       </td>
                       <td className="px-5 py-3 text-center font-sans">
-                        <button
-                          onClick={() => {
-                            if (isScanning || isSavingDraft || isVerifying) return;
-                            setIsScanning(true);
-                            setOcrStatus("processing");
-                            pollDocumentStatus(doc.id).finally(() => setIsScanning(false));
-                          }}
-                          className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[10px] font-bold uppercase transition-colors flex items-center justify-center gap-1 mx-auto"
-                        >
-                          <FolderOpen size={12} />
-                          Buka Draft
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              if (isScanning || isSavingDraft || isVerifying) return;
+                              setIsScanning(true);
+                              setOcrStatus("processing");
+                              pollDocumentStatus(doc.id).finally(() => setIsScanning(false));
+                            }}
+                            className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[10px] font-bold uppercase transition-colors flex items-center gap-1"
+                          >
+                            <FolderOpen size={12} />
+                            Buka Draft
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDraft(doc.id)}
+                            disabled={isScanning || isSavingDraft || isVerifying}
+                            className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors disabled:opacity-50"
+                            title="Hapus Draft"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

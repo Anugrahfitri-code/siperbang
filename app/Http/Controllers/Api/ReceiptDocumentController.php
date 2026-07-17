@@ -1244,4 +1244,24 @@ class ReceiptDocumentController extends Controller
             ],
         ], 202);
     }
+    public function destroy(ReceiptDocument $receiptDocument)
+    {
+        if ($receiptDocument->status === ReceiptDocumentStatus::VERIFIED) {
+            return response()->json([
+                'message' => 'Dokumen yang sudah diverifikasi tidak dapat dihapus.',
+            ], 403);
+        }
+
+        // Delete physical file if exists
+        if ($receiptDocument->storage_path && Storage::disk('local')->exists($receiptDocument->storage_path)) {
+            Storage::disk('local')->delete($receiptDocument->storage_path);
+        }
+
+        $receiptDocument->delete();
+
+        return response()->json([
+            'message' => 'Draft dokumen berhasil dihapus.',
+        ]);
+    }
 }
+
