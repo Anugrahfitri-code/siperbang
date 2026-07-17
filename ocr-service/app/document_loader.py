@@ -329,25 +329,48 @@ def load_document_pages(
                 max_pages,
             )
 
-            render_scale = (
-                pdf_dpi / 72
+            requested_scale = pdf_dpi / 72
+
+            # PDF tertentu menyimpan halaman dalam ukuran internal yang sangat besar.
+            # Jangan merender sampai 5000-7000 piksel hanya untuk dikecilkan lagi.
+            render_long_side_limit = max(
+                2200,
+                min(
+                    2800,
+                    int(max_side * 1.35),
+                ),
             )
 
-            for page_index in range(
-                page_count
-            ):
-                page = pdf_document[
-                    page_index
-                ]
+            for page_index in range(page_count):
+                page = pdf_document[page_index]
+
+                page_width, page_height = (
+                    page.get_size()
+                )
+
+                page_long_side = max(
+                    float(page_width),
+                    float(page_height),
+                    1.0,
+                )
+
+                render_scale = min(
+                    requested_scale,
+                    render_long_side_limit
+                    / page_long_side,
+                )
+
+                render_scale = max(
+                    0.25,
+                    render_scale,
+                )
 
                 bitmap = page.render(
                     scale=render_scale,
                 )
 
                 try:
-                    pil_image = (
-                        bitmap.to_pil()
-                    )
+                    pil_image = bitmap.to_pil()
 
                     pages.append(
                         _prepare_image(
@@ -356,23 +379,7 @@ def load_document_pages(
                         )
                     )
                 finally:
-                    close_bitmap = getattr(
-                        bitmap,
-                        "close",
-                        None,
-                    )
-
-                    if callable(close_bitmap):
-                        close_bitmap()
-
-                    close_page = getattr(
-                        page,
-                        "close",
-                        None,
-                    )
-
-                    if callable(close_page):
-                        close_page()
+                    bitmap.close()
         finally:
             pdf_document.close()
 

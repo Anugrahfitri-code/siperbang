@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import logging
 import os
-from importlib.metadata import PackageNotFoundError, version
+
+from importlib.metadata import (
+    PackageNotFoundError,
+    version,
+)
+
 from pathlib import Path
 from threading import Lock
 from time import perf_counter
-from threading import Lock
 from typing import Any
 
 from paddleocr import PaddleOCR
@@ -82,7 +86,7 @@ class OcrEngine:
 
     @property
     def model_name(self) -> str:
-        return "PP-OCRv6_medium"
+        return "PP-OCRv6_small"
 
     @property
     def device(self) -> str:
@@ -166,13 +170,12 @@ class OcrEngine:
                 self._engine = PaddleOCR(
                     lang="id",
                     ocr_version="PP-OCRv6",
-
                     text_detection_model_name=(
-                        "PP-OCRv6_medium_det"
+                        "PP-OCRv6_small_det"
                     ),
 
                     text_recognition_model_name=(
-                        "PP-OCRv6_medium_rec"
+                        "PP-OCRv6_small_rec"
                     ),
 
                     device="cpu",
@@ -187,9 +190,22 @@ class OcrEngine:
 
                     text_det_limit_type="max",
 
-                    text_rec_score_thresh=0.45,
+                    text_det_thresh=0.30,
+                    text_det_box_thresh=0.52,
+                    text_det_unclip_ratio=1.8,
 
-                    text_recognition_batch_size=8,
+                    text_rec_score_thresh=0.25,
+
+                    text_recognition_batch_size=max(
+                        1,
+                        min(
+                            4,
+                            int(
+                                settings
+                                .recognition_batch_size
+                            ),
+                        ),
+                    ),
 
                     enable_mkldnn=(
                         settings.enable_mkldnn
@@ -200,8 +216,9 @@ class OcrEngine:
                     cpu_threads=max(
                         1,
                         min(
-                            8,
+                            int(settings.cpu_threads),
                             os.cpu_count() or 4,
+                            6,
                         ),
                     ),
                 )
@@ -255,7 +272,11 @@ class OcrEngine:
 
             text_det_limit_type="max",
 
-            text_rec_score_thresh=0.40,
+            text_det_thresh=0.30,
+            text_det_box_thresh=0.52,
+            text_det_unclip_ratio=1.8,
+
+            text_rec_score_thresh=0.25,
         )
 
         page_lines: list[list[Any]] = []

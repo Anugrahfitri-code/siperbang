@@ -171,6 +171,23 @@ final class ProcessReceiptOcr implements ShouldQueue
                 ? $result['warnings']
                 : [];
 
+            $originalItems = is_array($parsedResult['items'] ?? null) ? $parsedResult['items'] : [];
+
+            if (count($parsedItems) < count($originalItems)) {
+                foreach ($originalItems as $index => $originalItem) {
+                    if (!isset($parsedItems[$index])) {
+                        $parsedItems[$index] = $originalItem;
+                    }
+                }
+                ksort($parsedItems);
+
+                $warnings[] = [
+                    'code' => 'missing_items_recovered',
+                    'message' => 'Beberapa item terhapus saat rekonsiliasi dan telah dipulihkan.',
+                    'severity' => 'warning',
+                ];
+            }
+
             $parsedResult['items'] =
                 $parsedItems;
 

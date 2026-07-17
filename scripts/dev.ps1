@@ -1,71 +1,331 @@
-# scripts/dev.ps1
-# Starts all development servers concurrently:
-#   1. Laravel (php artisan serve)
-#   2. Vite (npm run dev)
-#   3. OCR FastAPI service (uvicorn)
+$ErrorActionPreference = "Stop"
 
 $RootDir = Split-Path -Parent $PSScriptRoot
 
-Write-Host "==================================================" -ForegroundColor Cyan
-Write-Host "  Starting SIPERBANG Development Servers..." -ForegroundColor Cyan
-Write-Host "==================================================" -ForegroundColor Cyan
+Set-Location $RootDir
 
-# --- 1. Laravel server ---
-Write-Host "[1/3] Starting Laravel server on http://127.0.0.1:8000" -ForegroundColor Green
-$laravelJob = Start-Job -ScriptBlock {
-    param($dir)
-    Set-Location $dir
-    php artisan serve
-} -ArgumentList $RootDir
 
-# --- 2. Vite dev server ---
-Write-Host "[2/3] Starting Vite dev server..." -ForegroundColor Green
-$viteJob = Start-Job -ScriptBlock {
-    param($dir)
-    Set-Location $dir
-    npm run dev
-} -ArgumentList $RootDir
+function Get-EnvValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Path,
 
-# --- 3. OCR FastAPI service ---
-Write-Host "[3/3] Starting OCR service on http://127.0.0.1:8001" -ForegroundColor Green
-$ocrDir = Join-Path $RootDir "ocr-service"
-$ocrJob = Start-Job -ScriptBlock {
-    param($dir)
-    Set-Location $dir
-    if (Test-Path ".\.venv\Scripts\uvicorn.exe") {
-        $env:OCR_SERVICE_TOKEN = "your-secret-token-here"
-        .\.venv\Scripts\uvicorn.exe app.main:app --host 127.0.0.1 --port 8001 --reload
-    } else {
-        Write-Host "ERROR: .venv not found in $dir. Run 'pip install -r requirements.txt' inside ocr-service first." -ForegroundColor Red
+        [Parameter(Mandatory = $true)]
+        [string] $Name
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return $null
     }
-} -ArgumentList $ocrDir
 
-Write-Host ""
-Write-Host "All servers started. Press Ctrl+C to stop all." -ForegroundColor Yellow
-Write-Host "  Laravel  -> http://127.0.0.1:8000" -ForegroundColor White
-Write-Host "  Vite     -> http://127.0.0.1:5173" -ForegroundColor White
-Write-Host "  OCR API  -> http://127.0.0.1:8001" -ForegroundColor White
-Write-Host ""
+    $escapedName = [regex]::Escape(
+        $Name
+    )
 
-# Stream output from all jobs until interrupted
+    $line = Get-Content `
+        -LiteralPath $Path |
+        Where-Object {
+            $_ -match (
+                "^\s*" +
+                $escapedName +
+                "\s*="
+            )
+        } |
+        Select-Object -Last 1
+
+    if (-not $line) {
+        return $null
+    }
+
+    $parts = $line -split "=", 2
+
+    if ($parts.Count -lt 2) {
+        return $null
+    }
+
+    $value = $parts[1].Trim()
+
+    if (
+        ($value.Length -ge 2) -and
+        (
+            ($value.StartsWith('"') -and $value.EndsWith('"')) -or
+            ($value.StartsWith("'") -and $value.EndsWith("'"))
+        )
+    ) {
+        $value = $value.Substring(
+            1,
+            $value.Length - 2
+        )
+    }
+
+    return $value
+}
+
+
+$RootEnvPath = Join-Path `
+    $RootDir `
+    ".env"
+
+$OcrEnvPath = Join-Path `
+    $RootDir `
+    "ocr-service\.env"
+
+$RootToken = Get-EnvValue `
+    -Path $RootEnvPath `
+    -Name "OCR_SERVICE_TOKEN"
+
+$OcrToken = Get-EnvValue `
+    -Path $OcrEnvPath `
+    -Name "OCR_SERVICE_TOKEN"
+
+
+if (
+    [string]::IsNullOrWhiteSpace(
+        $RootToken
+    )
+) {
+    throw (
+        "OCR_SERVICE_TOKEN tidak ditemukan " +
+        "di file .env utama."
+    )
+}
+
+if (
+    [string]::IsNullOrWhiteSpace(
+        $OcrToken
+    )
+) {
+    throw (
+        "OCR_SERVICE_TOKEN tidak ditemukan " +
+        "di file ocr-service\.env."
+    )
+}
+
+if ($RootToken -ne $OcrToken) {
+    throw (
+        "OCR_SERVICE_TOKEN pada .env utama " +
+        "dan ocr-service\.env tidak sama."
+    )
+}
+
+
+$PhpCommand = (
+    Get-Command `
+        php `
+        -ErrorAction Stop
+).Source
+
+$NpmCommand = (
+    Get-Command `
+        npm.cmd `
+        -ErrorAction Stop
+).Source
+
+$PowerShellCommand = (
+    Get-Command `
+        powershell.exe `
+        -ErrorAction Stop
+).Source
+
+
+Write-Host (
+    "Membersihkan cache konfigurasi Laravel..."
+) -ForegroundColor Yellow
+
+& $PhpCommand artisan optimize:clear
+
+if ($LASTEXITCODE -ne 0) {
+    throw (
+        "Laravel optimize:clear gagal."
+    )
+}
+
+
+$Services = @()
+
+
+function Start-TrackedProcess {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Name,
+
+        [Parameter(Mandatory = $true)]
+        [string] $FilePath,
+
+        [Parameter(Mandatory = $true)]
+        [string[]] $Arguments,
+
+        [Parameter(Mandatory = $true)]
+        [string] $WorkingDirectory
+    )
+
+    $process = Start-Process `
+        -FilePath $FilePath `
+        -ArgumentList $Arguments `
+        -WorkingDirectory $WorkingDirectory `
+        -NoNewWindow `
+        -PassThru
+
+    $script:Services += [PSCustomObject]@{
+        Name = $Name
+        Process = $process
+    }
+
+    Write-Host (
+        "[STARTED] " +
+        $Name +
+        " PID=" +
+        $process.Id
+    ) -ForegroundColor Green
+}
+
+
+$OcrScript = Join-Path `
+    $RootDir `
+    "ocr-service\run-server.ps1"
+
+$QueueScript = Join-Path `
+    $RootDir `
+    "scripts\run-queue.ps1"
+
+
 try {
+    Write-Host ""
+    Write-Host (
+        "=============================================="
+    ) -ForegroundColor Cyan
+
+    Write-Host (
+        " Menjalankan SIPERBANG Development"
+    ) -ForegroundColor Cyan
+
+    Write-Host (
+        "=============================================="
+    ) -ForegroundColor Cyan
+
+
+    # OCR harus menggunakan run-server.ps1.
+    # Jangan menggunakan uvicorn --reload.
+    Start-TrackedProcess `
+        -Name "OCR Service" `
+        -FilePath $PowerShellCommand `
+        -Arguments @(
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            "`"$OcrScript`""
+        ) `
+        -WorkingDirectory (
+            Join-Path $RootDir "ocr-service"
+        )
+
+
+    # Script queue akan menunggu health OCR
+    # sampai model benar-benar siap.
+    Start-TrackedProcess `
+        -Name "Laravel Queue" `
+        -FilePath $PowerShellCommand `
+        -Arguments @(
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            "`"$QueueScript`""
+        ) `
+        -WorkingDirectory $RootDir
+
+
+    Start-TrackedProcess `
+        -Name "Laravel Server" `
+        -FilePath $PhpCommand `
+        -Arguments @(
+            "artisan",
+            "serve",
+            "--host=127.0.0.1",
+            "--port=8000"
+        ) `
+        -WorkingDirectory $RootDir
+
+
+    Start-TrackedProcess `
+        -Name "Vite" `
+        -FilePath $NpmCommand `
+        -Arguments @(
+            "run",
+            "dev"
+        ) `
+        -WorkingDirectory $RootDir
+
+
+    Write-Host ""
+    Write-Host (
+        "Laravel : http://127.0.0.1:8000"
+    ) -ForegroundColor White
+
+    Write-Host (
+        "OCR API : http://127.0.0.1:8001"
+    ) -ForegroundColor White
+
+    Write-Host (
+        "Health  : http://127.0.0.1:8001/health"
+    ) -ForegroundColor White
+
+    Write-Host ""
+    Write-Host (
+        "Tunggu pesan bahwa PaddleOCR dan queue " +
+        "sudah siap sebelum mengunggah dokumen."
+    ) -ForegroundColor Yellow
+
+    Write-Host (
+        "Tekan Ctrl+C untuk menghentikan semuanya."
+    ) -ForegroundColor Yellow
+
+
     while ($true) {
-        foreach ($job in @($laravelJob, $viteJob, $ocrJob)) {
-            $output = Receive-Job -Job $job -ErrorAction SilentlyContinue
-            if ($output) {
-                $output | ForEach-Object { Write-Host $_ }
-            }
-            # Restart job if it unexpectedly stopped
-            if ($job.State -eq 'Failed' -or $job.State -eq 'Completed') {
-                Write-Host "WARNING: A job stopped unexpectedly (State: $($job.State))" -ForegroundColor Red
+        foreach ($service in $Services) {
+            $service.Process.Refresh()
+
+            if ($service.Process.HasExited) {
+                throw (
+                    $service.Name +
+                    " berhenti dengan exit code " +
+                    $service.Process.ExitCode +
+                    "."
+                )
             }
         }
-        Start-Sleep -Milliseconds 500
+
+        Start-Sleep -Seconds 1
     }
-} finally {
+}
+finally {
     Write-Host ""
-    Write-Host "Stopping all development servers..." -ForegroundColor Yellow
-    Stop-Job -Job $laravelJob, $viteJob, $ocrJob -ErrorAction SilentlyContinue
-    Remove-Job -Job $laravelJob, $viteJob, $ocrJob -Force -ErrorAction SilentlyContinue
-    Write-Host "All servers stopped." -ForegroundColor Cyan
+    Write-Host (
+        "Menghentikan seluruh service SIPERBANG..."
+    ) -ForegroundColor Yellow
+
+    foreach ($service in $Services) {
+        try {
+            $service.Process.Refresh()
+
+            if (
+                -not $service.Process.HasExited
+            ) {
+                & taskkill.exe `
+                    /PID $service.Process.Id `
+                    /T `
+                    /F `
+                    2>$null |
+                    Out-Null
+            }
+        }
+        catch {
+            # Proses mungkin sudah berhenti.
+        }
+    }
+
+    Write-Host (
+        "Seluruh service telah dihentikan."
+    ) -ForegroundColor Cyan
 }

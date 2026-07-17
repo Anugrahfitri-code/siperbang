@@ -7,7 +7,11 @@ import tempfile
 from contextlib import asynccontextmanager
 from functools import partial
 from pathlib import Path
-from threading import Lock, Thread
+from threading import (
+    Event,
+    Lock,
+    Thread,
+)
 from time import perf_counter
 from typing import Any
 
@@ -65,6 +69,40 @@ def _set_model_state(
 def _get_model_state() -> tuple[str, str | None]:
     with _model_state_lock:
         return _model_state, _model_error
+
+
+def _hard_timeout_watchdog(
+    cancel_event: Event,
+    timeout_seconds: int,
+    filename: str,
+) -> None:
+    """
+    Mengakhiri proses OCR jika native inference
+    tidak selesai dalam batas waktu.
+
+    run-server.ps1 akan menyalakan service kembali.
+    """
+    timeout_seconds = max(
+        30,
+        int(timeout_seconds),
+    )
+
+    if cancel_event.wait(
+        timeout_seconds
+    ):
+        return
+
+    logger.critical(
+        (
+            "OCR melewati hard timeout "
+            "%d detik. Service dihentikan. "
+            "file=%s"
+        ),
+        timeout_seconds,
+        filename,
+    )
+
+    os._exit(75)
 
 
 def _load_model_in_background() -> None:
@@ -562,15 +600,33 @@ async def process_receipt(
         ocr_started_at = perf_counter()
 
         try:
-            raw_pages = await run_in_threadpool(
-                partial(
-                    ocr_engine.process,
-                    temporary_path,
-                    max_pages=(
-                        settings.max_pdf_pages
-                    ),
-                )
+            watchdog_cancel = Event()
+
+            watchdog_thread = Thread(
+                target=_hard_timeout_watchdog,
+                args=(
+                    watchdog_cancel,
+                    settings.hard_timeout_seconds,
+                    filename,
+                ),
+                name="paddleocr-hard-timeout",
+                daemon=True,
             )
+
+            watchdog_thread.start()
+
+            try:
+                raw_pages = await run_in_threadpool(
+                    partial(
+                        ocr_engine.process,
+                        temporary_path,
+                        max_pages=(
+                            settings.max_pdf_pages
+                        ),
+                    )
+                )
+            finally:
+                watchdog_cancel.set()
         except NoTextDetectedError as exc:
             raise HTTPException(
                 status_code=(
