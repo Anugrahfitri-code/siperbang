@@ -417,10 +417,49 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   };
 
   // Live Calculations based on input fields
-  const calculatedSubtotal = items.reduce((sum, item) => sum + (item.qty * item.price || 0), 0);
-  const calculatedTaxRate = isTaxed ? taxRate : 0;
-  const calculatedTaxAmount = Math.round(calculatedSubtotal * (calculatedTaxRate / 100));
-  const calculatedTotal = calculatedSubtotal + calculatedTaxAmount;
+  const roundMoney = (
+    value: number
+  ): number => {
+    return Math.round(
+      (
+        value
+        + Number.EPSILON
+      ) * 100
+    ) / 100;
+  };
+
+  const calculatedSubtotal = roundMoney(
+    items.reduce(
+      (
+        sum,
+        item
+      ) => (
+        sum
+        + (
+          item.qty
+          * item.price
+          || 0
+        )
+      ),
+      0
+    )
+  );
+
+  const calculatedTaxRate =
+    isTaxed ? taxRate : 0;
+
+  const calculatedTaxAmount = roundMoney(
+    calculatedSubtotal
+    * (
+      calculatedTaxRate
+      / 100
+    )
+  );
+
+  const calculatedTotal = roundMoney(
+    calculatedSubtotal
+    + calculatedTaxAmount
+  );
 
   const handleVerifySave = async () => {
     if (!activeDraft) return;
@@ -492,12 +531,32 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     }
   };
 
-  const formatIDR = (num: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(num);
+  const formatIDR = (
+    num: number
+  ) => {
+    const safeNumber = (
+      Number.isFinite(num)
+        ? num
+        : 0
+    );
+
+    const hasFraction = (
+      Math.abs(
+        safeNumber
+        - Math.round(safeNumber)
+      ) > 0.000001
+    );
+
+    return new Intl.NumberFormat(
+      "id-ID",
+      {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits:
+          hasFraction ? 2 : 0,
+        maximumFractionDigits: 2,
+      }
+    ).format(safeNumber);
   };
 
   return (
@@ -828,8 +887,17 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                           <input
                             type="number"
                             min="0"
+                            step="0.01"
                             value={it.price}
-                            onChange={(e) => handleUpdateItem(it.id, "price", parseInt(e.target.value) || 0)}
+                            onChange={(e) =>
+                              handleUpdateItem(
+                                it.id,
+                                "price",
+                                Number.parseFloat(
+                                  e.target.value
+                                ) || 0
+                              )
+                            }
                             className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs text-slate-800 font-semibold focus:outline-none"
                           />
                         </td>
