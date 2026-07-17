@@ -70,10 +70,12 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     if (elapsedMs > HARD_LIMIT_MS) {
       setIsScanning(false);
       setOcrStatus("timeout");
+      setActiveDocumentId(id);
 
       alert(
-        "OCR tidak selesai dalam batas maksimal 2 menit. " +
-        "Proses ditandai gagal agar aplikasi tidak terus menunggu."
+        "Tampilan berhenti menunggu setelah 2 menit. " +
+        "Dokumen tetap tersimpan. Periksa status dokumen " +
+        "dan terminal queue untuk mengetahui hasil akhirnya."
       );
 
       return;

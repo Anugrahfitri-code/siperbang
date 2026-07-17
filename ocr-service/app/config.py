@@ -44,5 +44,24 @@ class Settings(BaseSettings):
         validation_alias="OCR_ENABLE_MKLDNN",
     )
 
+    hard_timeout_seconds: int = Field(
+        default=95,
+        validation_alias=(
+            "OCR_HARD_TIMEOUT_SECONDS"
+        ),
+    )
+
+    cpu_threads: int = Field(
+        default=4,
+        validation_alias="OCR_CPU_THREADS",
+    )
+
+    recognition_batch_size: int = Field(
+        default=4,
+        validation_alias=(
+            "OCR_RECOGNITION_BATCH_SIZE"
+        ),
+    )
+
 
 settings = Settings()

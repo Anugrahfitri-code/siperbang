@@ -380,56 +380,158 @@ def _month_number(
     return None
 
 
-def _parse_date(text: str) -> str | None:
-    numeric_patterns = (
-        r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b",
-        r"\b(\d{4})[/-](\d{1,2})[/-](\d{1,2})\b",
+def _normalize_date_text(
+    text: str,
+) -> str:
+    value = (
+        str(text)
+        .replace("—", "-")
+        .replace("–", "-")
+        .replace("_", "-")
     )
 
-    for index, pattern in enumerate(numeric_patterns):
-        for match in re.finditer(pattern, text):
-            if index == 0:
-                day, month, year = map(int, match.groups())
+    # I7 -> 17, O6 -> 06, 2O26 -> 2026.
+    # Koreksi hanya dilakukan di sekitar angka.
+    value = re.sub(
+        r"(?<![A-Za-z0-9])[Iil|](?=\d)",
+        "1",
+        value,
+    )
+
+    value = re.sub(
+        r"(?<=\d)[Iil|](?=[./\-\s])",
+        "1",
+        value,
+    )
+
+    value = re.sub(
+        r"(?<![A-Za-z0-9])[OoQ](?=\d)",
+        "0",
+        value,
+    )
+
+    value = re.sub(
+        r"(?<=\d)[OoQ](?=\d|[./\-])",
+        "0",
+        value,
+    )
+
+    return re.sub(
+        r"\s+",
+        " ",
+        value,
+    ).strip()
+
+
+def _valid_iso_date(
+    year: int,
+    month: int,
+    day: int,
+) -> str | None:
+    if year < 100:
+        year += 2000
+
+    if year < 1990 or year > 2100:
+        return None
+
+    try:
+        return datetime(
+            year,
+            month,
+            day,
+        ).date().isoformat()
+    except ValueError:
+        return None
+
+
+def _parse_date(
+    text: str,
+) -> str | None:
+    value = _normalize_date_text(text)
+
+    numeric_patterns = (
+        (
+            re.compile(
+                r"(?<!\d)"
+                r"(\d{1,2})\s*[./-]\s*"
+                r"(\d{1,2})\s*[./-]\s*"
+                r"(\d{2,4})"
+                r"(?!\d)"
+            ),
+            "dmy",
+        ),
+        (
+            re.compile(
+                r"(?<!\d)"
+                r"(\d{4})\s*[./-]\s*"
+                r"(\d{1,2})\s*[./-]\s*"
+                r"(\d{1,2})"
+                r"(?!\d)"
+            ),
+            "ymd",
+        ),
+    )
+
+    for pattern, order in numeric_patterns:
+        for match in pattern.finditer(
+            value
+        ):
+            first, second, third = map(
+                int,
+                match.groups(),
+            )
+
+            if order == "dmy":
+                day, month, year = (
+                    first,
+                    second,
+                    third,
+                )
             else:
-                year, month, day = map(int, match.groups())
+                year, month, day = (
+                    first,
+                    second,
+                    third,
+                )
 
-            if year < 100:
-                year += 2000
+            parsed = _valid_iso_date(
+                year,
+                month,
+                day,
+            )
 
-            try:
-                return datetime(
-                    year,
-                    month,
-                    day,
-                ).date().isoformat()
-            except ValueError:
-                continue
+            if parsed:
+                return parsed
 
     month_pattern = re.compile(
-        r"\b(\d{1,2})\s+([A-Za-z]+)\s+(\d{2,4})\b"
+        r"(?<!\d)"
+        r"(\d{1,2})"
+        r"\s*(?:[./-]\s*)?"
+        r"([A-Za-z]{3,12})"
+        r"\s*[,]?\s*"
+        r"(?:[./-]\s*)?"
+        r"(\d{2,4})"
+        r"(?!\d)"
     )
 
-    for match in month_pattern.finditer(text):
-        day = int(match.group(1))
+    for match in month_pattern.finditer(
+        value
+    ):
         month = _month_number(
             match.group(2)
         )
-        year = int(match.group(3))
 
         if month is None:
             continue
 
-        if year < 100:
-            year += 2000
+        parsed = _valid_iso_date(
+            int(match.group(3)),
+            month,
+            int(match.group(1)),
+        )
 
-        try:
-            return datetime(
-                year,
-                month,
-                day,
-            ).date().isoformat()
-        except ValueError:
-            continue
+        if parsed:
+            return parsed
 
     return None
 
@@ -581,50 +683,73 @@ def _extract_date_field(
         if _is_label(
             line.text,
             "TANGGAL",
+            "TANGGAL TRANSAKSI",
+            "INVOICE DATE",
             "DATE",
             "TGL",
+            "TGL TRANSAKSI",
         )
     ]
 
-    candidates: list[tuple[OcrLine, str]] = []
-
-    for line in lines:
-        date_value = _parse_date(line.text)
-        if date_value:
-            candidates.append((line, date_value))
+    candidates = [
+        (line, value)
+        for line in lines
+        if (
+            value := _parse_date(
+                line.text
+            )
+        )
+    ]
 
     if not candidates:
         return ExtractedValue()
 
     scored: list[
-        tuple[float, OcrLine, str, OcrLine]
+        tuple[
+            float,
+            OcrLine,
+            str,
+            OcrLine,
+        ]
     ] = []
 
     for label in labels:
-        for line, date_value in candidates:
+        for line, value in candidates:
             if line.page != label.page:
                 continue
 
-            delta_y = line.cy - label.cy
+            delta_y = (
+                line.cy - label.cy
+            )
 
-            if delta_y < -label.height:
+            if (
+                delta_y < -label.height
+                or delta_y
+                > label.height * 4
+            ):
                 continue
 
-            if delta_y > label.height * 4:
-                continue
-
-            delta_x = abs(line.cx - label.cx)
-            score = (abs(delta_y) * 2) + (delta_x * 0.15)
+            score = (
+                abs(delta_y) * 2
+                + abs(
+                    line.cx - label.cx
+                ) * 0.15
+            )
 
             scored.append((
                 score,
                 line,
-                date_value,
+                value,
                 label,
             ))
 
     if scored:
-        _, line, value, label = min(
+        (
+            _,
+            line,
+            value,
+            label,
+        ) = min(
             scored,
             key=lambda item: item[0],
         )
@@ -638,12 +763,75 @@ def _extract_date_field(
             source="ocr_label",
         )
 
+    # Jangan memilih tanggal jatuh tempo
+    # sebagai tanggal transaksi.
+    due_labels = [
+        line
+        for line in lines
+        if any(
+            term
+            in _keyword_text(
+                line.text
+            )
+            for term in (
+                "TENGGAT",
+                "JATUH TEMPO",
+                "DUE DATE",
+                "BATAS BAYAR",
+            )
+        )
+    ]
+
+    def fallback_score(
+        item: tuple[
+            OcrLine,
+            str,
+        ],
+    ) -> tuple[
+        float,
+        int,
+        float,
+    ]:
+        candidate, _ = item
+        penalty = 0.0
+
+        for label in due_labels:
+            if (
+                label.page
+                != candidate.page
+            ):
+                continue
+
+            distance = (
+                abs(
+                    candidate.cy
+                    - label.cy
+                ) * 2
+                + abs(
+                    candidate.cx
+                    - label.cx
+                ) * 0.15
+            )
+
+            if distance <= max(
+                label.width * 1.5,
+                500.0,
+            ):
+                penalty = max(
+                    penalty,
+                    100000.0
+                    - distance,
+                )
+
+        return (
+            penalty,
+            candidate.page,
+            candidate.cy,
+        )
+
     line, value = min(
         candidates,
-        key=lambda item: (
-            item[0].page,
-            item[0].cy,
-        ),
+        key=fallback_score,
     )
 
     return ExtractedValue(
@@ -715,52 +903,44 @@ def _is_invoice_label(text: str) -> bool:
 def _extract_invoice_number(
     lines: list[OcrLine],
 ) -> ExtractedValue:
-    explicit_pattern = re.compile(
-        r"(?i)\b(?:NO(?:TA)?|NOMOR)"
-        r"\.?\s*[:#-]?\s*"
-        r"([A-Z0-9][A-Z0-9/-]{1,})\b"
-    )
-
-    for line in lines:
-        match = explicit_pattern.search(
-            line.text
-        )
-
-        if not match:
-            continue
-
-        value = match.group(1).strip()
-
-        if not re.search(
-            r"\d",
-            value,
-        ):
-            continue
-
-        return ExtractedValue(
-            value=value,
-            confidence=line.confidence,
-            source="ocr_explicit_number",
-        )
-
-    direct_candidates: list[tuple[OcrLine, str]] = []
-
+    # Pola INV selalu diprioritaskan.
     direct_pattern = re.compile(
-        r"\bINV(?:OICE)?[\s:#/-]*[A-Z0-9][A-Z0-9/-]{3,}\b",
+        r"\bINV(?:OICE)?"
+        r"[\s:#/-]*"
+        r"[A-Z0-9]"
+        r"[A-Z0-9/-]{3,}\b",
         re.IGNORECASE,
     )
 
-    for line in lines:
-        for match in direct_pattern.finditer(line.text):
-            value = match.group(0).strip().replace(" ", "")
+    direct_candidates: list[
+        tuple[OcrLine, str]
+    ] = []
 
-            if _looks_like_invoice_value(value):
-                direct_candidates.append((line, value))
+    for line in lines:
+        for match in (
+            direct_pattern.finditer(
+                line.text
+            )
+        ):
+            value = (
+                match.group(0)
+                .strip()
+                .replace(" ", "")
+            )
+
+            if _looks_like_invoice_value(
+                value
+            ):
+                direct_candidates.append((
+                    line,
+                    value,
+                ))
 
     if direct_candidates:
         line, value = max(
             direct_candidates,
-            key=lambda item: item[0].confidence,
+            key=lambda item:
+                item[0].confidence,
         )
 
         return ExtractedValue(
@@ -769,31 +949,105 @@ def _extract_invoice_number(
             source="ocr_pattern",
         )
 
+    explicit_pattern = re.compile(
+        r"(?i)\b"
+        r"(?:NO(?:TA)?|NOMOR)"
+        r"\.?\s*[:#-]?\s*"
+        r"([A-Z0-9]"
+        r"[A-Z0-9/-]{1,})\b"
+    )
+
+    excluded_context = (
+        "ALAMAT",
+        "JALAN",
+        "JL",
+        "TELP",
+        "PHONE",
+        "WHATSAPP",
+        "REKENING",
+    )
+
+    for line in lines:
+        keyword = _keyword_text(
+            line.text
+        )
+
+        if any(
+            word in keyword
+            for word
+            in excluded_context
+        ):
+            continue
+
+        match = explicit_pattern.search(
+            line.text
+        )
+
+        if not match:
+            continue
+
+        value = (
+            match.group(1)
+            .strip()
+        )
+
+        if (
+            re.search(r"\d", value)
+            and _looks_like_invoice_value(
+                value
+            )
+        ):
+            return ExtractedValue(
+                value=value,
+                confidence=line.confidence,
+                source=(
+                    "ocr_explicit_number"
+                ),
+            )
+
     labels = [
         line
         for line in lines
-        if _is_invoice_label(line.text)
+        if _is_invoice_label(
+            line.text
+        )
     ]
 
     candidates = [
         line
         for line in lines
-        if _looks_like_invoice_value(line.text)
+        if _looks_like_invoice_value(
+            line.text
+        )
     ]
 
-    scored: list[tuple[float, OcrLine, OcrLine]] = []
+    scored: list[
+        tuple[
+            float,
+            OcrLine,
+            OcrLine,
+        ]
+    ] = []
 
     for label in labels:
         for candidate in candidates:
-            if candidate.page != label.page or candidate is label:
+            if (
+                candidate.page
+                != label.page
+                or candidate is label
+            ):
                 continue
 
-            delta_y = candidate.cy - label.cy
+            delta_y = (
+                candidate.cy
+                - label.cy
+            )
 
-            if delta_y < -label.height:
-                continue
-
-            if delta_y > label.height * 4:
+            if (
+                delta_y < -label.height
+                or delta_y
+                > label.height * 4
+            ):
                 continue
 
             if abs(delta_y) <= max(
@@ -801,16 +1055,25 @@ def _extract_invoice_number(
                 candidate.height,
             ):
                 x_penalty = (
-                    max(0.0, label.x1 - candidate.cx) * 2
-                    + abs(candidate.x1 - label.x2) * 0.1
+                    max(
+                        0.0,
+                        label.x1
+                        - candidate.cx,
+                    ) * 2
+                    + abs(
+                        candidate.x1
+                        - label.x2
+                    ) * 0.1
                 )
             else:
                 x_penalty = abs(
-                    candidate.x1 - label.x1
+                    candidate.x1
+                    - label.x1
                 ) * 0.2
 
             scored.append((
-                (abs(delta_y) * 2) + x_penalty,
+                abs(delta_y) * 2
+                + x_penalty,
                 candidate,
                 label,
             ))
@@ -824,7 +1087,7 @@ def _extract_invoice_number(
     )
 
     return ExtractedValue(
-        value=candidate.text,
+        value=candidate.text.strip(),
         confidence=min(
             candidate.confidence,
             label.confidence,
@@ -1594,112 +1857,671 @@ def _extract_tax_rate(
     return ExtractedValue()
 
 
+def _split_receipt_regions(
+    lines: list[OcrLine],
+) -> list[list[OcrLine]]:
+    """
+    Memisahkan dua struk yang ditempel
+    berdampingan dalam satu halaman.
+    """
+    regions: list[
+        list[OcrLine]
+    ] = []
+
+    for page in sorted({
+        line.page
+        for line in lines
+    }):
+        page_lines = [
+            line
+            for line in lines
+            if line.page == page
+        ]
+
+        if len(page_lines) < 16:
+            regions.append(page_lines)
+            continue
+
+        min_x = min(
+            line.x1
+            for line in page_lines
+        )
+
+        max_x = max(
+            line.x2
+            for line in page_lines
+        )
+
+        min_y = min(
+            line.y1
+            for line in page_lines
+        )
+
+        max_y = max(
+            line.y2
+            for line in page_lines
+        )
+
+        width = max(
+            1.0,
+            max_x - min_x,
+        )
+
+        height = max(
+            1.0,
+            max_y - min_y,
+        )
+
+        cuts = sorted({
+            edge
+            for line in page_lines
+            for edge in (
+                line.x1,
+                line.x2,
+            )
+            if (
+                min_x + width * 0.30
+                <= edge
+                <= min_x + width * 0.70
+            )
+        })
+
+        best: tuple[
+            float,
+            list[OcrLine],
+            list[OcrLine],
+        ] | None = None
+
+        for cut in cuts:
+            left = [
+                line
+                for line in page_lines
+                if line.x2 <= cut
+            ]
+
+            right = [
+                line
+                for line in page_lines
+                if line.x1 >= cut
+            ]
+
+            crossing = [
+                line
+                for line in page_lines
+                if line.x1 < cut < line.x2
+            ]
+
+            if (
+                len(left) < 8
+                or len(right) < 8
+            ):
+                continue
+
+            if len(crossing) > max(
+                2,
+                int(
+                    len(page_lines)
+                    * 0.04
+                ),
+            ):
+                continue
+
+            gutter = (
+                min(
+                    line.x1
+                    for line in right
+                )
+                - max(
+                    line.x2
+                    for line in left
+                )
+            )
+
+            if gutter < max(
+                36.0,
+                width * 0.055,
+            ):
+                continue
+
+            left_span = (
+                max(
+                    line.y2
+                    for line in left
+                )
+                - min(
+                    line.y1
+                    for line in left
+                )
+            )
+
+            right_span = (
+                max(
+                    line.y2
+                    for line in right
+                )
+                - min(
+                    line.y1
+                    for line in right
+                )
+            )
+
+            if (
+                left_span
+                < height * 0.25
+                or right_span
+                < height * 0.25
+            ):
+                continue
+
+            score = (
+                gutter
+                + min(
+                    len(left),
+                    len(right),
+                ) * 0.5
+                - len(crossing) * 20.0
+            )
+
+            if (
+                best is None
+                or score > best[0]
+            ):
+                best = (
+                    score,
+                    left,
+                    right,
+                )
+
+        if best is None:
+            regions.append(page_lines)
+        else:
+            regions.extend((
+                best[1],
+                best[2],
+            ))
+
+    return [
+        region
+        for region in regions
+        if region
+    ]
+
+
 def _extract_receipt_items_fallback(
     rows: list[OcrRow],
 ) -> list[dict[str, Any]]:
-    items: list[dict[str, Any]] = []
+    """
+    Membaca struk tanpa header tabel.
+
+    Mendukung format terpisah seperti:
+
+        JOYKO GUNTING SC-33
+        3 PCS X
+        10.000,00
+        30.000,00
+    """
+    items: list[
+        dict[str, Any]
+    ] = []
+
+    unit_only = re.compile(
+        r"(?i)^"
+        r"(?:PCS?|PACK|BKS|BOX|RG|"
+        r"BTL|BOTOL|KRT|LEMBAR|LBR|"
+        r"BUAH|UNIT|SET|ROLL|ROL|"
+        r"KEPING|DUS|KOTAK|JRG|"
+        r"RIM|LSN)"
+        r"$"
+    )
+
+    amount_only = re.compile(
+        r"^[\sRP.,0-9OGQIl|:-]+$",
+        re.IGNORECASE,
+    )
+
+    def row_confidence(
+        row: OcrRow,
+    ) -> float | None:
+        return min(
+            (
+                line.confidence
+                for line in row.lines
+            ),
+            default=None,
+        )
+
+    def amounts(
+        row: OcrRow,
+    ) -> list[
+        tuple[
+            float,
+            float | None,
+        ]
+    ]:
+        result: list[
+            tuple[
+                float,
+                float | None,
+            ]
+        ] = []
+
+        for line in row.lines:
+            value = _money_value(line)
+
+            if (
+                value is not None
+                and value > 0
+            ):
+                result.append((
+                    value,
+                    line.confidence,
+                ))
+
+        return result
 
     for index, row in enumerate(rows):
-        qty, price = _extract_qty_marker(row.text)
+        qty, inline_price = (
+            _extract_qty_marker(
+                row.text
+            )
+        )
 
-        if qty is None or price is None:
+        if qty is None:
             continue
 
-        # Cari nama barang di baris sebelumnya
-        name = ""
-        name_confidence = 0.0
-        for offset in range(1, 4):
-            prev_index = index - offset
-            if prev_index < 0:
+        name_rows: list[OcrRow] = []
+        lower_row = row
+
+        for offset in range(1, 7):
+            previous_index = (
+                index - offset
+            )
+
+            if previous_index < 0:
                 break
-            prev_row = rows[prev_index]
-            
-            # Stop jika menemukan subtotal/total
-            if any(_label_kind(line.text) for line in prev_row.lines):
+
+            previous = rows[
+                previous_index
+            ]
+
+            gap = (
+                lower_row.cy
+                - previous.cy
+            )
+
+            gap_limit = max(
+                50.0,
+                max(
+                    line.height
+                    for line in (
+                        previous.lines
+                        + lower_row.lines
+                    )
+                ) * 2.8,
+            )
+
+            if gap > gap_limit:
                 break
-            
-            # Stop jika baris ini juga qty x harga
-            q, p = _extract_qty_marker(prev_row.text)
-            if q is not None and p is not None:
-                break
-                
-            text = prev_row.text.strip()
-            if sum(c.isalpha() for c in text) >= 3:
-                name = text
-                name_confidence = min(
-                    line.confidence
-                    for line in prev_row.lines
+
+            lower_row = previous
+
+            previous_qty, _ = (
+                _extract_qty_marker(
+                    previous.text
                 )
+            )
+
+            if previous_qty is not None:
                 break
 
-        if not name:
+            if any(
+                _label_kind(line.text)
+                for line
+                in previous.lines
+            ):
+                break
+
+            text = previous.text.strip()
+
+            digits = re.sub(
+                r"\D",
+                "",
+                text,
+            )
+
+            if (
+                not text
+                or unit_only.fullmatch(
+                    text
+                )
+                or len(digits) >= 8
+            ):
+                continue
+
+            if (
+                amount_only.fullmatch(
+                    text
+                )
+                or re.fullmatch(
+                    r"\d{1,3}[.)-]?",
+                    text,
+                )
+            ):
+                continue
+
+            if sum(
+                character.isalpha()
+                for character in text
+            ) < 3:
+                continue
+
+            name_rows.append(previous)
+
+            if len(name_rows) >= 2:
+                break
+
+        name_rows.reverse()
+
+        name = re.sub(
+            r"\s+",
+            " ",
+            " ".join(
+                item.text.strip()
+                for item in name_rows
+            ),
+        ).strip()
+
+        name = re.sub(
+            r"^\s*\d+[.)-]\s*",
+            "",
+            name,
+        ).strip()
+
+        if sum(
+            character.isalpha()
+            for character in name
+        ) < 3:
             continue
 
-        # Cari subtotal sesudahnya
-        subtotal = None
-        subtotal_confidence = 0.0
-        
-        expected_subtotal = qty * price
-        
-        for offset in range(1, 4):
+        values: list[
+            tuple[
+                float,
+                float | None,
+            ]
+        ] = []
+
+        if (
+            inline_price is not None
+            and inline_price > 0
+        ):
+            values.append((
+                inline_price,
+                row_confidence(row),
+            ))
+
+        for offset in range(1, 5):
             next_index = index + offset
+
             if next_index >= len(rows):
                 break
+
             next_row = rows[next_index]
-            
-            # Stop jika ketemu label
-            if any(_label_kind(line.text) for line in next_row.lines):
-                break
-                
-            # Stop jika baris ini qty x harga lagi
-            q, p = _extract_qty_marker(next_row.text)
-            if q is not None and p is not None:
-                break
-                
-            for line in next_row.lines:
-                amount = _money_value(line)
-                if amount is not None:
-                    # Toleransi perhitungan 1%
-                    if abs(amount - expected_subtotal) <= max(1.0, expected_subtotal * 0.01):
-                        subtotal = amount
-                        subtotal_confidence = line.confidence
-                        break
-                        
-            if subtotal is not None:
+
+            if any(
+                _label_kind(line.text)
+                for line
+                in next_row.lines
+            ):
                 break
 
-        if subtotal is None:
+            next_qty, _ = (
+                _extract_qty_marker(
+                    next_row.text
+                )
+            )
+
+            if next_qty is not None:
+                break
+
+            values.extend(
+                amounts(next_row)
+            )
+
+            if len(values) >= 2:
+                break
+
+        price: float | None = None
+        subtotal: float | None = None
+
+        price_confidence: (
+            float | None
+        ) = None
+
+        subtotal_confidence: (
+            float | None
+        ) = None
+
+        subtotal_source = "derived"
+
+        if len(values) >= 2:
+            best_pair: tuple[
+                float,
+                tuple[
+                    float,
+                    float | None,
+                ],
+                tuple[
+                    float,
+                    float | None,
+                ],
+            ] | None = None
+
+            for (
+                first_index,
+                first,
+            ) in enumerate(
+                values[:4]
+            ):
+                for second in values[
+                    first_index + 1:
+                    first_index + 4
+                ]:
+                    error = abs(
+                        qty * first[0]
+                        - second[0]
+                    ) / max(
+                        second[0],
+                        1.0,
+                    )
+
+                    candidate = (
+                        error,
+                        first,
+                        second,
+                    )
+
+                    if (
+                        best_pair is None
+                        or error
+                        < best_pair[0]
+                    ):
+                        best_pair = candidate
+
+            if best_pair is not None:
+                (
+                    _,
+                    selected_price,
+                    selected_subtotal,
+                ) = best_pair
+
+                (
+                    price,
+                    price_confidence,
+                ) = selected_price
+
+                (
+                    subtotal,
+                    subtotal_confidence,
+                ) = selected_subtotal
+
+                subtotal_source = (
+                    "ocr_fallback_block"
+                )
+
+        elif len(values) == 1:
+            (
+                price,
+                price_confidence,
+            ) = values[0]
+
+        if (
+            price is None
+            or price <= 0
+        ):
+            continue
+
+        expected_subtotal = (
+            qty * price
+        )
+
+        if (
+            subtotal is None
+            or subtotal <= 0
+            or not _amount_is_close(
+                expected_subtotal,
+                subtotal,
+                tolerance=0.03,
+            )
+        ):
             subtotal = expected_subtotal
-            subtotal_confidence = _derived_confidence(
-                min(line.confidence for line in row.lines),
-                name_confidence,
-                factor=0.9,
+
+            subtotal_confidence = (
+                _derived_confidence(
+                    row_confidence(row),
+                    price_confidence,
+                    factor=0.75,
+                )
+            )
+
+            subtotal_source = "derived"
+
+        normalized_qty: float | int = (
+            qty
+        )
+
+        if abs(
+            qty - round(qty)
+        ) < 1e-9:
+            normalized_qty = int(
+                round(qty)
             )
 
         items.append({
             "name": _field(
                 name,
-                name_confidence,
-                "ocr_fallback",
+                min(
+                    (
+                        row_confidence(item)
+                        for item
+                        in name_rows
+                        if row_confidence(
+                            item
+                        ) is not None
+                    ),
+                    default=None,
+                ),
+                "ocr_fallback_block",
             ),
+
             "qty": _field(
-                qty,
-                min(line.confidence for line in row.lines),
-                "ocr_fallback",
+                normalized_qty,
+                row_confidence(row),
+                "ocr_fallback_block",
             ),
+
             "price": _field(
                 price,
-                min(line.confidence for line in row.lines),
-                "ocr_fallback",
+                price_confidence,
+                "ocr_fallback_block",
             ),
+
             "subtotal": _field(
                 subtotal,
                 subtotal_confidence,
-                "ocr_fallback" if subtotal != expected_subtotal else "derived",
+                subtotal_source,
             ),
         })
 
-    return items
+    unique_items: list[
+        dict[str, Any]
+    ] = []
+
+    seen: set[
+        tuple[Any, ...]
+    ] = set()
+
+    for item in items:
+        key = (
+            str(
+                item["name"]["value"]
+            ).upper().strip(),
+            item["qty"]["value"],
+            item["subtotal"]["value"],
+        )
+
+        if key in seen:
+            continue
+
+        seen.add(key)
+        unique_items.append(item)
+
+    return unique_items
+
+
+def _extract_receipt_items_by_regions(
+    lines: list[OcrLine],
+) -> list[dict[str, Any]]:
+    items: list[
+        dict[str, Any]
+    ] = []
+
+    for region in (
+        _split_receipt_regions(lines)
+    ):
+        region_rows = _build_rows(
+            region
+        )
+
+        items.extend(
+            _extract_receipt_items_fallback(
+                region_rows
+            )
+        )
+
+    unique_items: list[
+        dict[str, Any]
+    ] = []
+
+    seen: set[
+        tuple[Any, ...]
+    ] = set()
+
+    for item in items:
+        key = (
+            str(
+                item["name"]["value"]
+            ).upper().strip(),
+            item["qty"]["value"],
+            item["subtotal"]["value"],
+        )
+
+        if key in seen:
+            continue
+
+        seen.add(key)
+        unique_items.append(item)
+
+    return unique_items
 
 
 def _numeric_field(
@@ -2185,8 +3007,8 @@ def parse_receipt(
     
     if not items:
         items = (
-            _extract_receipt_items_fallback(
-                rows
+            _extract_receipt_items_by_regions(
+                lines
             )
         )
 
