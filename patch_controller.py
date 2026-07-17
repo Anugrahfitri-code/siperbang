@@ -1,23 +1,28 @@
-<?php
+import os
+import re
 
-namespace App\Http\Controllers\Api;
+def patch_controller():
+    path = r"d:\Project\siperbang\app\Http\Controllers\Api\ReceiptDocumentController.php"
+    with open(path, "r", encoding="utf-8") as f:
+        content = f.read()
 
-use App\Http\Controllers\Controller;
-use App\Models\ReceiptDocument;
-use App\Models\Receipt;
-use App\Jobs\ProcessReceiptOcr;
-use App\Enums\ReceiptDocumentStatus;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Database\QueryException;
+    # Add imports
+    imports = """use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\ValidationException;"""
+    
+    if "use Illuminate\\Database\\QueryException;" not in content:
+        content = content.replace("use Illuminate\\Http\\JsonResponse;", "use Illuminate\\Http\\JsonResponse;\n" + imports)
 
-class ReceiptDocumentController extends Controller
-{
-    public function index(
+    # Replace index method
+    # Need to find index() { ... }
+    index_start = content.find("    public function index()")
+    if index_start == -1:
+        index_start = content.find("    public function index(")
+    
+    index_end = content.find("    public function show(")
+    
+    new_index = """    public function index(
         Request $request,
     ): JsonResponse {
         $query = ReceiptDocument::query()
@@ -214,124 +219,11 @@ class ReceiptDocumentController extends Controller
         );
     }
 
-    public function show(
-        ReceiptDocument $receiptDocument,
-    ): JsonResponse {
-        $data = $receiptDocument->toArray();
+"""
+    content = content[:index_start] + new_index + content[index_end:]
 
-        $rawResult = is_array(
-            $receiptDocument->raw_result,
-        )
-            ? $receiptDocument->raw_result
-            : [];
-
-        $parsedResult = is_array(
-            $receiptDocument->parsed_result,
-        )
-            ? $receiptDocument->parsed_result
-            : [];
-
-        if (
-            ! is_array(
-                $parsedResult['items']
-                ?? null,
-            )
-        ) {
-            $parsedResult['items'] = is_array(
-                $rawResult['items'] ?? null,
-            )
-                ? $rawResult['items']
-                : [];
-        }
-
-        if (
-            ! is_array(
-                $parsedResult['warnings']
-                ?? null,
-            )
-        ) {
-            $parsedResult['warnings'] = is_array(
-                $rawResult['warnings']
-                ?? null,
-            )
-                ? $rawResult['warnings']
-                : [];
-        }
-
-        /*
-         * Pages hanya ditambahkan saat endpoint detail dipanggil.
-         * Index tidak perlu mengirim seluruh bounding box.
-         */
-        $parsedResult['pages'] = is_array(
-            $rawResult['pages'] ?? null,
-        )
-            ? $rawResult['pages']
-            : [];
-
-        $data['parsed_result'] =
-            $parsedResult;
-
-        return response()->json(
-            $data
-        );
-    }
-
-    public function store(Request $request)
-    {
-        $maxSize = (int) config('services.ocr.max_upload_size_kb', 10240); // 10MB default
-
-        $request->validate([
-            'document' => [
-                'required',
-                'file',
-                'mimetypes:image/jpeg,image/png,application/pdf,image/tiff',
-                'mimes:jpg,jpeg,png,pdf,tif,tiff',
-                'max:' . $maxSize,
-            ],
-        ]);
-
-        $file = $request->file('document');
-        
-        $path = $file->store('receipts', 'local');
-        
-        $fullPath = Storage::disk('local')->path($path);
-        $sha256 = hash_file('sha256', $fullPath);
-
-        // $existing = ReceiptDocument::where('sha256', $sha256)->first();
-        // if ($existing) {
-        //     return response()->json([
-        //         'message' => 'Document already uploaded',
-        //         'data' => [
-        //             'id' => $existing->id,
-        //             'status' => $existing->status->value
-        //         ]
-        //     ], 200);
-        // }
-
-        $document = ReceiptDocument::create([
-            'uploaded_by' => $request->user()?->id,
-            'original_filename' => $file->getClientOriginalName(),
-            'storage_path' => $path,
-            'mime_type' => $file->getMimeType(),
-            'size_bytes' => $file->getSize(),
-            'sha256' => $sha256,
-            'status' => ReceiptDocumentStatus::QUEUED,
-        ]);
-
-        ProcessReceiptOcr::dispatch(
-            $document->id,
-        );
-
-        return response()->json([
-            'message' => 'Dokumen diterima dan sedang diproses.',
-            'data' => [
-                'id' => $document->id,
-                'status' => $document->status->value
-            ]
-        ], 202);
-    }
-
-    public function file(
+    # Add file() and saveDraft() before verify()
+    file_and_draft = """    public function file(
         ReceiptDocument $receiptDocument,
     ) {
         $disk = Storage::disk('local');
@@ -633,7 +525,13 @@ class ReceiptDocumentController extends Controller
         ]);
     }
 
-    public function verify(
+"""
+
+    # Replace verify() 
+    verify_start = content.find("    public function verify(")
+    verify_end = content.find("    public function retry(")
+    
+    new_verify = """    public function verify(
         Request $request,
         ReceiptDocument $receiptDocument,
     ): JsonResponse {
@@ -988,7 +886,7 @@ class ReceiptDocumentController extends Controller
                         'invoice_no' =>
                             $invoiceNo,
 
-                        'store_name' =>
+                        'storeName' =>
                             $storeName,
 
                         'date' =>
@@ -1181,67 +1079,14 @@ class ReceiptDocumentController extends Controller
         }
     }
 
-    public function retry(
-        ReceiptDocument $receiptDocument,
-    ) {
-        $updated = ReceiptDocument::query()
-            ->whereKey(
-                $receiptDocument->id,
-            )
-            ->whereIn(
-                'status',
-                [
-                    ReceiptDocumentStatus::FAILED->value,
-                    ReceiptDocumentStatus::UPLOADED->value,
-                ],
-            )
-            ->update([
-                'status' =>
-                    ReceiptDocumentStatus::QUEUED->value,
+"""
+    content = content[:verify_start] + file_and_draft + new_verify + content[verify_end:]
+    # Fix store_name typo inside verify() receipt creation
+    content = content.replace("'storeName' =>", "'store_name' =>")
 
-                'ocr_engine' => null,
-                'ocr_engine_version' => null,
-                'raw_text' => null,
-                'raw_result' => null,
-                'parsed_result' => null,
-                'overall_confidence' => null,
-                'error_message' => null,
-                'processed_at' => null,
-            ]);
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
 
-        if ($updated === 0) {
-            return response()->json([
-                'message' => (
-                    'Hanya dokumen berstatus failed '
-                    . 'atau uploaded yang dapat diproses ulang.'
-                ),
-            ], 409);
-        }
-
-        ProcessReceiptOcr::dispatch(
-            $receiptDocument->id,
-        );
-
-        $receiptDocument->refresh();
-
-        return response()->json([
-            'message' => (
-                'Dokumen dimasukkan kembali '
-                . 'ke antrean OCR.'
-            ),
-            'data' => [
-                'id' =>
-                    $receiptDocument->id,
-
-                'status' =>
-                    $receiptDocument
-                        ->status
-                        ->value,
-
-                'attempts' =>
-                    $receiptDocument
-                        ->attempts,
-            ],
-        ], 202);
-    }
-}
+if __name__ == "__main__":
+    patch_controller()
+    print("Controller patched")
