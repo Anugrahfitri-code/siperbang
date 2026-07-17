@@ -138,8 +138,30 @@ export type OcrStatus =
   | "queued"
   | "processing"
   | "needs_review"
+  | "draft"
   | "verified"
   | "failed";
+
+export interface ReceiptManualDraft {
+  invoiceNo: string;
+  storeName: string;
+  date: string | null;
+  isTaxed: boolean;
+  taxRate: number;
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+  method?: ProcurementMethod | null;
+  bastName?: string | null;
+  bastDate?: string | null;
+
+  items: Array<{
+    name: string;
+    qty: number;
+    price: number;
+    subtotal: number;
+  }>;
+}
 
 export type OcrWarningSeverity =
   | "info"
@@ -205,6 +227,17 @@ export interface ReceiptDocument {
   mime_type: string;
   size_bytes: number;
   status: OcrStatus;
+  manual_draft?: ReceiptManualDraft | null;
+  draft_saved_at?: string | null;
+  summary?: {
+    invoiceNo?: string | null;
+    storeName?: string | null;
+    date?: string | null;
+    method?: ProcurementMethod | null;
+    isTaxed?: boolean;
+    taxRate?: number;
+    total?: number;
+  };
   raw_text?: string | null;
   parsed_result?: ParsedReceiptResult | null;
   overall_confidence?: number | null;

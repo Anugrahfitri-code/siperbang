@@ -26,10 +26,16 @@ class ReceiptDocument extends Model
         'parsed_result' =>
             'array',
 
+        'manual_draft' =>
+            'array',
+
         'processed_at' =>
             'datetime',
 
         'verified_at' =>
+            'datetime',
+
+        'draft_saved_at' =>
             'datetime',
 
         'overall_confidence' =>

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ReceiptData, ReceiptItem, ProcurementMethod, RequestStatus, ItemRequest, ParsedReceiptResult, OcrWarning, OcrField } from "../types";
+import { ReceiptData, ReceiptItem, ProcurementMethod, RequestStatus, ItemRequest, ParsedReceiptResult, OcrWarning, OcrField, ReceiptDocument, ReceiptManualDraft } from "../types";
 import { apiFetch } from "../api";
-import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Cpu } from "lucide-react";
+import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Cpu, Save, FolderOpen, X } from "lucide-react";
 
 interface ReceiptOCRProcessorProps {
   receipts: ReceiptData[];
@@ -25,6 +25,21 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   const [ocrWarnings, setOcrWarnings] = useState<OcrWarning[]>([]);
   const [ocrStatus, setOcrStatus] = useState<string>("");
   const [rawText, setRawText] = useState<string>("");
+
+  const [
+    pendingDocuments,
+    setPendingDocuments,
+  ] = useState<ReceiptDocument[]>([]);
+
+  const [
+    isSavingDraft,
+    setIsSavingDraft,
+  ] = useState(false);
+
+  const [
+    isVerifying,
+    setIsVerifying,
+  ] = useState(false);
   const pollTimerRef = useRef<number | NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -44,6 +59,83 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   const [items, setItems] = useState<ReceiptItem[]>([]);
   const [bastName, setBastName] = useState("");
   const [bastDate, setBastDate] = useState("");
+
+    const readApiError = async (
+    response: Response
+  ): Promise<string> => {
+    const payload = await response
+      .json()
+      .catch(() => ({}));
+
+    if (
+      payload?.errors
+      && typeof payload.errors
+        === "object"
+    ) {
+      const messages = Object
+        .values(payload.errors)
+        .flatMap((value) =>
+          Array.isArray(value)
+            ? value
+            : [value]
+        )
+        .filter(
+          (
+            value
+          ): value is string =>
+            typeof value === "string"
+        );
+
+      if (messages.length > 0) {
+        return messages.join("\n");
+      }
+    }
+
+    return (
+      payload?.message
+      || payload?.error
+      || (
+        `HTTP ${response.status} `
+        + response.statusText
+      )
+    );
+  };
+
+  const loadPendingDocuments =
+    async () => {
+      try {
+        const response = await apiFetch(
+          "/api/receipt-documents"
+          + "?scope=pending"
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            await readApiError(
+              response
+            )
+          );
+        }
+
+        const documents =
+          await response.json();
+
+        setPendingDocuments(
+          Array.isArray(documents)
+            ? documents
+            : []
+        );
+      } catch (error) {
+        console.error(
+          "Gagal memuat draft kuitansi:",
+          error
+        );
+      }
+    };
+
+  useEffect(() => {
+    void loadPendingDocuments();
+  }, []);
 
   const normalizeWarnings = (warnings: Array<OcrWarning | string>): OcrWarning[] => {
     return warnings.map((w) => {
@@ -90,7 +182,11 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
 
       const data = await res.json();
 
-      if (data.status === "needs_review" || data.status === "verified") {
+      if (
+          data.status === "needs_review"
+          || data.status === "draft"
+          || data.status === "verified"
+        ) {
         setIsScanning(false);
         setActiveDocumentId(id);
         const p: ParsedReceiptResult = data.parsed_result || { items: [], warnings: [], pages: [] };
@@ -299,6 +395,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         };
 
         setActiveDraft(newDraft);
+        await loadPendingDocuments();
         setStoreName(newDraft.storeName);
         setInvoiceNo(newDraft.invoiceNo);
         setDate(newDraft.date);
@@ -461,73 +558,137 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     + calculatedTaxAmount
   );
 
-  const handleVerifySave = async () => {
-    if (!activeDraft) return;
+  const buildManualPayload = () => ({
+    invoiceNo: invoiceNo.trim(),
+    storeName: storeName.trim(),
+    date: date || null,
+    isTaxed,
+    taxRate: isTaxed ? Number(taxRate) : 0,
+    items: items.map((item) => ({
+      name: item.name.trim(),
+      qty: Number(item.qty),
+      price: Number(item.price),
+    })),
+    method,
+    bastName: bastName.trim(),
+    bastDate: bastDate || null,
+  });
 
-    if (!activeDocumentId) {
-      alert("Simulasi dimatikan. Dokumen harus berasal dari server.");
+  const closeWorkspace = () => {
+    setActiveDraft(null);
+    setActiveDocumentId(null);
+    setRawText("");
+    setOcrWarnings([]);
+    setSelectedImage(null);
+    setSelectedMimeType(null);
+  };
+
+  const handleSaveDraft = async () => {
+    if (!activeDocumentId || isSavingDraft || isVerifying) return;
+    setIsSavingDraft(true);
+    try {
+      const response = await apiFetch(`/api/receipt-documents/${activeDocumentId}/draft`, {
+        method: "PUT",
+        body: JSON.stringify(buildManualPayload()),
+      });
+      if (!response.ok) throw new Error(await readApiError(response));
+      await loadPendingDocuments();
+      closeWorkspace();
+      alert("Draft verifikasi berhasil disimpan. Dokumen dapat dibuka kembali dari daftar Menunggu Verifikasi.");
+    } catch (error: any) {
+      console.error(error);
+      alert("Gagal menyimpan draft:\n" + (error?.message || "Kesalahan tidak diketahui"));
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  const handleVerifySave = async () => {
+    if (!activeDraft || !activeDocumentId || isSavingDraft || isVerifying) return;
+
+    if (!storeName.trim()) {
+      alert("Nama toko/penyedia wajib diisi sebelum verifikasi.");
+      return;
+    }
+    if (!date) {
+      alert("Tanggal kuitansi wajib diisi sebelum verifikasi.");
       return;
     }
 
-    try {
-      const payload = {
-        invoiceNo,
-        storeName,
-        date,
-        isTaxed,
-        taxRate: isTaxed ? Number(taxRate) : 0,
-        items: items.map(it => ({
-          name: it.name,
-          qty: Number(it.qty),
-          price: Number(it.price)
-        })),
-        method,
-        bastName,
-        bastDate,
-      };
+    const invalidItemIndex = items.findIndex(
+      (item) =>
+        !item.name.trim() ||
+        !Number.isInteger(Number(item.qty)) ||
+        Number(item.qty) < 1 ||
+        !Number.isFinite(Number(item.price)) ||
+        Number(item.price) <= 0
+    );
 
-      const res = await apiFetch(`/api/receipt-documents/${activeDocumentId}/verify`, {
+    if (items.length === 0 || invalidItemIndex >= 0) {
+      alert(
+        invalidItemIndex >= 0
+          ? `Periksa barang ke-${invalidItemIndex + 1}. Nama, jumlah, dan harga wajib valid.`
+          : "Minimal satu barang wajib diisi."
+      );
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      const response = await apiFetch(`/api/receipt-documents/${activeDocumentId}/verify`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(buildManualPayload()),
       });
-      
-      if (!res.ok) {
-        const err = await res.json();
-        alert("Gagal menyimpan verifikasi: " + (err.message || "Kesalahan server"));
-        return;
+
+      if (!response.ok) throw new Error(await readApiError(response));
+
+      const responsePayload = await response.json();
+      const receipt = responsePayload?.data?.receipt;
+
+      if (!receipt) {
+        throw new Error("Server tidak mengembalikan data kuitansi yang sudah diverifikasi.");
       }
-      
-      const verifiedData = await res.json();
+
+      const serverItems = Array.isArray(receipt.items)
+        ? receipt.items.map((item: any) => ({
+            id: String(item.id),
+            name: String(item.name),
+            qty: Number(item.qty),
+            price: Number(item.price),
+            subtotal: Number(item.subtotal),
+          }))
+        : items;
 
       const finalReceipt: ReceiptData = {
-        ...activeDraft,
-        storeName,
-        invoiceNo,
-        date,
-        isTaxed,
-        taxRate: isTaxed ? Number(taxRate) : 0,
-        subtotal: verifiedData.receipt.subtotal,
-        taxAmount: verifiedData.receipt.tax_amount,
-        total: verifiedData.receipt.total,
+        id: String(receipt.id),
+        storeName: String(receipt.store_name),
+        invoiceNo: String(receipt.invoice_no),
+        date: String(receipt.date).slice(0, 10),
+        isTaxed: Boolean(receipt.is_taxed),
+        taxRate: Number(receipt.tax_rate),
+        subtotal: Number(receipt.subtotal),
+        taxAmount: Number(receipt.tax_amount),
+        total: Number(receipt.total),
         isVerified: true,
         status: "Dokumen Valid",
-        items,
-        method,
-        bastName,
-        bastDate,
+        items: serverItems,
+        method: (receipt.method as ProcurementMethod) || method,
+        bastName: receipt.bast_name || bastName,
+        bastDate: receipt.bast_date ? String(receipt.bast_date).slice(0, 10) : bastDate,
       };
 
-      const logMsg = `Verifikasi Kuitansi: Petugas memverifikasi kuitansi nomor ${invoiceNo} dari ${storeName}. Total belanja ${formatIDR(finalReceipt.total)} dengan pajak PPN ${isTaxed ? `${taxRate}%` : "0% (Bebas Pajak)"}. BAST tercatat atas nama ${bastName || "-"} tanggal ${bastDate || "-"}.`;
+      const displayInvoice = finalReceipt.invoiceNo || "tanpa nomor";
+      const logMsg = `Verifikasi Kuitansi: Petugas memverifikasi kuitansi nomor ${displayInvoice} dari ${finalReceipt.storeName}. Total belanja ${formatIDR(finalReceipt.total)}.`;
 
       onVerifyReceipt(activeDraft.id, finalReceipt, logMsg);
-      setActiveDraft(null);
-      setActiveDocumentId(null);
-    } catch (e) {
-      console.error(e);
-      alert("Kesalahan jaringan saat menyimpan verifikasi.");
+      setPendingDocuments((prev) => prev.filter((d) => d.id !== activeDocumentId));
+      closeWorkspace();
+      alert(responsePayload.message || "Dokumen berhasil diverifikasi.");
+    } catch (error: any) {
+      console.error(error);
+      alert("Gagal menyimpan verifikasi:\n" + (error?.message || "Kesalahan tidak diketahui"));
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -956,21 +1117,33 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             </div>
 
             {/* Form Actions */}
-            <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:justify-end gap-2.5 pt-3 border-t border-slate-100">
               <button
                 type="button"
-                onClick={() => setActiveDraft(null)}
-                className="px-3.5 py-2 rounded text-xs font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all"
+                onClick={closeWorkspace}
+                disabled={isSavingDraft || isVerifying}
+                className="px-3.5 py-2 rounded text-xs font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
-                Tolak Draft
+                <X size={13} />
+                Tutup
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={isSavingDraft || isVerifying}
+                className="px-3.5 py-2 rounded text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {isSavingDraft ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
+                {isSavingDraft ? "Menyimpan Draft..." : "Simpan Draft"}
               </button>
               <button
                 type="button"
                 onClick={handleVerifySave}
-                className="px-4 py-2 rounded text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-xs flex items-center gap-1.5"
+                disabled={isSavingDraft || isVerifying}
+                className="px-4 py-2 rounded text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
-                <CheckCircle size={13} />
-                Selesaikan & Verifikasi Dokumen
+                {isVerifying ? <RefreshCw size={13} className="animate-spin" /> : <CheckCircle size={13} />}
+                {isVerifying ? "Menyimpan Verifikasi..." : "Selesaikan & Verifikasi Dokumen"}
               </button>
             </div>
           </div>
@@ -999,49 +1172,89 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {receipts
-                .filter((r) => (activeTab === "pending" ? !r.isVerified : r.isVerified))
-                .map((rc) => (
-                  <tr key={rc.id} className="hover:bg-slate-50/50 transition-colors text-xs font-mono">
-                    <td className="px-5 py-3 font-semibold text-slate-700">
-                      {rc.invoiceNo}
-                    </td>
-                    <td className="px-5 py-3 font-bold text-slate-800 font-sans">
-                      {rc.storeName}
-                    </td>
-                    <td className="px-5 py-3 text-slate-500 font-sans">
-                      {rc.date}
-                    </td>
-                    <td className="px-5 py-3 font-semibold text-slate-600 font-sans">
-                      {rc.method}
-                    </td>
-                    <td className="px-5 py-3 text-center font-bold text-indigo-600">
-                      {rc.isTaxed ? `${rc.taxRate}%` : "0% (Bebas)"}
-                    </td>
-                    <td className="px-5 py-3 text-right font-bold text-slate-800 font-sans">
-                      {formatIDR(rc.total)}
-                    </td>
-                    <td className="px-5 py-3 text-center font-sans">
-                      <span
-                        className={`inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded border font-bold ${
-                          rc.isVerified
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-100"
-                            : "bg-amber-50 text-amber-800 border-amber-100"
-                        }`}
-                      >
-                        {rc.isVerified ? "Dokumen Valid" : "Menunggu Verifikasi"}
-                      </span>
+              {activeTab === "pending" ? (
+                pendingDocuments.length > 0 ? (
+                  pendingDocuments.map((doc) => (
+                    <tr key={`doc-${doc.id}`} className="hover:bg-slate-50/50 transition-colors text-xs font-mono">
+                      <td className="px-5 py-3 font-semibold text-slate-700">
+                        {doc.summary?.invoiceNo || "-"}
+                      </td>
+                      <td className="px-5 py-3 font-bold text-slate-800 font-sans">
+                        {doc.summary?.storeName || doc.original_filename}
+                      </td>
+                      <td className="px-5 py-3 text-slate-500 font-sans">
+                        {doc.summary?.date || "-"}
+                      </td>
+                      <td className="px-5 py-3 font-semibold text-slate-600 font-sans">
+                        {doc.summary?.method || "-"}
+                      </td>
+                      <td className="px-5 py-3 text-center font-bold text-indigo-600">
+                        {doc.summary?.isTaxed ? `${doc.summary.taxRate}%` : "0% (Bebas)"}
+                      </td>
+                      <td className="px-5 py-3 text-right font-bold text-slate-800 font-sans">
+                        {formatIDR(doc.summary?.total || 0)}
+                      </td>
+                      <td className="px-5 py-3 text-center font-sans">
+                        <button
+                          onClick={() => {
+                            if (isScanning || isSavingDraft || isVerifying) return;
+                            setIsScanning(true);
+                            setOcrStatus("processing");
+                            pollDocumentStatus(doc.id).finally(() => setIsScanning(false));
+                          }}
+                          className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[10px] font-bold uppercase transition-colors flex items-center justify-center gap-1 mx-auto"
+                        >
+                          <FolderOpen size={12} />
+                          Buka Draft
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="text-center py-8 text-slate-400 text-xs font-medium font-sans">
+                      Tidak ada dokumen menunggu verifikasi.
                     </td>
                   </tr>
-                ))}
-              {receipts.filter((r) => (activeTab === "pending" ? !r.isVerified : r.isVerified)).length === 0 && (
-                <tr>
-                  <td colSpan={7} className="text-center py-8 text-slate-400 text-xs font-medium font-sans">
-                    Tidak ada kuitansi dalam daftar ini.
-                  </td>
-                </tr>
+                )
+              ) : (
+                receipts.filter((r) => r.isVerified).length > 0 ? (
+                  receipts.filter((r) => r.isVerified).map((rc) => (
+                    <tr key={rc.id} className="hover:bg-slate-50/50 transition-colors text-xs font-mono">
+                      <td className="px-5 py-3 font-semibold text-slate-700">
+                        {rc.invoiceNo}
+                      </td>
+                      <td className="px-5 py-3 font-bold text-slate-800 font-sans">
+                        {rc.storeName}
+                      </td>
+                      <td className="px-5 py-3 text-slate-500 font-sans">
+                        {rc.date}
+                      </td>
+                      <td className="px-5 py-3 font-semibold text-slate-600 font-sans">
+                        {rc.method}
+                      </td>
+                      <td className="px-5 py-3 text-center font-bold text-indigo-600">
+                        {rc.isTaxed ? `${rc.taxRate}%` : "0% (Bebas)"}
+                      </td>
+                      <td className="px-5 py-3 text-right font-bold text-slate-800 font-sans">
+                        {formatIDR(rc.total)}
+                      </td>
+                      <td className="px-5 py-3 text-center font-sans">
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded border font-bold bg-emerald-50 text-emerald-800 border-emerald-100">
+                          Dokumen Valid
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="text-center py-8 text-slate-400 text-xs font-medium font-sans">
+                      Tidak ada kuitansi valid.
+                    </td>
+                  </tr>
+                )
               )}
-            </tbody>
+</tbody>
           </table>
         </div>
       </div>
