@@ -139,8 +139,12 @@ class ReceiptDocumentController extends Controller
 
     public function verify(Request $request, ReceiptDocument $receiptDocument)
     {
-        if ($receiptDocument->status !== ReceiptDocumentStatus::NEEDS_REVIEW) {
-            return response()->json(['message' => 'Document must be in needs_review status'], 422);
+        if (!in_array($receiptDocument->status, [ReceiptDocumentStatus::NEEDS_REVIEW, ReceiptDocumentStatus::VERIFIED])) {
+            return response()->json(['message' => 'Document must be in needs_review or verified status'], 422);
+        }
+
+        if ($receiptDocument->receipt_id !== null) {
+            return response()->json(['message' => 'Document has already been verified and receipt created'], 422);
         }
 
         $validated = $request->validate([
