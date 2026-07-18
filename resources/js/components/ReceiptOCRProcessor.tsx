@@ -362,34 +362,45 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
           normalizedWarnings
         );
 
+        const m = data.manual_draft;
+        
+        let finalItems = safeItems;
+        if (m && Array.isArray(m.items) && m.items.length > 0) {
+          finalItems = m.items.map((item: any, index: number) => ({
+            id: `it-draft-manual-${index}`,
+            name: item.name || "",
+            qty: Number(item.qty) || 1,
+            price: Number(item.price) || 0,
+            subtotal: (Number(item.qty) || 1) * (Number(item.price) || 0),
+          }));
+        }
+
         const newDraft: ReceiptData = {
           id: `rc-draft-${data.id}`,
 
           invoiceNo:
-            extractValue(p.invoice_no),
+            m?.invoiceNo ?? extractValue(p.invoice_no),
 
           storeName:
-            extractValue(p.store_name),
+            m?.storeName ?? extractValue(p.store_name),
 
           date:
-            extractValue(p.date),
+            m?.date ?? extractValue(p.date),
 
           isTaxed:
-            hasTax,
+            m?.isTaxed ?? hasTax,
 
           taxRate:
-            hasTax
-              ? extractedTaxRate
-              : 0,
+            m?.taxRate ?? (hasTax ? extractedTaxRate : 0),
 
           subtotal:
-            documentSubtotal,
+            m?.subtotal ?? documentSubtotal,
 
           taxAmount:
-            extractedTaxAmount,
+            m?.taxAmount ?? extractedTaxAmount,
 
           total:
-            documentTotal,
+            m?.total ?? documentTotal,
 
           isVerified:
             data.status === "verified",
@@ -400,16 +411,16 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
               : "Menunggu Verifikasi",
 
           method:
-            ProcurementMethod.SENDIRI,
+            (m?.method as ProcurementMethod) ?? ProcurementMethod.SENDIRI,
 
           items:
-            safeItems,
+            finalItems,
 
           bastName:
-            extractValue(p.store_name),
+            m?.bastName ?? extractValue(p.store_name),
 
           bastDate:
-            extractValue(p.date),
+            m?.bastDate ?? extractValue(p.date),
         };
 
         setActiveDraft(newDraft);

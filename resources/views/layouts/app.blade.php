@@ -62,7 +62,7 @@
                         </span>
                     </div>
                     
-                    <button onclick="window.history.back()" type="button" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white border-2 border-slate-300 hover:bg-slate-50 hover:border-slate-400 text-slate-900 transition-all shadow-sm hover:shadow-md cursor-pointer">
+                    <button onclick="window.location.href='/'" type="button" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white border-2 border-slate-300 hover:bg-slate-50 hover:border-slate-400 text-slate-900 transition-all shadow-sm hover:shadow-md cursor-pointer">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                         </svg>
