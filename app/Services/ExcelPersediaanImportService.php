@@ -95,9 +95,9 @@ class ExcelPersediaanImportService
                     elseif (str_contains($v, 'nama'))                 $found['nama']   = $colLetter;
                     elseif (in_array($v, ['no','no.','nomor','#']))   $found['no']     = $colLetter;
                     elseif (str_contains($v, 'jumlah') || $v==='qty') $found['qty']    = $colLetter;
-                    elseif (str_contains($v, 'satuan') || $v==='sat') $found['unit']   = $colLetter;
+                    elseif (str_contains($v, 'pajak') || str_contains($v, 'ppn')) $found['pajak'] = $colLetter;
                     elseif (str_contains($v, 'harga'))                $found['harga']  = $colLetter;
-                    elseif (str_contains($v, 'pajak'))                $found['pajak']  = $colLetter;
+                    elseif (str_contains($v, 'satuan') || $v==='sat') $found['unit']   = $colLetter;
                     elseif (str_contains($v, 'total'))                $found['total']  = $colLetter;
                     elseif (str_contains($v, 'lokasi') || str_contains($v, 'location') || str_contains($v, 'rak') || str_contains($v, 'tempat')) $found['storage_location'] = $colLetter;
                 }
@@ -136,13 +136,13 @@ class ExcelPersediaanImportService
                 for ($c = 1; $c <= min($highCol2, 12); $c++) {
                     $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
                     $val = strtolower(trim($sheet->getCell($colLetter . $headerRow)->getValue() ?? ''));
-                    if (str_contains($val, 'harga') && str_contains($val, 'pajak')) {
+                    if (str_contains($val, 'harga') && (str_contains($val, 'pajak') || str_contains($val, 'ppn'))) {
                         $colHargaPajak = $colLetter;
                     }
                     if (str_contains($val, 'total')) {
                         $colTotal = $colLetter;
                     }
-                    if ($val === 'pajak' || str_ends_with($val, 'pajak')) {
+                    if ($val === 'pajak' || $val === 'ppn' || str_ends_with($val, 'pajak') || str_ends_with($val, 'ppn')) {
                         $colPajakRate = $colLetter;
                     }
                 }
@@ -286,6 +286,9 @@ class ExcelPersediaanImportService
                 if ($unit === '') {
                     $errorDetails[] = ['column' => $colUnit,
                         'message' => "Baris Excel {$row}: Satuan wajib diisi."];
+                } elseif (preg_match('/\d/', $unit)) {
+                    $errorDetails[] = ['column' => $colUnit,
+                        'message' => "Baris Excel {$row}: Satuan tidak boleh mengandung angka ('{$unit}')."];
                 }
                 if ($priceUnit <= 0) {
                     $errorDetails[] = ['column' => $colHarga,
