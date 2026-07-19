@@ -727,7 +727,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     if (!window.confirm("Apakah Anda yakin ingin membatalkan validasi dokumen ini? Dokumen akan kembali ke status draft/menunggu verifikasi.")) return;
 
     try {
-      const response = await apiFetch(`/api/receipt-documents/${id}/unverify`, {
+      const response = await apiFetch(`/api/receipts/${id}/unverify`, {
         method: "PUT",
       });
 
