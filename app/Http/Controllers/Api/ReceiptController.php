@@ -59,4 +59,36 @@ class ReceiptController extends Controller
 
         return response()->json($receipt->load('items'), 201);
     }
+
+    public function unverify(\App\Models\Receipt $receipt)
+    {
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($receipt) {
+                // Cari ReceiptDocument yang terhubung, jika ada
+                $document = \App\Models\ReceiptDocument::where('receipt_id', $receipt->id)->first();
+                if ($document) {
+                    $document->update([
+                        'receipt_id' => null,
+                        'status' => \App\Enums\ReceiptDocumentStatus::NEEDS_REVIEW,
+                    ]);
+                }
+
+                $receipt->delete();
+
+                \App\Models\Log::create([
+                    'user' => auth()->user()->name,
+                    'role' => auth()->user()->role,
+                    'action' => 'Pembatalan Verifikasi Kuitansi: Petugas membatalkan verifikasi kuitansi ' . ($receipt->invoice_no ?? 'tanpa nomor') . '.',
+                ]);
+            });
+
+            return response()->json(['message' => 'Verifikasi kuitansi berhasil dibatalkan.']);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Gagal membatalkan kuitansi', ['id' => $receipt->id, 'error' => $e->getMessage()]);
+            return response()->json([
+                'message' => 'Terjadi kesalahan sistem saat membatalkan kuitansi.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
 }
