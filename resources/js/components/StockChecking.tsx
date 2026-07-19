@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ItemRequest, RequestStatus, StockItem } from "../types";
-import { SearchCode, CheckCircle, AlertTriangle, Play, HelpCircle, Package, ArrowRight, ShieldAlert, Truck, ShoppingCart, XCircle, Loader2 } from "lucide-react";
+import { SearchCode, CheckCircle, AlertTriangle, Play, HelpCircle, Package, ArrowRight, ShieldAlert, Truck, ShoppingCart, XCircle, Loader2, Search } from "lucide-react";
 import { DistributionProcurement } from "./DistributionProcurement";
 
 interface StockCheckingProps {
@@ -54,6 +54,10 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
   const [selectedForAction, setSelectedForAction] = useState<ItemRequest | null>(null);
   const [qtyAvailable,      setQtyAvailable]      = useState<number>(0);
   const [qtyFulfilled,      setQtyFulfilled]      = useState<number>(0);
+  // Barang stok yang dipilih manual oleh Petugas saat cek stok
+  const [selectedStockItem, setSelectedStockItem] = useState<StockItem | null>(null);
+  const [stockSearchQuery,  setStockSearchQuery]  = useState("");
+  const [showStockDropdown, setShowStockDropdown] = useState(false);
 
   // ── Batalkan state ────────────────────────────────────────────
   const [rejectTarget,  setRejectTarget]  = useState<ItemRequest | null>(null);
@@ -61,17 +65,38 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
   const [rejectLoading, setRejectLoading] = useState(false);
   const [rejectError,   setRejectError]   = useState<string | null>(null);
 
+  /** Cari barang yang paling mirip berdasarkan kata kunci (fuzzy keyword) */
+  const findBestMatch = (itemName: string): StockItem | null => {
+    const needle = itemName.toLowerCase();
+    // Exact match dulu
+    const exact = stockList.find((s) => s.name.toLowerCase() === needle);
+    if (exact) return exact;
+    // Tokenised partial match: cari barang yang mengandung paling banyak kata dari nama pengajuan
+    const tokens = needle.split(/\s+/).filter((t) => t.length > 2);
+    let bestScore = 0;
+    let bestItem: StockItem | null = null;
+    for (const s of stockList) {
+      const haystack = s.name.toLowerCase();
+      const score = tokens.filter((t) => haystack.includes(t)).length;
+      if (score > bestScore) {
+        bestScore = score;
+        bestItem = s;
+      }
+    }
+    return bestScore > 0 ? bestItem : null;
+  };
+
   const openChecker = (req: ItemRequest) => {
-    // Find matching stock item
-    const stockItem = stockList.find(
-      (s) => s.name.toLowerCase() === req.itemName.toLowerCase()
-    );
-    const available = stockItem ? stockItem.qty : 0;
+    // Cari otomatis dengan fuzzy match
+    const match = findBestMatch(req.itemName);
+    const available = match ? match.qty : 0;
 
     setSelectedRequest(req);
+    setSelectedStockItem(match);
     setQtyAvailable(available);
-    // Suggest default fulfilled as Min(requested, available)
     setQtyFulfilled(Math.min(req.qtyRequested, available));
+    setStockSearchQuery(match ? match.name : "");
+    setShowStockDropdown(false);
   };
 
   const handleConfirmCheck = () => {
@@ -85,10 +110,8 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
     let logMessage = "";
     let stockItemToDeduct: { code: string; qtyToDeduct: number } | undefined;
 
-    // Find stock code
-    const stockItem = stockList.find(
-      (s) => s.name.toLowerCase() === selectedRequest.itemName.toLowerCase()
-    );
+    // Gunakan barang yang dipilih manual (sudah di-set di selectedStockItem)
+    const stockItem = selectedStockItem;
 
     if (fulfilled === requested) {
       finalStatus = RequestStatus.TERPENUHI;
@@ -117,6 +140,8 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
     );
 
     setSelectedRequest(null);
+    setSelectedStockItem(null);
+    setStockSearchQuery("");
   };
 
   const getStatusColor = (status: RequestStatus) => {
@@ -303,13 +328,81 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                   <span className="font-bold text-slate-700">{selectedRequest.section}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Nama Barang:</span>
+                  <span className="text-slate-500">Nama di Pengajuan:</span>
                   <span className="font-extrabold text-indigo-700">{selectedRequest.itemName}</span>
                 </div>
                 <div className="flex justify-between border-t border-slate-200/50 pt-2 font-semibold">
                   <span className="text-slate-700">Jumlah Diminta:</span>
                   <span className="text-slate-900 font-extrabold">{selectedRequest.qtyRequested} {selectedRequest.unit}</span>
                 </div>
+              </div>
+
+              {/* ── Pilih Barang dari Stok Gudang ── */}
+              <div>
+                <label className="block text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1.5">
+                  Cocokkan dengan Barang di Stok Gudang
+                </label>
+                {selectedStockItem && (
+                  <div className="mb-2 flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
+                    <CheckCircle size={13} className="text-emerald-500 shrink-0" />
+                    <span className="text-xs font-bold text-emerald-700 truncate">{selectedStockItem.name}</span>
+                    <span className="text-[10px] text-emerald-500 font-semibold ml-auto shrink-0">Stok: {selectedStockItem.qty} {selectedStockItem.unit}</span>
+                  </div>
+                )}
+                <div className="relative">
+                  <div className="relative">
+                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Cari nama barang di stok gudang..."
+                      value={stockSearchQuery}
+                      onChange={(e) => {
+                        setStockSearchQuery(e.target.value);
+                        setShowStockDropdown(true);
+                      }}
+                      onFocus={() => setShowStockDropdown(true)}
+                      className="w-full pl-7 pr-3 py-2 border border-indigo-200 rounded text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white"
+                    />
+                  </div>
+                  {showStockDropdown && (
+                    <div className="absolute z-20 w-full bg-white border border-slate-200 rounded shadow-lg mt-1 max-h-48 overflow-y-auto">
+                      {stockList
+                        .filter((s) =>
+                          stockSearchQuery === "" ||
+                          s.name.toLowerCase().includes(stockSearchQuery.toLowerCase())
+                        )
+                        .slice(0, 20)
+                        .map((s) => (
+                          <button
+                            key={s.id ?? s.code}
+                            type="button"
+                            onClick={() => {
+                              setSelectedStockItem(s);
+                              setQtyAvailable(s.qty);
+                              setQtyFulfilled(Math.min(selectedRequest!.qtyRequested, s.qty));
+                              setStockSearchQuery(s.name);
+                              setShowStockDropdown(false);
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs hover:bg-indigo-50 flex justify-between items-center gap-3 border-b border-slate-100 last:border-0"
+                          >
+                            <span className="font-medium text-slate-800 truncate">{s.name}</span>
+                            <span className="text-[10px] text-slate-400 shrink-0 font-semibold">Stok: {s.qty} {s.unit}</span>
+                          </button>
+                        ))}
+                      {stockList.filter((s) =>
+                        stockSearchQuery === "" ||
+                        s.name.toLowerCase().includes(stockSearchQuery.toLowerCase())
+                      ).length === 0 && (
+                        <div className="px-3 py-3 text-xs text-slate-400 text-center">Tidak ada barang yang sesuai</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {!selectedStockItem && (
+                  <p className="mt-1.5 text-[10px] text-amber-600 font-semibold">
+                    ⚠ Nama pengajuan tidak cocok otomatis — pilih barang dari dropdown di atas.
+                  </p>
+                )}
               </div>
 
               {/* Stock Input fields */}
@@ -372,14 +465,21 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
 
             <div className="flex gap-2.5">
               <button
-                onClick={() => setSelectedRequest(null)}
+                onClick={() => {
+                  setSelectedRequest(null);
+                  setSelectedStockItem(null);
+                  setStockSearchQuery("");
+                  setShowStockDropdown(false);
+                }}
                 className="flex-1 px-3 py-2 rounded text-xs font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all text-center"
               >
                 Kembali
               </button>
               <button
                 onClick={handleConfirmCheck}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-3 rounded transition-all shadow-xs text-center"
+                disabled={qtyFulfilled > 0 && !selectedStockItem}
+                title={qtyFulfilled > 0 && !selectedStockItem ? "Pilih dulu barang dari stok gudang" : undefined}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold py-2 px-3 rounded transition-all shadow-xs text-center"
               >
                 Konfirmasi Pemenuhan
               </button>
