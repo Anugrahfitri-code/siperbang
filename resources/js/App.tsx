@@ -605,6 +605,11 @@ useEffect(() => {
     await addLog(currentUser, "Verifikasi Kuitansi", logMsg);
   };
 
+  const handleUnverifyReceipt = async (id: string, logMsg: string) => {
+    setReceipts((prev) => prev.filter((r) => r.id !== id));
+    await addLog(currentUser, "Batalkan Verifikasi", logMsg);
+  };
+
   const handleAddReceipt = async (newReceipt: ReceiptData) => {
     setReceipts((prev) => [newReceipt, ...prev]);
     await addLog(currentUser, "Tambah Kuitansi", `Menambahkan kuitansi manual/baru dari ${newReceipt.storeName} senilai ${formatIDR(newReceipt.total)}.`);
@@ -887,6 +892,7 @@ useEffect(() => {
                   requests={requests}
                   onAddReceipt={handleAddReceipt}
                   onVerifyReceipt={handleVerifyReceipt}
+                  onUnverifyReceipt={handleUnverifyReceipt}
                 />
               )}
 
@@ -1118,6 +1124,7 @@ useEffect(() => {
                 requests={requests}
                 onAddReceipt={handleAddReceipt}
                 onVerifyReceipt={handleVerifyReceipt}
+                onUnverifyReceipt={handleUnverifyReceipt}
               />
             )}
 
