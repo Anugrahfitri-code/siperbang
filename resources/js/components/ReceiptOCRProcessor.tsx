@@ -436,20 +436,25 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         setBastName(newDraft.bastName || "");
         setBastDate(newDraft.bastDate || "");
 
-        // Load dokumen asli dari server untuk ditampilkan di preview
-        if (!selectedImage) {
-          try {
-            const fileRes = await apiFetch(`/api/receipt-documents/${id}/file`);
-            if (fileRes.ok) {
-              const contentType = fileRes.headers.get("Content-Type") || "image/jpeg";
-              const blob = await fileRes.blob();
-              const objectUrl = URL.createObjectURL(blob);
-              setSelectedImage(objectUrl);
-              setSelectedMimeType(contentType.startsWith("application/pdf") ? "application/pdf" : "image/jpeg");
-            }
-          } catch (_e) {
-            // Jika gagal memuat preview, tidak perlu alert — workspace tetap bisa dipakai
+        // Load dokumen asli dari server — selalu di-refresh setiap buka draft
+        try {
+          // Cabut objectURL lama agar tidak bocor memori
+          if (selectedImage) URL.revokeObjectURL(selectedImage);
+          setSelectedImage(null);
+          setSelectedMimeType(null);
+
+          const fileRes = await apiFetch(`/api/receipt-documents/${id}/file`);
+          if (fileRes.ok) {
+            const contentType = fileRes.headers.get("Content-Type") || "image/jpeg";
+            const blob = await fileRes.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            setSelectedImage(objectUrl);
+            setSelectedMimeType(contentType.startsWith("application/pdf") ? "application/pdf" : "image/jpeg");
           }
+        } catch (_e) {
+          // Jika gagal memuat preview, workspace tetap bisa dipakai
+          setSelectedImage(null);
+          setSelectedMimeType(null);
         }
         return;
       }
