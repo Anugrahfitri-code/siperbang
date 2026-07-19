@@ -435,6 +435,22 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         setItems(newDraft.items);
         setBastName(newDraft.bastName || "");
         setBastDate(newDraft.bastDate || "");
+
+        // Load dokumen asli dari server untuk ditampilkan di preview
+        if (!selectedImage) {
+          try {
+            const fileRes = await apiFetch(`/api/receipt-documents/${id}/file`);
+            if (fileRes.ok) {
+              const contentType = fileRes.headers.get("Content-Type") || "image/jpeg";
+              const blob = await fileRes.blob();
+              const objectUrl = URL.createObjectURL(blob);
+              setSelectedImage(objectUrl);
+              setSelectedMimeType(contentType.startsWith("application/pdf") ? "application/pdf" : "image/jpeg");
+            }
+          } catch (_e) {
+            // Jika gagal memuat preview, tidak perlu alert — workspace tetap bisa dipakai
+          }
+        }
         return;
       }
 
