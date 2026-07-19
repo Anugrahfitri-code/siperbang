@@ -1110,40 +1110,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
               </div>
             </div>
 
-            {/* BAST input: as requested by the PRD */}
-            <div className="bg-slate-50 border border-slate-200 rounded p-4 space-y-3">
-              <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider block border-b border-slate-200 pb-1.5">
-                Pencatatan Dokumen BAST (Berita Acara Serah Terima)
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                    Nama Toko / Mitra BAST
-                  </label>
-                  <input
-                    type="text"
-                    value={bastName}
-                    onChange={(e) => setBastName(e.target.value)}
-                    placeholder="Nama toko..."
-                    className="w-full bg-white border border-slate-200 rounded px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                    Tanggal BAST
-                  </label>
-                  <input
-                    type="date"
-                    value={bastDate}
-                    onChange={(e) => setBastDate(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
-              <p className="text-[10px] text-slate-450 leading-relaxed italic">
-                * Sesuai ketentuan PRD, dokumen BAST cukup memuat nama toko/penyedia dan tanggal serah terima. Detail transaksi dan nilai barang akan mengacu sepenuhnya pada data kuitansi kuitansi_detail (Section 4.9).
-              </p>
-            </div>
+
 
             {/* Form Actions */}
             <div className="flex flex-col sm:flex-row sm:justify-end gap-2.5 pt-3 border-t border-slate-100">

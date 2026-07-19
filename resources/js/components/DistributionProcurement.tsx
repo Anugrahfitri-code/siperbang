@@ -596,32 +596,7 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                Nama BAST
-              </label>
-              <input
-                type="text"
-                value={bastName}
-                onChange={(e) => setBastName(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="Nama penerima..."
-              />
-            </div>
 
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                Tanggal BAST
-              </label>
-              <input
-                type="date"
-                value={bastDate}
-                onChange={(e) => setBastDate(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
 
           {/* Price Summary */}
           <div className="bg-indigo-50 border border-indigo-200 rounded p-4">
