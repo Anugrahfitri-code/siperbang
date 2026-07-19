@@ -1203,10 +1203,10 @@ class ReceiptDocumentController extends Controller
                     'status' => ReceiptDocumentStatus::NEEDS_REVIEW,
                 ]);
 
-                \App\Models\Log::create([
-                    'user' => auth()->user()->name,
-                    'role' => auth()->user()->role,
-                    'action' => 'Pembatalan Verifikasi Kuitansi: Petugas membatalkan verifikasi dokumen OCR.',
+                \App\Models\HistoryLog::create([
+                    'actor' => auth()->user()->name . ' (' . auth()->user()->role . ')',
+                    'action' => 'Batalkan Verifikasi Kuitansi',
+                    'details' => 'Petugas membatalkan verifikasi dokumen OCR.',
                 ]);
             });
 
