@@ -75,10 +75,10 @@ class ReceiptController extends Controller
 
                 $receipt->delete();
 
-                \App\Models\Log::create([
-                    'user' => auth()->user()->name,
-                    'role' => auth()->user()->role,
-                    'action' => 'Pembatalan Verifikasi Kuitansi: Petugas membatalkan verifikasi kuitansi ' . ($receipt->invoice_no ?? 'tanpa nomor') . '.',
+                \App\Models\HistoryLog::create([
+                    'actor' => auth()->user()->name . ' (' . auth()->user()->role . ')',
+                    'action' => 'Batalkan Verifikasi Kuitansi',
+                    'details' => 'Petugas membatalkan verifikasi kuitansi ' . ($receipt->invoice_no ?? 'tanpa nomor') . ' dari ' . ($receipt->store_name ?? '-') . '.',
                 ]);
             });
 
