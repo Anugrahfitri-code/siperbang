@@ -8,6 +8,7 @@ interface ReceiptOCRProcessorProps {
   requests: ItemRequest[];
   onAddReceipt: (newReceipt: ReceiptData) => void;
   onVerifyReceipt: (id: string, updatedReceipt: ReceiptData, logMsg: string) => void;
+  onUnverifyReceipt?: (id: string, logMsg: string) => void;
 }
 
 export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
@@ -15,6 +16,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   requests,
   onAddReceipt,
   onVerifyReceipt,
+  onUnverifyReceipt,
 }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [activeDraft, setActiveDraft] = useState<ReceiptData | null>(null);
@@ -721,6 +723,27 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     }
   };
 
+  const handleUnverify = async (id: string, invoiceNo: string, storeName: string) => {
+    if (!window.confirm("Apakah Anda yakin ingin membatalkan validasi dokumen ini? Dokumen akan kembali ke status draft/menunggu verifikasi.")) return;
+
+    try {
+      const response = await apiFetch(`/api/receipt-documents/${id}/unverify`, {
+        method: "PUT",
+      });
+
+      if (!response.ok) throw new Error(await readApiError(response));
+      
+      const logMsg = `Pembatalan Verifikasi: Petugas membatalkan kuitansi nomor ${invoiceNo || "tanpa nomor"} dari ${storeName}.`;
+      if (onUnverifyReceipt) onUnverifyReceipt(id, logMsg);
+      
+      await loadPendingDocuments(); // refresh list
+      alert("Validasi kuitansi berhasil dibatalkan.");
+    } catch (error: any) {
+      console.error(error);
+      alert("Gagal membatalkan verifikasi:\n" + (error?.message || "Kesalahan tidak diketahui"));
+    }
+  };
+
   const formatIDR = (
     num: number
   ) => {
@@ -1246,9 +1269,17 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                         {formatIDR(rc.total)}
                       </td>
                       <td className="px-5 py-3 text-center font-sans">
-                        <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded border font-bold bg-emerald-50 text-emerald-800 border-emerald-100">
-                          Dokumen Valid
-                        </span>
+                        <div className="flex flex-col items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded border font-bold bg-emerald-50 text-emerald-800 border-emerald-100">
+                            Dokumen Valid
+                          </span>
+                          <button
+                            onClick={() => handleUnverify(rc.id, rc.invoiceNo, rc.storeName)}
+                            className="text-[9px] font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded border border-rose-100 transition-colors"
+                          >
+                            Batalkan
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

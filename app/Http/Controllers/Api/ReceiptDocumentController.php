@@ -1181,6 +1181,50 @@ class ReceiptDocumentController extends Controller
         }
     }
 
+    public function unverify(
+        ReceiptDocument $receiptDocument,
+    ): JsonResponse {
+        if ($receiptDocument->status !== ReceiptDocumentStatus::VERIFIED || !$receiptDocument->receipt_id) {
+            return response()->json([
+                'message' => 'Dokumen ini belum diverifikasi atau tidak memiliki kuitansi.',
+            ], 400);
+        }
+
+        try {
+            DB::transaction(function () use ($receiptDocument) {
+                $receiptId = $receiptDocument->receipt_id;
+                
+                // Hapus kuitansi (cascade akan menghapus receipt_items jika diset di DB)
+                \App\Models\Receipt::where('id', $receiptId)->delete();
+
+                // Kembalikan status dokumen
+                $receiptDocument->update([
+                    'receipt_id' => null,
+                    'status' => ReceiptDocumentStatus::NEEDS_REVIEW,
+                ]);
+
+                \App\Models\Log::create([
+                    'user' => auth()->user()->name,
+                    'role' => auth()->user()->role,
+                    'action' => 'Pembatalan Verifikasi Kuitansi: Petugas membatalkan verifikasi dokumen OCR.',
+                ]);
+            });
+
+            return response()->json([
+                'message' => 'Verifikasi kuitansi berhasil dibatalkan. Dokumen dikembalikan ke status draft.',
+                'data' => [
+                    'document' => $receiptDocument,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal membatalkan verifikasi kuitansi', ['id' => $receiptDocument->id, 'error' => $e->getMessage()]);
+            return response()->json([
+                'message' => 'Terjadi kesalahan sistem saat membatalkan verifikasi.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
+
     public function retry(
         ReceiptDocument $receiptDocument,
     ) {

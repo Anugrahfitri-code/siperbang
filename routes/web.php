@@ -149,6 +149,13 @@ Route::middleware('auth')->prefix('api')->group(function () {
                 'verify',
             ]
         );
+        Route::put(
+            '/receipt-documents/{receiptDocument}/unverify',
+            [
+                \App\Http\Controllers\Api\ReceiptDocumentController::class,
+                'unverify',
+            ]
+        );
         Route::post('/receipt-documents/{receiptDocument}/retry', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'retry']);
         Route::delete('/receipt-documents/{receiptDocument}', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'destroy']);
         
