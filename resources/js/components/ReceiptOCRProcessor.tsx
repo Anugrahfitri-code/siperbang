@@ -43,11 +43,55 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     setIsVerifying,
   ] = useState(false);
   const pollTimerRef = useRef<number | NodeJS.Timeout | null>(null);
+  const documentRequestTokenRef = useRef(0);
+
+  const cancelDocumentRequest = () => {
+    if (pollTimerRef.current) {
+      clearTimeout(
+        pollTimerRef.current as number
+      );
+
+      pollTimerRef.current = null;
+    }
+
+    documentRequestTokenRef.current += 1;
+  };
+
+  const beginDocumentRequest = (): number => {
+    cancelDocumentRequest();
+
+    return documentRequestTokenRef.current;
+  };
+
+  const isCurrentDocumentRequest = (
+    requestToken: number
+  ): boolean => (
+    requestToken
+    === documentRequestTokenRef.current
+  );
 
   useEffect(() => {
     return () => {
-      if (pollTimerRef.current) clearTimeout(pollTimerRef.current as number);
-      if (selectedImage) URL.revokeObjectURL(selectedImage);
+      if (pollTimerRef.current) {
+        clearTimeout(
+          pollTimerRef.current as number
+        );
+      }
+
+      documentRequestTokenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (
+        selectedImage
+        && selectedImage.startsWith("blob:")
+      ) {
+        URL.revokeObjectURL(
+          selectedImage
+        );
+      }
     };
   }, [selectedImage]);
 
@@ -173,8 +217,17 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
 
   const pollDocumentStatus = async (
     id: number,
-    startedAt = Date.now()
+    startedAt = Date.now(),
+    requestToken = documentRequestTokenRef.current
   ) => {
+    if (
+      !isCurrentDocumentRequest(
+        requestToken
+      )
+    ) {
+      return;
+    }
+
     const elapsedMs = Date.now() - startedAt;
     const SOFT_LIMIT_MS = 20_000;
     const HARD_LIMIT_MS = 120_000;
@@ -203,11 +256,18 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       const data = await res.json();
 
       if (
+        !isCurrentDocumentRequest(
+          requestToken
+        )
+      ) {
+        return;
+      }
+
+      if (
           data.status === "needs_review"
           || data.status === "draft"
           || data.status === "verified"
         ) {
-        setIsScanning(false);
         setActiveDocumentId(id);
         const p: ParsedReceiptResult = data.parsed_result || { items: [], warnings: [], pages: [] };
 
@@ -426,7 +486,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         };
 
         setActiveDraft(newDraft);
-        await loadPendingDocuments();
+        void loadPendingDocuments();
         setStoreName(newDraft.storeName);
         setInvoiceNo(newDraft.invoiceNo);
         setDate(newDraft.date);
@@ -436,30 +496,52 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         setBastName(newDraft.bastName || "");
         setBastDate(newDraft.bastDate || "");
 
-        // Load dokumen asli dari server — selalu di-refresh setiap buka draft
-        try {
-          // Cabut objectURL lama agar tidak bocor memori
-          if (selectedImage) URL.revokeObjectURL(selectedImage);
-          setSelectedImage(null);
-          setSelectedMimeType(null);
-
-          const fileRes = await apiFetch(`/api/receipt-documents/${id}/file`);
-          if (fileRes.ok) {
-            const contentType = fileRes.headers.get("Content-Type") || "image/jpeg";
-            const blob = await fileRes.blob();
-            const objectUrl = URL.createObjectURL(blob);
-            setSelectedImage(objectUrl);
-            setSelectedMimeType(contentType.startsWith("application/pdf") ? "application/pdf" : "image/jpeg");
-          }
-        } catch (_e) {
-          // Jika gagal memuat preview, workspace tetap bisa dipakai
-          setSelectedImage(null);
-          setSelectedMimeType(null);
+        /*
+         * Preview menggunakan URL yang langsung terikat
+         * pada ID dokumen. Tidak ada lagi fetch Blob
+         * terpisah yang dapat selesai terlambat lalu
+         * menimpa preview draft yang baru dibuka.
+         */
+        if (
+          !isCurrentDocumentRequest(
+            requestToken
+          )
+        ) {
+          return;
         }
+
+        const contentType = (
+          typeof data.mime_type === "string"
+          && data.mime_type.length > 0
+        )
+          ? data.mime_type
+          : "application/pdf";
+
+        setSelectedMimeType(
+          contentType
+        );
+
+        setSelectedImage(
+          `/api/receipt-documents/${id}/file`
+          + `?draft=${id}`
+          + `&request=${requestToken}`
+          + `&t=${Date.now()}`
+        );
+
+        setIsScanning(false);
+
         return;
       }
 
       if (data.status === "failed") {
+        if (
+          !isCurrentDocumentRequest(
+            requestToken
+          )
+        ) {
+          return;
+        }
+
         setIsScanning(false);
         setActiveDocumentId(null);
         setOcrStatus("failed");
@@ -478,11 +560,33 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       } else {
         setOcrStatus(data.status);
       }
+      if (
+        !isCurrentDocumentRequest(
+          requestToken
+        )
+      ) {
+        return;
+      }
+
       pollTimerRef.current = setTimeout(
-        () => pollDocumentStatus(id, startedAt),
+        () => {
+          void pollDocumentStatus(
+            id,
+            startedAt,
+            requestToken
+          );
+        },
         1000
       );
     } catch (e) {
+      if (
+        !isCurrentDocumentRequest(
+          requestToken
+        )
+      ) {
+        return;
+      }
+
       console.error(e);
       setIsScanning(false);
       setOcrStatus("error");
@@ -492,6 +596,10 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
 
   const handleFileUpload = async (file: File) => {
     if (isScanning) return;
+
+    const requestToken =
+      beginDocumentRequest();
+
     setIsScanning(true);
     setOcrStatus("uploading");
     setActiveDraft(null);
@@ -526,7 +634,11 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       const data = await res.json();
       const docId = data.data ? data.data.id : (data.document ? data.document.id : data.id);
       if (!docId) throw new Error("Server response is missing document ID");
-      pollDocumentStatus(docId, Date.now());
+      void pollDocumentStatus(
+        docId,
+        Date.now(),
+        requestToken
+      );
     } catch (e: any) {
       console.error(e);
       setIsScanning(false);
@@ -627,6 +739,8 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   });
 
   const closeWorkspace = () => {
+    cancelDocumentRequest();
+    setIsScanning(false);
     setActiveDraft(null);
     setActiveDocumentId(null);
     setRawText("");
@@ -875,9 +989,19 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
               <div className="mb-4">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Dokumen Asli:</span>
                 {selectedMimeType === "application/pdf" ? (
-                  <iframe src={selectedImage} className="w-full h-64 border border-slate-200 rounded" title="PDF Preview" />
+                  <iframe
+                    key={`pdf-${activeDocumentId}-${selectedImage}`}
+                    src={selectedImage}
+                    className="w-full h-64 border border-slate-200 rounded"
+                    title="PDF Preview"
+                  />
                 ) : (
-                  <img src={selectedImage} alt="Struk" className="w-full max-h-48 object-contain rounded border border-slate-200 shadow-sm" />
+                  <img
+                    key={`image-${activeDocumentId}-${selectedImage}`}
+                    src={selectedImage}
+                    alt="Struk"
+                    className="w-full max-h-48 object-contain rounded border border-slate-200 shadow-sm"
+                  />
                 )}
               </div>
             )}
@@ -1238,10 +1362,25 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => {
-                              if (isScanning || isSavingDraft || isVerifying) return;
+                              if (
+                                isScanning
+                                || isSavingDraft
+                                || isVerifying
+                              ) {
+                                return;
+                              }
+
+                              const requestToken =
+                                beginDocumentRequest();
+
                               setIsScanning(true);
                               setOcrStatus("processing");
-                              pollDocumentStatus(doc.id).finally(() => setIsScanning(false));
+
+                              void pollDocumentStatus(
+                                doc.id,
+                                Date.now(),
+                                requestToken
+                              );
                             }}
                             className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[10px] font-bold uppercase transition-colors flex items-center gap-1"
                           >

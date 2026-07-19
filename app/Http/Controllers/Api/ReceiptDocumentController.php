@@ -347,6 +347,19 @@ class ReceiptDocumentController extends Controller
             );
         }
 
+        $inlineFilename = str_replace(
+            [
+                '"',
+                "\r",
+                "\n",
+            ],
+            '',
+            basename(
+                $receiptDocument
+                    ->original_filename
+            ),
+        );
+
         return response()->file(
             $disk->path(
                 $receiptDocument->storage_path
@@ -355,8 +368,23 @@ class ReceiptDocumentController extends Controller
                 'Content-Type' =>
                     $receiptDocument->mime_type,
 
+                'Content-Disposition' =>
+                    'inline; filename="'
+                    . $inlineFilename
+                    . '"',
+
                 'Cache-Control' =>
-                    'private, no-store, max-age=0',
+                    'private, no-store, no-cache, '
+                    . 'must-revalidate, max-age=0',
+
+                'Pragma' =>
+                    'no-cache',
+
+                'Expires' =>
+                    '0',
+
+                'X-Content-Type-Options' =>
+                    'nosniff',
             ],
         );
     }
