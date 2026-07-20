@@ -115,7 +115,7 @@ $statusColors = [
                                     Lihat Detail
                                 </a>
                                 <button type="button"
-                                        onclick="openBatalkanModal({{ $batch->id }}, '{{ addslashes($batch->file_name_original) }}')"
+                                        onclick="openConfirmModal('batalkanRiwayat{{ $batch->id }}')"
                                         class="btn-action border border-rose-200 text-rose-600 hover:bg-rose-50">
                                     Batalkan
                                 </button>
@@ -129,13 +129,10 @@ $statusColors = [
 
                             {{-- Hapus (soft) — only non-finalised --}}
                             @if($batch->isDeletable())
-                            <form action="{{ route('stok-upload.destroy', $batch->id) }}" method="POST"
-                                  onsubmit="return confirm('Pindahkan \'{{ addslashes($batch->file_name_original) }}\' ke sampah?')">
-                                @csrf @method('DELETE')
-                                <button class="btn-action border border-slate-200 text-slate-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200">
-                                    Hapus
-                                </button>
-                            </form>
+                            <button type="button" onclick="openConfirmModal('delRiwayat{{ $batch->id }}')"
+                                    class="btn-action border border-slate-200 text-slate-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200">
+                                Hapus
+                            </button>
                             @endif
 
                         </div>
@@ -163,72 +160,37 @@ $statusColors = [
     @endif
 </div>
 
-{{-- ── Batalkan Transaksi Modal (shared, opened via JS) ─────── --}}
-<div id="modalBatalkanRiwayat" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6">
-        <div class="flex items-start gap-3 mb-5">
-            <div class="bg-rose-100 rounded-full p-2 shrink-0">
-                <svg class="h-5 w-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-            </div>
-            <div>
-                <h3 class="text-sm font-extrabold text-slate-900">Batalkan Transaksi Upload</h3>
-                <p class="text-xs text-slate-500 mt-0.5" id="modalBatalkanDesc">
-                    Stok yang sudah ditambahkan akan dikembalikan melalui transaksi pembalik.
-                </p>
-            </div>
-        </div>
-
-        <form id="formBatalkanRiwayat" action="" method="POST" onsubmit="return validateBatalkanRiwayat()">
-            @csrf
-            <div class="mb-4">
-                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Alasan Pembatalan <span class="text-rose-500">*</span>
-                </label>
-                <textarea id="cancelReasonRiwayat" name="cancellation_reason" rows="3" required minlength="10"
-                          placeholder="Jelaskan alasan pembatalan secara singkat dan jelas (min. 10 karakter)..."
-                          class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs text-slate-700 focus:ring-2 focus:ring-rose-400 focus:border-rose-400 resize-none"></textarea>
-                <p class="text-[10px] text-slate-400 mt-1">Alasan dicatat dalam audit log dan tidak dapat diubah.</p>
-            </div>
-            <div class="flex gap-3 justify-end">
-                <button type="button" onclick="document.getElementById('modalBatalkanRiwayat').classList.add('hidden')"
-                        class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-                    Batal
-                </button>
-                <button type="submit"
-                        class="px-5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold shadow-sm transition-colors">
-                    Konfirmasi Batalkan
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <style>
 .btn-action {
     @apply inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors border border-transparent;
 }
 </style>
 
-<script>
-function openBatalkanModal(batchId, fileName) {
-    document.getElementById('modalBatalkanDesc').textContent =
-        'File: ' + fileName + '. Stok yang sudah ditambahkan akan dikembalikan melalui transaksi pembalik.';
-    document.getElementById('cancelReasonRiwayat').value = '';
-    document.getElementById('formBatalkanRiwayat').action =
-        '/stok-upload/' + batchId + '/batalkan';
-    document.getElementById('modalBatalkanRiwayat').classList.remove('hidden');
-}
+{{-- Per-batch confirmation modals --}}
+@foreach($batches as $batch)
+    @if($batch->isDeletable())
+    <x-confirm-modal id="delRiwayat{{ $batch->id }}"
+        title="Hapus Upload"
+        message="Pindahkan <strong>{{ $batch->file_name_original }}</strong> ke sampah?"
+        variant="danger"
+        confirmText="Ya, Hapus"
+        :formAction="route('stok-upload.destroy', $batch->id)"
+        formMethod="DELETE"
+    />
+    @endif
 
-function validateBatalkanRiwayat() {
-    const reason = document.getElementById('cancelReasonRiwayat')?.value?.trim();
-    if (!reason || reason.length < 10) {
-        alert('Alasan pembatalan harus diisi minimal 10 karakter.');
-        return false;
-    }
-    return confirm('Yakin ingin membatalkan transaksi ini? Stok akan dikembalikan. Tindakan ini tidak dapat diurungkan.');
-}
-</script>
+    @if($batch->status === SU::STATUS_SELESAI)
+    <x-confirm-modal id="batalkanRiwayat{{ $batch->id }}"
+        title="Batalkan Transaksi Upload"
+        message="File: <strong>{{ $batch->file_name_original }}</strong>. Stok yang sudah ditambahkan akan dikembalikan melalui transaksi pembalik."
+        variant="danger"
+        confirmText="Ya, Batalkan"
+        :formAction="route('stok-upload.batalkan', $batch->id)"
+        formMethod="POST"
+    >
+        <input type="hidden" name="cancellation_reason" value="Pembatalan oleh pengguna">
+    </x-confirm-modal>
+    @endif
+@endforeach
 
 @endsection

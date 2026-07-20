@@ -31,11 +31,10 @@
     <div class="flex gap-2 flex-wrap">
         <a href="{{ route('stok-upload.riwayat') }}" class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">← Riwayat</a>
         @if($batch->isDeletable())
-        <form action="{{ route('stok-upload.destroy', $batch->id) }}" method="POST"
-              onsubmit="return confirm('Pindahkan upload ini ke sampah?')">
-            @csrf @method('DELETE')
-            <button class="px-3 py-1.5 rounded-lg border border-rose-200 text-xs font-semibold text-rose-600 hover:bg-rose-50">Hapus</button>
-        </form>
+        <button type="button" onclick="openConfirmModal('delStepperModal')"
+                class="px-3 py-1.5 rounded-lg border border-rose-200 text-xs font-semibold text-rose-600 hover:bg-rose-50">
+            Hapus
+        </button>
         @endif
     </div>
 </div>
@@ -124,13 +123,10 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
     <svg class="h-10 w-10 text-rose-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
     <p class="text-sm font-extrabold text-rose-800">Batch ini tidak seharusnya ada di sini.</p>
     <p class="text-xs text-rose-600 mt-1">Sistem menolak upload ketika ada error. Jika batch ini sudah terlanjur tersimpan, hapus dan upload ulang file yang sudah diperbaiki.</p>
-    <form action="{{ route('stok-upload.destroy', $batch->id) }}" method="POST" class="mt-4"
-          onsubmit="return confirm('Hapus batch ini dan upload ulang file Excel yang sudah diperbaiki?')">
-        @csrf @method('DELETE')
-        <button class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors">
-            Hapus & Upload Ulang
-        </button>
-    </form>
+    <button type="button" onclick="openConfirmModal('delReuploadModal')"
+            class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors">
+        Hapus & Upload Ulang
+    </button>
 </div>
 @endif
 
@@ -427,73 +423,20 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
         </a>
 
         @if($canFinalize)
-        <form action="{{ route('stok-upload.finalisasi', $batch->id) }}" method="POST"
-              onsubmit="return confirm('Finalisasi {{ $totalApproved }} baris ke Master Barang? Stok akan diperbarui sekarang.')">
-            @csrf
-            <button type="submit"
-                    class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-lg shadow-sm transition-colors">
-                ✓ Finalisasi Stok
-            </button>
-        </form>
+        <button type="button" onclick="openConfirmModal('finalConfirmModal')"
+                class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-lg shadow-sm transition-colors">
+            ✓ Finalisasi Stok
+        </button>
         @endif
 
         @if($batch->status === \App\Models\StokUpload::STATUS_SELESAI)
-        {{-- Batalkan Transaksi button — opens modal --}}
-        <button type="button" onclick="document.getElementById('modalBatalkan').classList.remove('hidden')"
+        <button type="button" onclick="openConfirmModal('batalkanStepperModal')"
                 class="px-4 py-2 rounded-lg border border-rose-300 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors">
             ↩ Batalkan Transaksi
         </button>
         @endif
     </div>
 </div>
-
-{{-- ── Batalkan Transaksi Modal ──────────────────────────── --}}
-@if($batch->status === \App\Models\StokUpload::STATUS_SELESAI)
-<div id="modalBatalkan" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6">
-        <div class="flex items-start gap-3 mb-5">
-            <div class="bg-rose-100 rounded-full p-2 shrink-0">
-                <svg class="h-5 w-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-            </div>
-            <div>
-                <h3 class="text-sm font-extrabold text-slate-900">Batalkan Transaksi Upload</h3>
-                <p class="text-xs text-slate-500 mt-0.5">Tindakan ini akan membuat transaksi pembalik yang mengurangi stok kembali ke nilai sebelum upload. Stok tidak boleh sudah negatif.</p>
-            </div>
-        </div>
-
-        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5 text-xs text-amber-800">
-            <strong>Batch #{{ $batch->id }}</strong> — {{ $batch->file_name_original }}<br>
-            Difinalisasi: {{ $batch->updated_at->format('d M Y, H:i') }} oleh {{ $batch->user?->name ?? '—' }}
-        </div>
-
-        <form action="{{ route('stok-upload.batalkan', $batch->id) }}" method="POST"
-              onsubmit="return validateBatalkan()">
-            @csrf
-            <div class="mb-4">
-                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Alasan Pembatalan <span class="text-rose-500">*</span>
-                </label>
-                <textarea id="cancelReason" name="cancellation_reason" rows="3" required minlength="10"
-                          placeholder="Jelaskan alasan pembatalan secara singkat dan jelas (min. 10 karakter)..."
-                          class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs text-slate-700 focus:ring-2 focus:ring-rose-400 focus:border-rose-400 resize-none"></textarea>
-                <p class="text-[10px] text-slate-400 mt-1">Alasan ini akan dicatat dalam audit log dan tidak dapat diubah.</p>
-            </div>
-            <div class="flex gap-3 justify-end">
-                <button type="button" onclick="document.getElementById('modalBatalkan').classList.add('hidden')"
-                        class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-                    Batal
-                </button>
-                <button type="submit"
-                        class="px-5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold shadow-sm transition-colors">
-                    Konfirmasi Batalkan Transaksi
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-@endif
 
 @endif {{-- end step 4 --}}
 
@@ -518,21 +461,56 @@ function applySuggestion(index, kode) {
     for (let opt of sel.options) {
         if (opt.value === kode) { opt.selected = true; break; }
     }
-    // Also set Perbaiki radio
     const radio = document.getElementById('radio_' + index + '_Perbaiki');
     if (radio) radio.checked = true;
     sel.classList.add('ring-2', 'ring-indigo-400');
     setTimeout(() => sel.classList.remove('ring-2', 'ring-indigo-400'), 1500);
 }
-
-function validateBatalkan() {
-    const reason = document.getElementById('cancelReason')?.value?.trim();
-    if (!reason || reason.length < 10) {
-        alert('Alasan pembatalan harus diisi minimal 10 karakter.');
-        return false;
-    }
-    return confirm('Yakin ingin membatalkan transaksi ini? Stok akan dikembalikan ke nilai sebelum upload. Tindakan ini tidak dapat diurungkan.');
-}
 </script>
+
+{{-- Confirmation Modals --}}
+<x-confirm-modal id="delStepperModal"
+    title="Hapus Upload"
+    message="Pindahkan upload <strong>{{ $batch->file_name_original }}</strong> ke sampah?"
+    variant="danger"
+    confirmText="Ya, Hapus"
+    :formAction="route('stok-upload.destroy', $batch->id)"
+    formMethod="DELETE"
+/>
+
+<x-confirm-modal id="delReuploadModal"
+    title="Hapus & Upload Ulang"
+    message="Hapus batch ini dan upload ulang file Excel yang sudah diperbaiki?"
+    variant="danger"
+    confirmText="Ya, Hapus"
+    :formAction="route('stok-upload.destroy', $batch->id)"
+    formMethod="DELETE"
+/>
+
+<x-confirm-modal id="finalConfirmModal"
+    title="Finalisasi Stok"
+    message="Finalisasi <strong>{{ $totalApproved }} baris</strong> ke Master Barang? Stok akan diperbarui sekarang."
+    variant="success"
+    confirmText="Ya, Finalisasi"
+    :formAction="route('stok-upload.finalisasi', $batch->id)"
+    formMethod="POST"
+/>
+
+@if($batch->status === \App\Models\StokUpload::STATUS_SELESAI)
+<x-confirm-modal id="batalkanStepperModal"
+    title="Batalkan Transaksi Upload"
+    message="Tindakan ini akan membuat transaksi pembalik yang mengurangi stok kembali ke nilai sebelum upload. Stok tidak boleh sudah negatif."
+    variant="danger"
+    confirmText="Ya, Batalkan"
+    :formAction="route('stok-upload.batalkan', $batch->id)"
+    formMethod="POST"
+>
+    <input type="hidden" name="cancellation_reason" value="Pembatalan oleh pengguna">
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+        <strong>Batch #{{ $batch->id }}</strong> — {{ $batch->file_name_original }}<br>
+        Difinalisasi: {{ $batch->updated_at->format('d M Y, H:i') }} oleh {{ $batch->user?->name ?? '—' }}
+    </div>
+</x-confirm-modal>
+@endif
 
 @endsection

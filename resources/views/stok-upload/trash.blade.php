@@ -74,22 +74,16 @@
                     <td class="px-5 py-4 whitespace-nowrap text-right">
                         <div class="flex items-center justify-end gap-2">
                             {{-- Restore --}}
-                            <form action="{{ route('stok-upload.restore', $batch->id) }}" method="POST"
-                                  onsubmit="return confirm('Pulihkan upload ini dari sampah?')">
-                                @csrf
-                                <button class="inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-bold border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors">
-                                    Pulihkan
-                                </button>
-                            </form>
+                            <button type="button" onclick="openConfirmModal('restoreTrash{{ $batch->id }}')"
+                                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-bold border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors">
+                                Pulihkan
+                            </button>
 
                             {{-- Force delete --}}
-                            <form action="{{ route('stok-upload.force-delete', $batch->id) }}" method="POST"
-                                  onsubmit="return confirm('Hapus PERMANEN \'{{ addslashes($batch->file_name_original) }}\'? Data tidak dapat dikembalikan.')">
-                                @csrf @method('DELETE')
-                                <button class="inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-bold border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors">
-                                    Hapus Permanen
-                                </button>
-                            </form>
+                            <button type="button" onclick="openConfirmModal('forceDelTrash{{ $batch->id }}')"
+                                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-bold border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors">
+                                Hapus Permanen
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -114,5 +108,26 @@
     </div>
     @endif
 </div>
+
+{{-- Confirmation Modals --}}
+@foreach($batches as $batch)
+<x-confirm-modal id="restoreTrash{{ $batch->id }}"
+    title="Pulihkan Upload"
+    message="Pulihkan <strong>{{ $batch->file_name_original }}</strong> dari sampah?"
+    variant="success"
+    confirmText="Ya, Pulihkan"
+    :formAction="route('stok-upload.restore', $batch->id)"
+    formMethod="POST"
+/>
+
+<x-confirm-modal id="forceDelTrash{{ $batch->id }}"
+    title="Hapus Permanen"
+    message="Hapus PERMANEN <strong>{{ $batch->file_name_original }}</strong>? Data tidak dapat dikembalikan."
+    variant="danger"
+    confirmText="Ya, Hapus Permanen"
+    :formAction="route('stok-upload.force-delete', $batch->id)"
+    formMethod="DELETE"
+/>
+@endforeach
 
 @endsection

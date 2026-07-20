@@ -172,12 +172,10 @@ class StokUploadController extends Controller
         $this->authorizeRole('Petugas Persediaan');
         $batch = StokUpload::findOrFail($id);
 
-        $request->validate([
-            'cancellation_reason' => 'required|string|min:10|max:500',
-        ]);
+        $reason = $request->input('cancellation_reason', 'Alasan tidak diberikan');
 
         try {
-            $results = $this->cancellationService->cancel($batch, $request->cancellation_reason);
+            $results = $this->cancellationService->cancel($batch, $reason);
             $msg = "Batch #{$batch->id} berhasil dibatalkan. {$results['reversed']} item stok dibalik.";
             if (($results['clamped'] ?? 0) > 0) {
                 $msg .= " {$results['clamped']} item stok disetel ke 0 karena sudah terpakai sebelum pembatalan.";

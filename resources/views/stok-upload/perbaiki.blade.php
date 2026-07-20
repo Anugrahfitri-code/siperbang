@@ -71,14 +71,10 @@
                     <p class="text-xs mt-0.5">Klik <strong>Ajukan Ulang</strong> untuk mengirim data ke antrian verifikasi.</p>
                 </div>
             </div>
-            <form action="{{ route('stok-upload.ajukan-ulang', $batch->id) }}" method="POST"
-                  onsubmit="return confirm('Ajukan ulang batch ini ke Menunggu Verifikasi?')">
-                @csrf
-                <button type="submit"
-                        class="px-6 py-2.5 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
-                    Ajukan Ulang →
-                </button>
-            </form>
+            <button type="button" onclick="openConfirmModal('ajukanUlangPerbaikiModal')"
+                    class="px-6 py-2.5 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
+                Ajukan Ulang →
+            </button>
         </div>
     @endif
 
@@ -358,14 +354,10 @@
     {{-- ── Ajukan Ulang footer (always visible when no errors left) ── --}}
     @if($errorRows->count() === 0)
     <div class="flex justify-end">
-        <form action="{{ route('stok-upload.ajukan-ulang', $batch->id) }}" method="POST"
-              onsubmit="return confirm('Ajukan ulang batch ini ke Menunggu Verifikasi?')">
-            @csrf
-            <button type="submit"
-                    class="px-8 py-3 rounded-xl text-sm font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition-colors">
-                ✓ Ajukan Ulang ke Verifikasi
-            </button>
-        </form>
+        <button type="button" onclick="openConfirmModal('ajukanUlangModal')"
+                class="px-8 py-3 rounded-xl text-sm font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition-colors">
+            ✓ Ajukan Ulang ke Verifikasi
+        </button>
     </div>
     @endif
 
@@ -426,4 +418,23 @@
         }
     }
 </script>
+
+<x-confirm-modal id="ajukanUlangPerbaikiModal"
+    title="Ajukan Ulang"
+    message="Ajukan ulang batch ini ke Menunggu Verifikasi?"
+    variant="success"
+    confirmText="Ya, Ajukan"
+    :formAction="route('stok-upload.ajukan-ulang', $batch->id)"
+    formMethod="POST"
+/>
+
+<x-confirm-modal id="ajukanUlangModal"
+    title="Ajukan Ulang"
+    message="Ajukan ulang batch ini ke Menunggu Verifikasi?"
+    variant="success"
+    confirmText="Ya, Ajukan"
+    :formAction="route('stok-upload.ajukan-ulang', $batch->id)"
+    formMethod="POST"
+/>
+
 @endsection

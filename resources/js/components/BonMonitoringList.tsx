@@ -11,6 +11,7 @@
  */
 
 import React, { useState } from "react";
+import { ConfirmDialog } from "./ConfirmDialog";
 import {
   ClipboardList,
   Edit3,
@@ -145,35 +146,21 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
 
   return (
     <>
-      {/* Delete confirm modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-6">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="bg-rose-100 rounded-full p-2 shrink-0">
-                <Trash2 size={18} className="text-rose-600" />
-              </div>
-              <div>
-                <p className="text-sm font-extrabold text-slate-900">Hapus Draft?</p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Draft <strong>{confirmDelete.bonNo}</strong> akan dihapus permanen dan tidak dapat dikembalikan.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-                Batal
-              </button>
-              <button onClick={handleDeleteConfirm} disabled={deletingId === confirmDelete.id}
-                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold disabled:opacity-50 transition-colors flex items-center gap-1.5">
-                {deletingId === confirmDelete.id
-                  ? <><Loader2 size={12} className="animate-spin" /> Menghapus...</>
-                  : <><Trash2 size={12} /> Hapus Draft</>}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          open
+          title="Hapus Draft?"
+          message={
+            <>
+              Draft <strong>{confirmDelete.bonNo}</strong> akan dihapus permanen dan tidak dapat dikembalikan.
+            </>
+          }
+          variant="danger"
+          confirmText={deletingId === confirmDelete.id ? "Menghapus..." : "Hapus Draft"}
+          loading={deletingId === confirmDelete.id}
+          onConfirm={handleDeleteConfirm}
+          onClose={() => { if (deletingId === null) setConfirmDelete(null); }}
+        />
       )}
 
       <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm space-y-5">
