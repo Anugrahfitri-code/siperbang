@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ReceiptData, ReceiptItem, ProcurementMethod, RequestStatus, ItemRequest, ParsedReceiptResult, OcrWarning, OcrField, ReceiptDocument, ReceiptManualDraft } from "../types";
+import { ReceiptData, ReceiptItem, ProcurementMethod, RequestStatus, ItemRequest, ParsedReceiptResult, OcrWarning, OcrField, ReceiptDocument, ReceiptManualDraft, InventoryCodeOption } from "../types";
 import { apiFetch } from "../api";
 import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Cpu, Save, FolderOpen, X } from "lucide-react";
 
@@ -10,6 +10,38 @@ interface ReceiptOCRProcessorProps {
   onVerifyReceipt: (id: string, updatedReceipt: ReceiptData, logMsg: string) => void;
   onUnverifyReceipt?: (id: string, logMsg: string) => void;
 }
+
+const RECEIPT_UNIT_OPTIONS = [
+  "PCS",
+  "PAK",
+  "RIM",
+  "BKS",
+  "BOX",
+  "DUS",
+  "RG",
+  "KEPING",
+  "BOTOL",
+  "JERIGEN",
+  "LEMBAR",
+  "BUAH",
+  "UNIT",
+  "SET",
+  "ROLL",
+  "LUSIN",
+  "SACHET",
+  "KG",
+  "GRAM",
+  "LITER",
+] as const;
+
+const normalizeInventoryCode = (
+  value: unknown
+): string => (
+  String(value ?? "")
+    .replace(/\D/g, "")
+    .slice(0, 10)
+);
+
 
 export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   receipts,
@@ -103,10 +135,93 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   const [taxRate, setTaxRate] = useState<number>(0);
   const [method, setMethod] = useState<ProcurementMethod>(ProcurementMethod.SENDIRI);
   const [items, setItems] = useState<ReceiptItem[]>([]);
+  const [
+    inventoryCodes,
+    setInventoryCodes,
+  ] = useState<InventoryCodeOption[]>([]);
+  const [
+    inventoryCodesLoading,
+    setInventoryCodesLoading,
+  ] = useState(false);
   const [bastName, setBastName] = useState("");
   const [bastDate, setBastDate] = useState("");
 
-    const readApiError = async (
+  useEffect(() => {
+    let active = true;
+
+    const loadInventoryCodes = async () => {
+      setInventoryCodesLoading(true);
+
+      try {
+        const response = await apiFetch(
+          "/api/inventory-codes"
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `HTTP ${response.status} ${response.statusText}`
+          );
+        }
+
+        const payload = await response.json();
+        const options = Array.isArray(
+          payload?.data
+        )
+          ? payload.data
+          : [];
+
+        if (active) {
+          setInventoryCodes(
+            options.map(
+              (
+                option: any
+              ): InventoryCodeOption => ({
+                code: normalizeInventoryCode(
+                  option.code
+                ),
+                formatted_code:
+                  String(
+                    option.formatted_code
+                    ?? option.code
+                    ?? ""
+                  ),
+                description:
+                  String(
+                    option.description
+                    ?? ""
+                  ),
+                category:
+                  option.category
+                    ? String(option.category)
+                    : null,
+              })
+            )
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Gagal memuat kode persediaan 1.01.03:",
+          error
+        );
+
+        if (active) {
+          setInventoryCodes([]);
+        }
+      } finally {
+        if (active) {
+          setInventoryCodesLoading(false);
+        }
+      }
+    };
+
+    void loadInventoryCodes();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const readApiError = async (
     response: Response
   ): Promise<string> => {
     const payload = await response
@@ -359,8 +474,45 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             if (!implausible) {
               return {
                 id: `it-draft-${index}`,
-                name: extractValue(it.name),
+                name: String(
+                  extractValue(it.name, "")
+                  ?? ""
+                ),
                 qty,
+                unit: String(
+                  extractValue(it.unit, "")
+                  ?? ""
+                ),
+                inventoryCode:
+                  normalizeInventoryCode(
+                    extractValue(
+                      it.inventory_code,
+                      ""
+                    )
+                  ),
+                inventoryCodeDescription:
+                  typeof it.inventory_code_description
+                    === "string"
+                      ? it.inventory_code_description
+                      : null,
+                stockItemId:
+                  Number.isFinite(
+                    Number(it.stock_item_id)
+                  )
+                    ? Number(it.stock_item_id)
+                    : null,
+                codeConfidence:
+                  Number.isFinite(
+                    Number(
+                      it.inventory_code
+                        ?.confidence
+                    )
+                  )
+                    ? Number(
+                        it.inventory_code
+                          ?.confidence
+                      )
+                    : null,
                 price,
                 subtotal: itemSubtotal,
               };
@@ -399,8 +551,45 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             ) {
               return {
                 id: `it-draft-${index}`,
-                name: extractValue(it.name),
+                name: String(
+                  extractValue(it.name, "")
+                  ?? ""
+                ),
                 qty: 1,
+                unit: String(
+                  extractValue(it.unit, "")
+                  ?? ""
+                ),
+                inventoryCode:
+                  normalizeInventoryCode(
+                    extractValue(
+                      it.inventory_code,
+                      ""
+                    )
+                  ),
+                inventoryCodeDescription:
+                  typeof it.inventory_code_description
+                    === "string"
+                      ? it.inventory_code_description
+                      : null,
+                stockItemId:
+                  Number.isFinite(
+                    Number(it.stock_item_id)
+                  )
+                    ? Number(it.stock_item_id)
+                    : null,
+                codeConfidence:
+                  Number.isFinite(
+                    Number(
+                      it.inventory_code
+                        ?.confidence
+                    )
+                  )
+                    ? Number(
+                        it.inventory_code
+                          ?.confidence
+                      )
+                    : null,
                 price: documentAnchor,
                 subtotal: documentAnchor,
               };
@@ -412,8 +601,45 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
              */
             return {
               id: `it-draft-${index}`,
-              name: extractValue(it.name),
+              name: String(
+                extractValue(it.name, "")
+                ?? ""
+              ),
               qty: 1,
+              unit: String(
+                extractValue(it.unit, "")
+                ?? ""
+              ),
+              inventoryCode:
+                normalizeInventoryCode(
+                  extractValue(
+                    it.inventory_code,
+                    ""
+                  )
+                ),
+              inventoryCodeDescription:
+                typeof it.inventory_code_description
+                  === "string"
+                    ? it.inventory_code_description
+                    : null,
+              stockItemId:
+                Number.isFinite(
+                  Number(it.stock_item_id)
+                )
+                  ? Number(it.stock_item_id)
+                  : null,
+              codeConfidence:
+                Number.isFinite(
+                  Number(
+                    it.inventory_code
+                      ?.confidence
+                  )
+                )
+                  ? Number(
+                      it.inventory_code
+                        ?.confidence
+                    )
+                  : null,
               price: 0,
               subtotal: 0,
             };
@@ -428,13 +654,41 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         
         let finalItems = safeItems;
         if (m && Array.isArray(m.items) && m.items.length > 0) {
-          finalItems = m.items.map((item: any, index: number) => ({
-            id: `it-draft-manual-${index}`,
-            name: item.name || "",
-            qty: Number(item.qty) || 1,
-            price: Number(item.price) || 0,
-            subtotal: (Number(item.qty) || 1) * (Number(item.price) || 0),
-          }));
+          finalItems = m.items.map((item: any, index: number) => {
+            const suggestedItem = safeItems[index];
+            const manualCode = normalizeInventoryCode(
+              item.inventoryCode
+              ?? item.inventory_code
+              ?? ""
+            );
+
+            return {
+              id: `it-draft-manual-${index}`,
+              name: item.name || "",
+              qty: Number(item.qty) || 1,
+              unit: String(
+                item.unit
+                ?? suggestedItem?.unit
+                ?? ""
+              ),
+              inventoryCode:
+                manualCode
+                || suggestedItem?.inventoryCode
+                || "",
+              inventoryCodeDescription:
+                suggestedItem
+                  ?.inventoryCodeDescription
+                ?? null,
+              stockItemId:
+                suggestedItem?.stockItemId
+                ?? null,
+              codeConfidence:
+                suggestedItem?.codeConfidence
+                ?? null,
+              price: Number(item.price) || 0,
+              subtotal: (Number(item.qty) || 1) * (Number(item.price) || 0),
+            };
+          });
         }
 
         const newDraft: ReceiptData = {
@@ -652,6 +906,11 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       id: "it-draft-" + Date.now(),
       name: "",
       qty: 1,
+      unit: "",
+      inventoryCode: "",
+      inventoryCodeDescription: null,
+      stockItemId: null,
+      codeConfidence: null,
       price: 0,
       subtotal: 0,
     };
@@ -670,6 +929,33 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         }
         return it;
       })
+    );
+  };
+
+  const handleInventoryCodeChange = (
+    id: string,
+    codeValue: string
+  ) => {
+    const code = normalizeInventoryCode(
+      codeValue
+    );
+
+    const selected = inventoryCodes.find(
+      (option) => option.code === code
+    );
+
+    setItems(
+      items.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              inventoryCode: code,
+              inventoryCodeDescription:
+                selected?.description
+                ?? null,
+            }
+          : item
+      )
     );
   };
 
@@ -731,6 +1017,11 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     items: items.map((item) => ({
       name: item.name.trim(),
       qty: Number(item.qty),
+      unit: item.unit.trim(),
+      inventoryCode:
+        normalizeInventoryCode(
+          item.inventoryCode
+        ),
       price: Number(item.price),
     })),
     method,
@@ -784,6 +1075,12 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     const invalidItemIndex = items.findIndex(
       (item) =>
         !item.name.trim() ||
+        !item.unit.trim() ||
+        !/^10103\d{5}$/.test(
+          normalizeInventoryCode(
+            item.inventoryCode
+          )
+        ) ||
         !Number.isInteger(Number(item.qty)) ||
         Number(item.qty) < 1 ||
         !Number.isFinite(Number(item.price)) ||
@@ -793,7 +1090,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     if (items.length === 0 || invalidItemIndex >= 0) {
       alert(
         invalidItemIndex >= 0
-          ? `Periksa barang ke-${invalidItemIndex + 1}. Nama, jumlah, dan harga wajib valid.`
+          ? `Periksa barang ke-${invalidItemIndex + 1}. Nama, kode persediaan kategori 1.01.03, satuan, jumlah, dan harga wajib valid.`
           : "Minimal satu barang wajib diisi."
       );
       return;
@@ -820,6 +1117,18 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             id: String(item.id),
             name: String(item.name),
             qty: Number(item.qty),
+            unit: String(item.unit ?? ""),
+            inventoryCode:
+              normalizeInventoryCode(
+                item.inventory_code
+                ?? ""
+              ),
+            inventoryCodeDescription:
+              item.inventory_code_master
+                ?.nama_barang
+                ?? null,
+            stockItemId: null,
+            codeConfidence: null,
             price: Number(item.price),
             subtotal: Number(item.subtotal),
           }))
@@ -1049,7 +1358,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                     <div className="max-w-[60%]">
                       <p className="font-bold text-slate-850">{it.name || "Nama Barang"}</p>
                       <p className="text-[10px] text-slate-450">
-                        {it.qty} x {formatIDR(it.price)}
+                        {it.qty} {it.unit || "(satuan?)"} x {formatIDR(it.price)}
                       </p>
                     </div>
                     <span className="font-bold text-slate-850">{formatIDR(it.qty * it.price || 0)}</span>
@@ -1209,14 +1518,25 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                 </button>
               </div>
 
-              <div className="overflow-x-auto border border-slate-200 rounded max-h-[250px] overflow-y-auto">
-                <table className="w-full text-left border-collapse">
+              <p className="mb-2 text-[10px] leading-relaxed text-slate-500">
+                Kode dibatasi pada kategori resmi
+                <strong className="mx-1 text-slate-700">
+                  1.01.03 - Alat/Bahan untuk Kegiatan Kantor
+                </strong>
+                dan tetap wajib dikonfirmasi petugas.
+                Satuan berasal dari OCR atau master stok Excel.
+              </p>
+
+              <div className="overflow-auto border border-slate-200 rounded max-h-[290px]">
+                <table className="min-w-[1260px] w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 text-slate-600 text-[9px] font-bold uppercase tracking-wider border-b border-slate-200">
-                      <th className="px-3 py-2">Nama Barang</th>
+                      <th className="px-3 py-2 min-w-[300px]">Nama Barang</th>
+                      <th className="px-3 py-2 min-w-[330px]">Kode Persediaan</th>
                       <th className="px-3 py-2 w-24 text-center">Jumlah</th>
-                      <th className="px-3 py-2 w-24">Harga Satuan (Rp)</th>
-                      <th className="px-3 py-2 w-24 text-right">Subtotal</th>
+                      <th className="px-3 py-2 min-w-[120px]">Satuan</th>
+                      <th className="px-3 py-2 min-w-[150px]">Harga Satuan (Rp)</th>
+                      <th className="px-3 py-2 min-w-[130px] text-right">Subtotal</th>
                       <th className="px-3 py-2 w-10 text-center">Aksi</th>
                     </tr>
                   </thead>
@@ -1233,6 +1553,49 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                           />
                         </td>
                         <td className="px-3 py-1.5">
+                          <select
+                            value={it.inventoryCode}
+                            onChange={(e) =>
+                              handleInventoryCodeChange(
+                                it.id,
+                                e.target.value
+                              )
+                            }
+                            title={
+                              it.inventoryCodeDescription
+                              ?? "Pilih kode persediaan resmi kategori 1.01.03"
+                            }
+                            className={`w-full bg-white border rounded px-2 py-1 text-[11px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
+                              it.inventoryCode
+                                ? "border-slate-200"
+                                : "border-amber-300 bg-amber-50"
+                            }`}
+                          >
+                            <option value="">
+                              {inventoryCodesLoading
+                                ? "Memuat kode..."
+                                : "Pilih kode 1.01.03"}
+                            </option>
+                            {inventoryCodes.map(
+                              (option) => (
+                                <option
+                                  key={option.code}
+                                  value={option.code}
+                                >
+                                  {option.formatted_code}
+                                  {" - "}
+                                  {option.description}
+                                </option>
+                              )
+                            )}
+                          </select>
+                          {it.inventoryCodeDescription && (
+                            <p className="mt-1 max-w-[310px] truncate text-[9px] text-slate-500">
+                              {it.inventoryCodeDescription}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-3 py-1.5">
                           <input
                             type="number"
                             min="1"
@@ -1240,6 +1603,37 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                             onChange={(e) => handleUpdateItem(it.id, "qty", parseInt(e.target.value) || 1)}
                             className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs text-center text-slate-800 font-bold focus:outline-none"
                           />
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <select
+                            value={it.unit}
+                            onChange={(e) =>
+                              handleUpdateItem(
+                                it.id,
+                                "unit",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full bg-white border rounded px-2 py-1 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
+                              it.unit
+                                ? "border-slate-200"
+                                : "border-amber-300 bg-amber-50"
+                            }`}
+                          >
+                            <option value="">
+                              Pilih satuan
+                            </option>
+                            {RECEIPT_UNIT_OPTIONS.map(
+                              (unit) => (
+                                <option
+                                  key={unit}
+                                  value={unit}
+                                >
+                                  {unit}
+                                </option>
+                              )
+                            )}
+                          </select>
                         </td>
                         <td className="px-3 py-1.5">
                           <input
@@ -1266,6 +1660,8 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                           <button
                             type="button"
                             onClick={() => handleRemoveItem(it.id)}
+                            aria-label={`Hapus ${it.name || "barang"}`}
+                            title="Hapus barang"
                             className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1 rounded"
                           >
                             <Trash2 size={12} />
