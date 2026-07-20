@@ -30,12 +30,59 @@
                 <!-- Logo & Brand -->
                 <div class="flex items-center gap-8">
                     <a href="/" class="flex items-center gap-3">
-                        <img src="/logo.png" alt="SIPERBANG Logo" class="h-12 w-auto" onerror="this.src='https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600'">
-                        <div class="flex flex-col">
-                            <span class="text-xl font-extrabold text-slate-800 tracking-tight leading-none">SIPERBANG</span>
-                            <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Sistem Informasi Persediaan Barang</span>
+                        <div class="relative w-12 h-12 flex-shrink-0">
+                          <svg viewBox="0 0 100 100" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="30" y="36" width="10" height="10" rx="1.5" fill="#B90015" />
+                            <rect x="42" y="44" width="10" height="10" rx="1.5" fill="#0055A5" />
+                            <rect x="44" y="24" width="10" height="10" rx="1.5" fill="#00A1E4" />
+                            <rect x="56" y="32" width="10" height="10" rx="1.5" fill="#00A1E4" />
+                            <rect x="52" y="42" width="6" height="6" rx="1" fill="#F2B818" />
+                            <path d="M20 50 L48 64 L48 90 L20 74 Z" fill="#013A70" />
+                            <path d="M48 64 L80 50 L80 74 L48 90 Z" fill="#00A1E4" />
+                            <path d="M52 78 L72 68 M72 68 L64 67 M72 68 L71 74" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M20 50 L48 36 L48 64 L20 50 Z" fill="#E5A800" opacity="0.8" />
+                            <path d="M48 36 L80 50 L48 64 L48 36 Z" fill="#F2B818" />
+                          </svg>
+                        </div>
+                        <div class="flex flex-col select-none">
+                          <div class="text-2xl font-bold tracking-tight leading-none flex items-center">
+                            <span class="text-[#0055A5]">S</span>
+                            <span class="text-[#B90015]">I</span>
+                            <span class="text-[#0055A5]">PERB</span>
+                            <span class="text-[#F2B818]">A</span>
+                            <span class="text-[#4A4A4A]">NG</span>
+                          </div>
+                          <span class="text-[10px] font-medium tracking-wide mt-1 leading-none uppercase text-[#7A7A7A]">
+                            Sistem Informasi Penyediaan Barang
+                          </span>
                         </div>
                     </a>
+
+                    <div class="hidden md:block h-8 w-px bg-slate-200"></div>
+
+                    <div class="hidden md:flex items-center gap-2">
+                      <div class="relative w-10 h-10 flex-shrink-0">
+                        <svg viewBox="0 0 100 100" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M40 30 H60" stroke="#0055A5" stroke-width="4" stroke-linecap="round" />
+                          <path d="M40 50 H60" stroke="#00A1E4" stroke-width="4" stroke-linecap="round" />
+                          <path d="M30 40 V60" stroke="#013A70" stroke-width="4" stroke-linecap="round" />
+                          <path d="M70 30 V50" stroke="#F2B818" stroke-width="4" stroke-linecap="round" />
+                          <rect x="24" y="24" width="16" height="16" rx="4" fill="#B90015" />
+                          <rect x="56" y="20" width="20" height="20" rx="5" fill="#00A1E4" />
+                          <rect x="18" y="48" width="22" height="22" rx="5" fill="#013A70" />
+                          <rect x="54" y="44" width="22" height="22" rx="5" fill="#00A1E4" />
+                          <rect x="68" y="70" width="14" height="14" rx="3.5" fill="#F2B818" />
+                        </svg>
+                      </div>
+                      <div class="flex flex-col select-none border-l border-gray-300 pl-2">
+                        <span class="text-sm font-extrabold text-[#4A4A4A] tracking-wider leading-none">
+                          KOMDIGI
+                        </span>
+                        <span class="text-[8px] text-[#7A7A7A] font-semibold tracking-tight leading-tight mt-0.5">
+                          Kementerian Komunikasi dan Digital<br />Republik Indonesia
+                        </span>
+                      </div>
+                    </div>
                     
                     <!-- Desktop Nav Links -->
                     <nav class="hidden md:flex items-center gap-1">
