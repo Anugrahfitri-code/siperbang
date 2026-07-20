@@ -6,7 +6,11 @@
     <!-- Title Page Header -->
     <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs flex items-center gap-4">
         <div class="bg-indigo-50 text-indigo-600 p-3.5 rounded-lg border border-indigo-100 flex-shrink-0">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 00-4-4H3m18 0h-2a4 4 0 00-4 4v2m0 4h.01M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H4a2 2 0 00-2 2v16a2 2 0 002 2z"/></svg>
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" x2="12" y1="3" y2="15" />
+            </svg>
         </div>
         <div>
             <h1 class="text-lg font-extrabold text-slate-900 tracking-tight">Upload Stok & Persediaan Excel</h1>
