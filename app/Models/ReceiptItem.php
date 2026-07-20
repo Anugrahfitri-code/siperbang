@@ -13,12 +13,21 @@ class ReceiptItem extends Model
 
     protected $casts = [
         'qty' => 'integer',
-        'price' => 'float',
-        'subtotal' => 'float',
+        'price' => 'decimal:2',
+        'subtotal' => 'decimal:2',
     ];
 
     public function receipt()
     {
         return $this->belongsTo(Receipt::class);
+    }
+
+    public function inventoryCodeMaster()
+    {
+        return $this->belongsTo(
+            KodePersediaan::class,
+            'inventory_code',
+            'kode',
+        );
     }
 }

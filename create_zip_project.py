@@ -2,7 +2,8 @@ import os
 import zipfile
 
 def create_zip():
-    zip_filename = "siperbang_project.zip"
+    # Mengubah lokasi penyimpanan file zip ke D:\Project
+    zip_filename = r"D:\Project\siperbang_project.zip"
     source_dir = "."
     
     excludes = {
@@ -16,13 +17,15 @@ def create_zip():
             dirs[:] = [d for d in dirs if d not in excludes]
             
             for file in files:
-                if file == zip_filename:
+                file_path = os.path.join(root, file)
+                
+                # Menghindari ZIP rekursif jika file zipnya ada di dalam folder
+                if os.path.abspath(file_path) == os.path.abspath(zip_filename):
                     continue
                     
-                file_path = os.path.join(root, file)
                 arcname = os.path.relpath(file_path, source_dir)
                 zipf.write(file_path, arcname)
 
 if __name__ == "__main__":
     create_zip()
-    print("ZIP file created successfully: siperbang_project.zip")
+    print("ZIP file created successfully at: D:\\Project\\siperbang_project.zip")
