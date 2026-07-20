@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { ItemRequest, RequestStatus, StockItem } from "../types";
-import { SearchCode, CheckCircle, AlertTriangle, Play, HelpCircle, Package, ArrowRight, ShieldAlert, Truck, ShoppingCart, XCircle, Loader2, Search } from "lucide-react";
+import { SearchCode, CheckCircle, AlertTriangle, Play, HelpCircle, Package, ArrowRight, ShieldAlert, Truck, ShoppingCart, XCircle, Loader2, Search, Trash2, User } from "lucide-react";
 import { DistributionProcurement } from "./DistributionProcurement";
 
 interface StockCheckingProps {
@@ -168,7 +168,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-6">
         <div className="bg-amber-50 text-amber-600 p-2 rounded border border-amber-100">
           <Package size={18} />
@@ -199,62 +199,45 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
             return (
               <div
                 key={req.id}
-                className={`border rounded p-4 transition-all ${
+                className={`border bg-white rounded-lg p-5 transition-all mb-4 shadow-xs ${
                   isPendingCheck
-                    ? "border-amber-200 bg-amber-50/10 hover:border-amber-300"
-                    : "border-slate-200 hover:border-slate-300"
+                    ? "border-amber-200 border-l-[4px] border-l-amber-400 hover:border-amber-300"
+                    : "border-slate-200 border-l-[4px] border-l-slate-300 hover:border-slate-300"
                 }`}
               >
-                <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4">
+                <div className="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
                   <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                      <span className="text-[11px] font-mono font-bold text-slate-500 uppercase tracking-wider">
                         {req.bonNo}
                       </span>
                       <span className="text-slate-300">•</span>
-                      <span className="text-[10px] text-slate-400 font-semibold font-mono">
+                      <span className="text-[11px] font-mono font-bold text-slate-500">
                         {req.date}
                       </span>
                       <span className="text-slate-300">•</span>
-                      <span className="text-xs font-bold text-slate-700">
+                      <span className="text-[11px] font-bold text-slate-700">
                         {req.section}
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-extrabold text-slate-800 mt-1.5 flex items-center gap-1.5">
-                      {req.itemName}
-                      <span className="text-xs font-normal text-slate-500 font-mono">
-                        ({req.qtyRequested} {req.unit})
+                    <div className="flex items-center">
+                      <h3 className="text-[16px] font-extrabold text-slate-800">
+                        {req.itemName}
+                      </h3>
+                      <span className="ml-3 px-2 py-0.5 rounded border border-slate-200 text-slate-600 text-xs font-semibold bg-slate-50">
+                        {req.qtyRequested} {req.unit}
                       </span>
-                    </h3>
+                    </div>
 
                     {req.notes && (
-                      <p className="text-xs text-slate-500 italic mt-1 font-sans">
+                      <p className="text-xs text-slate-500 italic mt-1.5 font-sans">
                         &ldquo;{req.notes}&rdquo;
                       </p>
                     )}
-
-                    <div className="flex items-center gap-4 mt-3">
-                      <span className="text-xs text-slate-400 font-medium">
-                        Diajukan oleh: <strong className="text-slate-600 font-bold">{req.requester}</strong>
-                      </span>
-                      {stockItem ? (
-                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-100">
-                          Stok di Gudang: {stockQty} {req.unit}
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-rose-600 font-bold bg-rose-50 px-2.5 py-0.5 rounded border border-rose-100">
-                          Barang Baru (Belum Terdaftar di Stok)
-                        </span>
-                      )}
-                    </div>
                   </div>
 
                   <div className="flex items-center gap-3 justify-end flex-wrap">
-                    <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold border ${getStatusColor(req.status)}`}>
-                      {req.status}
-                    </span>
-
                     {/* ── Tombol Batalkan — tampil untuk semua status kecuali Ditolak & Selesai ── */}
                     {req.status !== RequestStatus.DITOLAK && req.status !== RequestStatus.SELESAI && (
                       <button
@@ -263,9 +246,9 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                           setRejectAlasan("");
                           setRejectError(null);
                         }}
-                        className="border border-rose-200 text-rose-600 hover:bg-rose-50 text-[11px] font-bold px-3 py-1.5 rounded transition-all flex items-center gap-1"
+                        className="border border-rose-300 text-rose-600 hover:bg-rose-50 text-[12px] font-bold px-4 py-2 rounded-md transition-all flex items-center gap-1.5 shadow-sm"
                       >
-                        <XCircle size={11} />
+                        <Trash2 size={14} />
                         Batalkan
                       </button>
                     )}
@@ -273,19 +256,13 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                     {isPendingCheck ? (
                       <button
                         onClick={() => openChecker(req)}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3.5 py-1.5 rounded transition-all flex items-center gap-1 shadow-xs"
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-bold px-4 py-2 rounded-md transition-all flex items-center gap-1.5 shadow-sm"
                       >
-                        <Play size={11} />
+                        <Play size={14} />
                         Proses Cek Stok
                       </button>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <div className="text-right text-xs">
-                          <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Status Pemenuhan:</span>
-                          <span className="font-extrabold text-slate-700">
-                            {req.qtyFulfilled} / {req.qtyRequested} {req.unit}
-                          </span>
-                        </div>
+                      <>
                         {(req.status === RequestStatus.TERPENUHI ||
                           req.status === RequestStatus.TERPENUHI_SEBAGIAN ||
                           req.status === RequestStatus.SIAP_DIDISTRIBUSIKAN ||
@@ -293,15 +270,57 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                           req.status === RequestStatus.DALAM_PENGADAAN) && (
                           <button
                             onClick={() => setSelectedForAction(req)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-1.5 rounded transition-all flex items-center gap-1 shadow-xs"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-bold px-4 py-2 rounded-md transition-all flex items-center gap-1.5 shadow-sm"
                           >
-                            {req.qtyFulfilled > 0 ? <Truck size={11} /> : <ShoppingCart size={11} />}
-                            Proses
+                            {req.qtyFulfilled > 0 ? <Truck size={14} /> : <ShoppingCart size={14} />}
+                            Proses Pemenuhan
                           </button>
                         )}
-                      </div>
+                      </>
                     )}
                   </div>
+                </div>
+
+                <hr className="my-4 border-slate-100" />
+
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 items-start">
+                  <div>
+                    <span className="block text-[10px] text-slate-400 font-bold mb-1">Jumlah Diminta</span>
+                    <span className="text-xs font-semibold text-slate-800">{req.qtyRequested} {req.unit}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-400 font-bold mb-1">Diajukan oleh</span>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
+                      <User size={12} className="text-slate-500" />
+                      {req.requester}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-400 font-bold mb-1">Stok di Gudang</span>
+                    {stockItem ? (
+                      <span className="inline-block text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        Stok di gudang: {stockQty} {req.unit}
+                      </span>
+                    ) : (
+                      <span className="inline-block text-[10px] text-rose-700 font-bold bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                        Baru (0 {req.unit})
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-400 font-bold mb-1">Status Permintaan</span>
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getStatusColor(req.status)}`}>
+                      {req.status}
+                    </span>
+                  </div>
+                  {!isPendingCheck && (
+                    <div>
+                      <span className="block text-[10px] text-slate-400 font-bold mb-1">Pemenuhan</span>
+                      <span className="text-xs font-bold text-slate-800">
+                        {req.qtyFulfilled} / {req.qtyRequested} {req.unit}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             );
