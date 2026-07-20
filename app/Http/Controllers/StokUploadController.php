@@ -63,26 +63,133 @@ class StokUploadController extends Controller
     {
         $this->authorizeRole('Petugas Persediaan');
 
-        $batch = StokUpload::with(['details' => fn ($q) => $q->orderBy('sheet_name')->orderBy('no_urut'), 'user'])
-            ->findOrFail($id);
+        $batch = StokUpload::with([
+            'details' => fn ($query) => $query
+                ->orderBy('sheet_name')
+                ->orderBy('no_urut'),
 
-        // Block access to cancelled batches entirely
-        if ($batch->status === StokUpload::STATUS_DIBATALKAN) {
-            return redirect()->route('stok-upload.riwayat')
-                ->with('error', "Batch #{$batch->id} sudah dibatalkan dan tidak dapat dibuka. Upload file baru untuk menambah stok.");
+            'user',
+        ])->findOrFail($id);
+
+        /*
+         * Batch yang sudah dibatalkan tidak boleh
+         * dibuka kembali melalui halaman stepper.
+         */
+        if (
+            $batch->status ===
+            StokUpload::STATUS_DIBATALKAN
+        ) {
+            return redirect()
+                ->route('stok-upload.riwayat')
+                ->with(
+                    'error',
+                    "Batch #{$batch->id} sudah dibatalkan "
+                    . 'dan tidak dapat dibuka. '
+                    . 'Upload file baru untuk menambah stok.'
+                );
         }
 
-        // Determine which step to display; URL param ?step overrides
-        $step = $request->integer('step', $batch->resolveNextStep());
-        $step = max(1, min(4, $step));
+        /*
+         * Parameter step dari URL dipakai jika tersedia.
+         * Jika tidak, sistem menentukan langkah berikutnya
+         * berdasarkan status batch.
+         */
+        $step = $request->integer(
+            'step',
+            $batch->resolveNextStep()
+        );
 
-        $masterCodes  = KodePersediaan::with('kategoriBarang')->orderBy('kode')->get();
-        $errorRows    = $batch->details->where('status_validation', 'Perlu Perbaikan');
-        $validRows    = $batch->details->where('status_validation', 'Menunggu Verifikasi');
+        $step = max(
+            1,
+            min(4, $step)
+        );
 
-        return view('stok-upload.stepper', compact(
-            'batch', 'step', 'masterCodes', 'errorRows', 'validRows'
-        ));
+        $masterCodes = KodePersediaan::with(
+            'kategoriBarang'
+        )
+            ->orderBy('kode')
+            ->get();
+
+        /*
+         * Semua statistik dihitung di controller,
+         * bukan hanya ketika Blade berada di langkah 4.
+         *
+         * Dengan demikian, variabel selalu tersedia
+         * ketika komponen modal Blade dikompilasi.
+         */
+        $allDetails = $batch->details;
+
+        $errorRows = $allDetails->where(
+            'status_validation',
+            'Perlu Perbaikan'
+        );
+
+        $validRows = $allDetails->where(
+            'status_validation',
+            'Menunggu Verifikasi'
+        );
+
+        $pendingRows = $allDetails->where(
+            'status_verification',
+            'Pending'
+        );
+
+        $approvedRows = $allDetails->where(
+            'status_verification',
+            'Setuju'
+        );
+
+        $rejectedRows = $allDetails->where(
+            'status_verification',
+            'Tolak'
+        );
+
+        $totalApproved = $approvedRows->count();
+
+        $totalValue = (float) $approvedRows->sum(
+            fn (
+                StokUploadDetail $detail
+            ): float =>
+                (float) (
+                    $detail->total_calculated ?? 0
+                )
+        );
+
+        /*
+         * Finalisasi hanya diperbolehkan jika:
+         * 1. Ada minimal satu baris disetujui.
+         * 2. Tidak ada baris berstatus Pending.
+         * 3. Batch belum selesai atau dibatalkan.
+         */
+        $canFinalize =
+            $totalApproved > 0
+            && $pendingRows->isEmpty()
+            && ! in_array(
+                $batch->status,
+                [
+                    StokUpload::STATUS_SELESAI,
+                    StokUpload::STATUS_DIBATALKAN,
+                ],
+                true
+            );
+
+        return view(
+            'stok-upload.stepper',
+            compact(
+                'batch',
+                'step',
+                'masterCodes',
+                'allDetails',
+                'errorRows',
+                'validRows',
+                'pendingRows',
+                'approvedRows',
+                'rejectedRows',
+                'totalApproved',
+                'totalValue',
+                'canFinalize',
+            )
+        );
     }
 
     // ──────────────────────────────────────────────────────────────

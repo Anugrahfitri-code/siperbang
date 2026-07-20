@@ -172,12 +172,7 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
 @if($step === 3)
 
 {{-- Info banner if there are still pending rows --}}
-@php
-    $allDetails   = $batch->details->sortBy('sheet_name')->sortBy('no_urut');
-    $pendingRows  = $allDetails->where('status_verification', 'Pending');
-    $approvedRows = $allDetails->where('status_verification', 'Setuju');
-    $rejectedRows = $allDetails->where('status_verification', 'Tolak');
-@endphp
+
 
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
     <div class="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-xs">
@@ -284,17 +279,7 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
      STEP 4 — Review & Finalisasi
 ══════════════════════════════════════════════════════════ --}}
 @if($step === 4)
-@php
-    $allDetails    = $batch->details;
-    $approvedRows  = $allDetails->where('status_verification', 'Setuju');
-    $rejectedRows  = $allDetails->where('status_verification', 'Tolak');
-    $pendingRows   = $allDetails->where('status_verification', 'Pending');
-    $totalApproved = $approvedRows->count();
-    $totalValue    = $approvedRows->sum(fn($r) => (float)$r->total_calculated);
-    $canFinalize   = $totalApproved > 0
-                     && $pendingRows->count() === 0
-                     && !in_array($batch->status, [\App\Models\StokUpload::STATUS_SELESAI, \App\Models\StokUpload::STATUS_DIBATALKAN]);
-@endphp
+
 
 {{-- Summary stats --}}
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -487,14 +472,20 @@ function applySuggestion(index, kode) {
     formMethod="DELETE"
 />
 
-<x-confirm-modal id="finalConfirmModal"
+@if($step === 4 && $canFinalize)
+<x-confirm-modal
+    id="finalConfirmModal"
     title="Finalisasi Stok"
     message="Finalisasi <strong>{{ $totalApproved }} baris</strong> ke Master Barang? Stok akan diperbarui sekarang."
     variant="success"
     confirmText="Ya, Finalisasi"
-    :formAction="route('stok-upload.finalisasi', $batch->id)"
+    :formAction="route(
+        'stok-upload.finalisasi',
+        $batch->id
+    )"
     formMethod="POST"
 />
+@endif
 
 @if($batch->status === \App\Models\StokUpload::STATUS_SELESAI)
 <x-confirm-modal id="batalkanStepperModal"
