@@ -1110,21 +1110,13 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     );
 
     if (items.length === 0 || invalidItemIndex >= 0) {
-<<<<<<< HEAD
       setDialogAlert({
         title: "Validasi Gagal",
         message: invalidItemIndex >= 0
-          ? `Periksa barang ke-${invalidItemIndex + 1}. Nama, jumlah, dan harga wajib valid.`
+          ? `Periksa barang ke-${invalidItemIndex + 1}. Nama, kode persediaan kategori 1.01.03, satuan, jumlah, dan harga wajib valid.`
           : "Minimal satu barang wajib diisi.",
         variant: "warning",
       });
-=======
-      alert(
-        invalidItemIndex >= 0
-          ? `Periksa barang ke-${invalidItemIndex + 1}. Nama, kode persediaan kategori 1.01.03, satuan, jumlah, dan harga wajib valid.`
-          : "Minimal satu barang wajib diisi."
-      );
->>>>>>> c972a810cbb19a794c6a88eebca2be8b2bd01964
       return;
     }
 
