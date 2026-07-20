@@ -104,7 +104,27 @@ export default function App() {
   const [requestsError, setRequestsError] = useState<string | null>(null);
 
   // Navigation tab states
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return window.matchMedia("(min-width: 1024px)").matches;
+  });
+
+  useEffect(() => {
+    const desktopMedia = window.matchMedia("(min-width: 1024px)");
+
+    const syncSidebarWithViewport = (event: MediaQueryListEvent) => {
+      setIsSidebarOpen(event.matches);
+    };
+
+    setIsSidebarOpen(desktopMedia.matches);
+    desktopMedia.addEventListener("change", syncSidebarWithViewport);
+
+    return () => {
+      desktopMedia.removeEventListener("change", syncSidebarWithViewport);
+    };
+  }, []);
   const [officerTab, setOfficerTab] = useState<"dashboard" | "checking" | "stock" | "ocr" | "report" | "history">(
     () => (localStorage.getItem("officerTab") as any) || "dashboard"
   );
@@ -804,7 +824,9 @@ useEffect(() => {
             onChangeRole={handleRoleChange}
             currentUser={currentUser}
             onLogout={handleLogout}
-            onToggleSidebar={() => setIsSidebarOpen(true)}
+            onToggleSidebar={() =>
+              setIsSidebarOpen((previous) => !previous)
+            }
           />
 
           <Sidebar 
@@ -821,7 +843,12 @@ useEffect(() => {
             receipts={receipts}
           />
 
-          <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+          <div
+            className={`flex min-h-[calc(100vh-4rem)] flex-1 flex-col transition-[margin] duration-300 ease-in-out ${
+              isSidebarOpen ? "lg:ml-72" : "lg:ml-0"
+            }`}
+          >
+            <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-7 sm:px-6 lg:px-8">
 
         {/* Stats Section */}
         <DashboardStats requests={requests} receipts={receipts} />
@@ -1209,10 +1236,11 @@ useEffect(() => {
             {superadminTab === "history" && <HistoryLog logs={logs} />}
           </div>
         )}
-      </main>
+            </main>
+          </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 mt-12 text-center text-[11px] text-slate-500 font-medium">
+      <footer className="mt-12 border-t border-slate-200 bg-white py-6 text-center text-[11px] font-medium text-slate-500 lg:pl-72">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p>© 2026 BBPSDM Komunikasi dan Digital Makassar. Seluruh hak cipta dilindungi.</p>
           <p className="mt-1 text-[9px] text-slate-400 font-bold uppercase tracking-wider">SIPERBANG v1.1</p>
