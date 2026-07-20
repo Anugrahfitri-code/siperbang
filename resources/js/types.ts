@@ -102,8 +102,20 @@ export interface ReceiptItem {
   id: string;
   name: string;
   qty: number;
+  unit: string;
+  inventoryCode: string;
+  inventoryCodeDescription?: string | null;
+  stockItemId?: number | null;
+  codeConfidence?: number | null;
   price: number;
   subtotal: number;
+}
+
+export interface InventoryCodeOption {
+  code: string;
+  formatted_code: string;
+  description: string;
+  category: string | null;
 }
 
 export interface ReceiptData {
@@ -158,6 +170,8 @@ export interface ReceiptManualDraft {
   items: Array<{
     name: string;
     qty: number;
+    unit: string | null;
+    inventoryCode: string | null;
     price: number;
     subtotal: number;
   }>;
@@ -197,6 +211,11 @@ export interface OcrWarning {
 export interface ParsedItem {
   name?: OcrField<string>;
   qty?: OcrField<number>;
+  unit?: OcrField<string>;
+  inventory_code?: OcrField<string>;
+  inventory_code_description?: string | null;
+  inventory_code_category?: string | null;
+  stock_item_id?: number | null;
   price?: OcrField<number>;
   subtotal?: OcrField<number>;
 }

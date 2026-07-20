@@ -65,6 +65,53 @@ RECEIPT_UNIT_PATTERN = (
     + r")"
 )
 
+UNIT_ALIASES = {
+    "PC": "PCS",
+    "PCS": "PCS",
+    "PACK": "PAK",
+    "PAK": "PAK",
+    "BKS": "BKS",
+    "BOX": "BOX",
+    "KOTAK": "BOX",
+    "RG": "RG",
+    "BTL": "BOTOL",
+    "BOTOL": "BOTOL",
+    "KRT": "DUS",
+    "DUS": "DUS",
+    "LEMBAR": "LEMBAR",
+    "LBR": "LEMBAR",
+    "BUAH": "BUAH",
+    "UNIT": "UNIT",
+    "SET": "SET",
+    "ROLL": "ROLL",
+    "ROL": "ROLL",
+    "KEPING": "KEPING",
+    "JRG": "JERIGEN",
+    "RIM": "RIM",
+    "LSN": "LUSIN",
+    "SACHET": "SACHET",
+    "SCT": "SACHET",
+}
+
+
+def _extract_unit(text: str) -> str | None:
+    """Extract a purchasing unit without confusing product sizes such as 5 L."""
+    match = re.search(
+        rf"(?i)(?<![A-Z0-9])({RECEIPT_UNIT_PATTERN})(?![A-Z0-9])",
+        text,
+    )
+
+    if match is None:
+        return None
+
+    raw = re.sub(
+        r"[^A-Z]",
+        "",
+        match.group(1).upper(),
+    )
+
+    return UNIT_ALIASES.get(raw, raw or None)
+
 ITEM_SEQUENCE_PATTERN = re.compile(
     r"^\s*(\d{1,3})\s*[.)\],;:-]\s*(.*)$"
 )
@@ -1802,8 +1849,23 @@ def _extract_items(
         )
 
         qty_line = (cells.get("qty") or [None])[0]
+        unit_line = (cells.get("unit") or [None])[0]
         price_line = (cells.get("price") or [None])[0]
         subtotal_line = (cells.get("subtotal") or [None])[0]
+
+        unit = _extract_unit(
+            unit_line.text
+            if unit_line
+            else (qty_line.text if qty_line else row.text)
+        )
+
+        unit_confidence = (
+            unit_line.confidence
+            if unit_line
+            else (qty_line.confidence if qty_line else None)
+        )
+
+        unit_source = "ocr" if unit is not None else None
 
         quantity = (
             parse_number(qty_line.text)
@@ -1881,6 +1943,14 @@ def _extract_items(
                     quantity = next_quantity
                     qty_confidence = adjacent_confidence
                     qty_source = "ocr_adjacent"
+
+                if unit is None and next_quantity is not None:
+                    adjacent_unit = _extract_unit(next_row.text)
+
+                    if adjacent_unit is not None:
+                        unit = adjacent_unit
+                        unit_confidence = adjacent_confidence
+                        unit_source = "ocr_adjacent"
 
                 if price is None and next_price is not None and next_price > 0:
                     price = next_price
@@ -1963,6 +2033,11 @@ def _extract_items(
                 quantity,
                 qty_confidence,
                 qty_source,
+            ),
+            "unit": _field(
+                unit,
+                unit_confidence,
+                unit_source,
             ),
             "price": _field(
                 price,
@@ -2315,6 +2390,7 @@ def _extract_numbered_receipt_items(
         inline_price: float | None = None
         qty_row_index: int | None = None
         qty_confidence: float | None = None
+        unit: str | None = None
 
         for local_index, row in enumerate(
             block
@@ -2348,6 +2424,8 @@ def _extract_numbered_receipt_items(
             qty_confidence = (
                 row_confidence(row)
             )
+
+            unit = _extract_unit(row.text)
 
             break
 
@@ -2623,6 +2701,12 @@ def _extract_numbered_receipt_items(
                 normalized_qty,
                 qty_confidence,
                 "ocr_numbered_block",
+            ),
+
+            "unit": _field(
+                unit,
+                qty_confidence if unit is not None else None,
+                "ocr_numbered_block" if unit is not None else None,
             ),
 
             "price": _field(
@@ -2912,6 +2996,8 @@ def _extract_receipt_items_fallback(
 
         if qty is None:
             continue
+
+        unit = _extract_unit(row.text)
 
         name_rows: list[OcrRow] = []
         lower_row = row
@@ -3221,6 +3307,12 @@ def _extract_receipt_items_fallback(
                 normalized_qty,
                 row_confidence(row),
                 "ocr_fallback_block",
+            ),
+
+            "unit": _field(
+                unit,
+                row_confidence(row) if unit is not None else None,
+                "ocr_fallback_block" if unit is not None else None,
             ),
 
             "price": _field(
