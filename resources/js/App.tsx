@@ -273,7 +273,27 @@ useEffect(() => {
           method: r.method,
           bastName: r.bast_name,
           bastDate: r.bast_date,
-          items: r.items || []
+          items: Array.isArray(r.items)
+            ? r.items.map((item: any) => ({
+                id: String(item.id),
+                name: String(item.name ?? ""),
+                qty: Number(item.qty ?? 0),
+                unit: String(item.unit ?? ""),
+                inventoryCode: String(
+                  item.inventory_code ?? ""
+                ).replace(/\D/g, ""),
+                inventoryCodeDescription:
+                  item.inventory_code_master
+                    ?.nama_barang
+                    ?? null,
+                stockItemId: null,
+                codeConfidence: null,
+                price: Number(item.price ?? 0),
+                subtotal: Number(
+                  item.subtotal ?? 0
+                ),
+              }))
+            : []
         })));
       } else {
         setReceipts([]);

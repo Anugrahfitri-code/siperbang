@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ReceiptDocument;
 use App\Models\Receipt;
+use App\Services\InventoryCodeSuggestionService;
 use App\Jobs\ProcessReceiptOcr;
 use App\Enums\ReceiptDocumentStatus;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
 class ReceiptDocumentController extends Controller
 {
@@ -216,6 +218,7 @@ class ReceiptDocumentController extends Controller
 
     public function show(
         ReceiptDocument $receiptDocument,
+        InventoryCodeSuggestionService $suggestionService,
     ): JsonResponse {
         $data = $receiptDocument->toArray();
 
@@ -231,49 +234,106 @@ class ReceiptDocumentController extends Controller
             ? $receiptDocument->parsed_result
             : [];
 
-        if (
-            ! is_array(
-                $parsedResult['items']
-                ?? null,
-            )
-        ) {
-            $parsedResult['items'] = is_array(
-                $rawResult['items'] ?? null,
-            )
+        if (! is_array($parsedResult['items'] ?? null)) {
+            $parsedResult['items'] = is_array($rawResult['items'] ?? null)
                 ? $rawResult['items']
                 : [];
         }
 
-        if (
-            ! is_array(
-                $parsedResult['warnings']
-                ?? null,
-            )
-        ) {
-            $parsedResult['warnings'] = is_array(
-                $rawResult['warnings']
-                ?? null,
-            )
+        if (! is_array($parsedResult['warnings'] ?? null)) {
+            $parsedResult['warnings'] = is_array($rawResult['warnings'] ?? null)
                 ? $rawResult['warnings']
                 : [];
         }
+
+        $fieldValue = static function (
+            mixed $field,
+        ): mixed {
+            return is_array($field)
+                && array_key_exists('value', $field)
+                    ? $field['value']
+                    : null;
+        };
+
+        $parsedResult['items'] = collect($parsedResult['items'])
+            ->map(function (array $item, int $index) use (
+                $suggestionService,
+                $fieldValue,
+                &$parsedResult,
+            ): array {
+                $name = trim((string) $fieldValue($item['name'] ?? null));
+                $ocrUnit = $fieldValue($item['unit'] ?? null);
+
+                $suggestion = $suggestionService->suggest(
+                    $name,
+                    is_string($ocrUnit) ? $ocrUnit : null,
+                );
+
+                if ($fieldValue($item['unit'] ?? null) === null) {
+                    $item['unit'] = [
+                        'value' => $suggestion['unit'],
+                        'confidence' => $suggestion['unit'] !== null
+                            ? $suggestion['confidence']
+                            : null,
+                        'source' => $suggestion['unit'] !== null
+                            ? ($suggestion['source'] ?? 'stock_master_suggestion')
+                            : null,
+                    ];
+                }
+
+                if ($fieldValue($item['inventory_code'] ?? null) === null) {
+                    $item['inventory_code'] = [
+                        'value' => $suggestion['code'],
+                        'confidence' => $suggestion['confidence'],
+                        'source' => $suggestion['source'],
+                    ];
+                }
+
+                $item['inventory_code_description'] =
+                    $suggestion['description'];
+
+                $item['inventory_code_category'] =
+                    $suggestion['category'];
+
+                $item['stock_item_id'] =
+                    $suggestion['stock_item_id'];
+
+                if (($item['unit']['value'] ?? null) === null) {
+                    $parsedResult['warnings'][] = [
+                        'code' => 'unit_not_detected',
+                        'field' => "items.{$index}.unit",
+                        'message' => 'Satuan barang ke-' . ($index + 1)
+                            . ' belum ditemukan. Pilih satuan secara manual.',
+                        'severity' => 'warning',
+                    ];
+                }
+
+                if (($item['inventory_code']['value'] ?? null) === null) {
+                    $parsedResult['warnings'][] = [
+                        'code' => 'inventory_code_not_matched',
+                        'field' => "items.{$index}.inventory_code",
+                        'message' => 'Kode persediaan barang ke-' . ($index + 1)
+                            . ' belum dapat dicocokkan. Pilih kode 1.01.03 secara manual.',
+                        'severity' => 'warning',
+                    ];
+                }
+
+                return $item;
+            })
+            ->values()
+            ->all();
 
         /*
          * Pages hanya ditambahkan saat endpoint detail dipanggil.
          * Index tidak perlu mengirim seluruh bounding box.
          */
-        $parsedResult['pages'] = is_array(
-            $rawResult['pages'] ?? null,
-        )
+        $parsedResult['pages'] = is_array($rawResult['pages'] ?? null)
             ? $rawResult['pages']
             : [];
 
-        $data['parsed_result'] =
-            $parsedResult;
+        $data['parsed_result'] = $parsedResult;
 
-        return response()->json(
-            $data
-        );
+        return response()->json($data);
     }
 
     public function store(Request $request)
@@ -392,6 +452,7 @@ class ReceiptDocumentController extends Controller
     public function saveDraft(
         Request $request,
         ReceiptDocument $receiptDocument,
+        InventoryCodeSuggestionService $suggestionService,
     ): JsonResponse {
         if (
             $receiptDocument->receipt_id
@@ -462,6 +523,20 @@ class ReceiptDocumentController extends Controller
             'items.*.qty' =>
                 'nullable|numeric|min:0',
 
+            'items.*.unit' =>
+                'nullable|string|max:30',
+
+            'items.*.inventoryCode' => [
+                'nullable',
+                'string',
+                'regex:/^10103\d{5}$/',
+                Rule::exists('kode_persediaan', 'kode')
+                    ->where(
+                        fn ($query) => $query
+                            ->where('kode', 'like', '10103%')
+                    ),
+            ],
+
             'items.*.price' =>
                 'nullable|numeric|min:0',
         ]);
@@ -473,7 +548,7 @@ class ReceiptDocumentController extends Controller
             ->map(
                 function (
                     array $item
-                ) {
+                ) use ($suggestionService) {
                     $qty = is_numeric(
                         $item['qty']
                         ?? null
@@ -510,6 +585,16 @@ class ReceiptDocumentController extends Controller
 
                         'qty' =>
                             $qty,
+
+                        'unit' =>
+                            $suggestionService->normaliseUnit(
+                                $item['unit'] ?? null,
+                            ),
+
+                        'inventoryCode' =>
+                            isset($item['inventoryCode'])
+                                ? trim((string) $item['inventoryCode'])
+                                : null,
 
                         'price' =>
                             $price,
@@ -664,6 +749,7 @@ class ReceiptDocumentController extends Controller
     public function verify(
         Request $request,
         ReceiptDocument $receiptDocument,
+        InventoryCodeSuggestionService $suggestionService,
     ): JsonResponse {
         /*
          * Idempotensi: klik dua kali tidak membuat
@@ -682,7 +768,7 @@ class ReceiptDocumentController extends Controller
                     'receipt' =>
                         $receiptDocument
                             ->receipt()
-                            ->with('items')
+                            ->with('items.inventoryCodeMaster')
                             ->first(),
 
                     'document' =>
@@ -757,6 +843,20 @@ class ReceiptDocumentController extends Controller
                 'items.*.qty' =>
                     'required|integer|min:1',
 
+                'items.*.unit' =>
+                    'required|string|max:30',
+
+                'items.*.inventoryCode' => [
+                    'required',
+                    'string',
+                    'regex:/^10103\d{5}$/',
+                    Rule::exists('kode_persediaan', 'kode')
+                        ->where(
+                            fn ($query) => $query
+                                ->where('kode', 'like', '10103%')
+                        ),
+                ],
+
                 'items.*.price' =>
                     'required|numeric|gt:0',
             ],
@@ -786,6 +886,18 @@ class ReceiptDocumentController extends Controller
                 'items.*.qty.min' =>
                     'Jumlah barang minimal 1.',
 
+                'items.*.unit.required' =>
+                    'Satuan setiap barang wajib dipilih.',
+
+                'items.*.inventoryCode.required' =>
+                    'Kode persediaan setiap barang wajib dipilih.',
+
+                'items.*.inventoryCode.regex' =>
+                    'Kode persediaan harus berasal dari kategori 1.01.03.',
+
+                'items.*.inventoryCode.exists' =>
+                    'Kode persediaan tidak ditemukan pada master resmi.',
+
                 'items.*.price.gt' =>
                     'Harga setiap barang harus '
                     . 'lebih besar dari 0.',
@@ -798,7 +910,7 @@ class ReceiptDocumentController extends Controller
             ->map(
                 function (
                     array $item
-                ) {
+                ) use ($suggestionService) {
                     return [
                         'name' =>
                             trim(
@@ -807,6 +919,14 @@ class ReceiptDocumentController extends Controller
 
                         'qty' =>
                             (int) $item['qty'],
+
+                        'unit' =>
+                            $suggestionService->normaliseUnit(
+                                $item['unit'],
+                            ),
+
+                        'inventory_code' =>
+                            trim($item['inventoryCode']),
 
                         'price' =>
                             round(
@@ -922,7 +1042,7 @@ class ReceiptDocumentController extends Controller
                             'receipt' =>
                                 $lockedDocument
                                     ->receipt()
-                                    ->with('items')
+                                    ->with('items.inventoryCodeMaster')
                                     ->first(),
 
                             'document' =>
@@ -939,7 +1059,7 @@ class ReceiptDocumentController extends Controller
                      */
                     $duplicate = (
                         Receipt::query()
-                            ->with('items')
+                            ->with('items.inventoryCodeMaster')
                             ->where(
                                 'invoice_no',
                                 $invoiceNo,
@@ -1069,6 +1189,12 @@ class ReceiptDocumentController extends Controller
                                 'qty' =>
                                     $item['qty'],
 
+                                'unit' =>
+                                    $item['unit'],
+
+                                'inventory_code' =>
+                                    $item['inventory_code'],
+
                                 'price' =>
                                     $item['price'],
 
@@ -1096,7 +1222,7 @@ class ReceiptDocumentController extends Controller
                     return [
                         'receipt' =>
                             $receipt
-                                ->load('items'),
+                                ->load('items.inventoryCodeMaster'),
 
                         'document' =>
                             $lockedDocument
@@ -1336,4 +1462,3 @@ class ReceiptDocumentController extends Controller
         ]);
     }
 }
-

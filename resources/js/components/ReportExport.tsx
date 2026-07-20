@@ -53,7 +53,12 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
       const query = searchQuery.toLowerCase();
       const matchesStore = r.storeName.toLowerCase().includes(query);
       const matchesInvoice = r.invoiceNo.toLowerCase().includes(query);
-      const matchesItem = r.items.some((it) => it.name.toLowerCase().includes(query));
+      const matchesItem = r.items.some(
+        (it) =>
+          it.name.toLowerCase().includes(query)
+          || it.inventoryCode.includes(query)
+          || it.unit.toLowerCase().includes(query)
+      );
       return matchesStore || matchesInvoice || matchesItem;
     }
 
@@ -66,8 +71,10 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
       invoiceNo: rc.invoiceNo,
       date: rc.date,
       storeName: rc.storeName,
+      inventoryCode: it.inventoryCode,
       itemName: it.name,
       qty: it.qty,
+      unit: it.unit,
       price: it.price,
       subtotal: it.subtotal,
       // Proportional tax allocation per item
@@ -173,7 +180,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
           ) : (
             <>
               <DownloadCloud size={13} />
-              Ekspor Rekap Laporan (.xlsx)
+              Ekspor Rekap Laporan (.csv)
             </>
           )}
         </button>
@@ -182,7 +189,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
       {exportSuccess && (
         <div className="bg-emerald-50 border border-emerald-150 text-emerald-800 rounded p-3.5 mb-6 text-xs font-semibold animate-fade-in flex items-center gap-2">
           <Check size={14} className="text-emerald-600" />
-          Ekspor Berhasil! File <strong className="font-extrabold text-emerald-950">SIPERBANG_REKAP_KUITANSI.xlsx</strong> berhasil diunduh ke komputer Anda.
+          Ekspor berhasil. File CSV dapat langsung dibuka melalui Microsoft Excel dan sudah memuat kode persediaan serta satuan.
         </div>
       )}
 
@@ -276,12 +283,15 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
                 <th className="px-4 py-3">No Nota</th>
                 <th className="px-4 py-3">Tanggal</th>
                 <th className="px-4 py-3">Nama Toko</th>
+                <th className="px-4 py-3">Kode Persediaan</th>
                 <th className="px-4 py-3">Nama Barang</th>
                 <th className="px-4 py-3 text-center">Jumlah</th>
+                <th className="px-4 py-3">Satuan</th>
                 <th className="px-4 py-3 text-right">Harga Satuan</th>
                 <th className="px-4 py-3 text-right">Subtotal</th>
                 <th className="px-4 py-3 text-right">PPN (Pajak)</th>
                 <th className="px-4 py-3 text-right">Total</th>
+                <th className="px-4 py-3">Metode</th>
                 <th className="px-4 py-3">BAST (Nama)</th>
                 <th className="px-4 py-3">BAST (Tgl)</th>
                 <th className="px-4 py-3">Tgl Buku</th>
@@ -293,14 +303,17 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
                   <td className="px-4 py-3 text-slate-600 font-bold">{row.invoiceNo}</td>
                   <td className="px-4 py-3 text-slate-500 font-sans">{row.date}</td>
                   <td className="px-4 py-3 font-sans font-bold text-slate-800">{row.storeName}</td>
+                  <td className="px-4 py-3 font-mono font-bold text-indigo-700">{row.inventoryCode || "-"}</td>
                   <td className="px-4 py-3 font-sans font-medium text-slate-700">{row.itemName}</td>
                   <td className="px-4 py-3 text-center font-sans font-bold text-slate-800">{row.qty}</td>
+                  <td className="px-4 py-3 font-sans font-semibold text-slate-700">{row.unit || "-"}</td>
                   <td className="px-4 py-3 text-right text-slate-600">{formatIDR(row.price)}</td>
                   <td className="px-4 py-3 text-right text-slate-700 font-semibold">{formatIDR(row.subtotal)}</td>
                   <td className="px-4 py-3 text-right text-indigo-700 font-semibold">
                     {row.taxAmount > 0 ? formatIDR(row.taxAmount) : "-"}
                   </td>
                   <td className="px-4 py-3 text-right text-slate-900 font-extrabold">{formatIDR(row.total)}</td>
+                  <td className="px-4 py-3 font-sans font-semibold text-slate-600">{row.method || "-"}</td>
                   <td className="px-4 py-3 font-sans text-slate-400">
                     {row.bastName ? (
                       <span className="text-slate-600 font-semibold">{row.bastName}</span>
@@ -326,7 +339,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
               ))}
               {reportRows.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="text-center py-12 text-slate-400 font-sans text-xs">
+                  <td colSpan={15} className="text-center py-12 text-slate-400 font-sans text-xs">
                     Tidak ada data kuitansi tervalidasi yang cocok dengan kriteria saringan Anda.
                   </td>
                 </tr>

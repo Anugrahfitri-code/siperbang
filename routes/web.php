@@ -113,6 +113,15 @@ Route::middleware('auth')->prefix('api')->group(function () {
         Route::post('/requests/{itemRequest}/complete-procurement', [\App\Http\Controllers\Api\RequestController::class, 'completeProcurement']);
         Route::post('/requests/{itemRequest}/reject', [\App\Http\Controllers\Api\RequestController::class, 'rejectItem']);
         
+        // Official inventory codes: only category 1.01.03
+        Route::get(
+            '/inventory-codes',
+            [
+                \App\Http\Controllers\Api\InventoryCodeController::class,
+                'index',
+            ]
+        );
+
         // Receipts
         Route::get('/receipts', [\App\Http\Controllers\Api\ReceiptController::class, 'index']);
         Route::post('/receipts', [\App\Http\Controllers\Api\ReceiptController::class, 'store']);

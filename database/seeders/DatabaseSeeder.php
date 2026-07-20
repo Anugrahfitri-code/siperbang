@@ -42,7 +42,10 @@ class DatabaseSeeder extends Seeder
             'section' => 'Admin',
         ]);
 
-        $this->call(KategoriDanKodePersediaanSeeder::class);
+        $this->call([
+            KategoriDanKodePersediaanSeeder::class,
+            OfficeActivityInventoryCodeSeeder::class,
+        ]);
         
     }
 }

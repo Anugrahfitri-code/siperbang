@@ -36,7 +36,7 @@ class LogController extends Controller
         $search = $request->query('search', '');
         $isAnnual = $request->query('annual') === 'true';
 
-        $query = Receipt::with('items')->where('is_verified', true);
+        $query = Receipt::with('items.inventoryCodeMaster')->where('is_verified', true);
 
         if ($year !== 'All') {
             $query->whereYear('date', $year);
@@ -71,7 +71,23 @@ class LogController extends Controller
         $callback = function () use ($receipts, $isAnnual) {
             $file = fopen('php://output', 'w');
 
-            fputcsv($file, ['No Nota', 'Tanggal', 'Nama Toko', 'Nama Barang', 'Jumlah', 'Harga Satuan', 'Subtotal', 'PPN', 'Total', 'BAST Nama', 'BAST Tanggal', 'Tanggal Buku']);
+            fputcsv($file, [
+                'No Nota',
+                'Tanggal',
+                'Nama Toko',
+                'Kode Persediaan',
+                'Nama Barang',
+                'Jumlah',
+                'Satuan',
+                'Harga Satuan',
+                'Subtotal',
+                'PPN',
+                'Total',
+                'Metode Pengadaan',
+                'BAST Nama',
+                'BAST Tanggal',
+                'Tanggal Buku',
+            ]);
 
             foreach ($receipts as $rc) {
                 foreach ($rc->items as $it) {
@@ -83,12 +99,15 @@ class LogController extends Controller
                         $rc->invoice_no,
                         $rc->date,
                         $rc->store_name,
+                        $it->inventory_code,
                         $it->name,
                         $it->qty,
+                        $it->unit,
                         $it->price,
                         $subtotal,
                         $taxAmount,
                         $total,
+                        $rc->method,
                         $isAnnual ? '' : ($rc->bast_name ?? '-'),
                         $isAnnual ? '' : ($rc->bast_date ?? '-'),
                         $isAnnual ? '' : $rc->date,
