@@ -1,0 +1,13 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "aimurah": {
+      "api": "https://aimurah.my.id/api/v1",
+      "options": {
+        "apiKey": "sk-9d560121394a8dff5deb16c814011ed5d47364740a3ea6fe7835af06800122a1"
+      }
+    }
+  },
+  "model": "aimurah/claude-sonnet-4.6",
+  "small_model": "aimurah/claude-sonnet-4.5"
+}

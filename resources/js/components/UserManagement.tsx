@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { UserRole, UserAccount } from "../types";
 import { Users, ShieldCheck, KeyRound, Plus, MoreVertical, Search, Edit2, Trash2 } from "lucide-react";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface UserManagementProps {
   users: UserAccount[];
@@ -13,6 +14,7 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<UserAccount | null>(null);
 
   // Form state
   const [formData, setFormData] = useState<Omit<UserAccount, "id">>({
@@ -58,7 +60,26 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
     setShowAddForm(true);
   };
 
+  const handleDeleteConfirm = () => {
+    if (confirmDelete) {
+      onDeleteUser(confirmDelete.id);
+      setConfirmDelete(null);
+    }
+  };
+
   return (
+    <>
+      {confirmDelete && (
+        <ConfirmDialog
+          open
+          title="Hapus Akun"
+          message={`Yakin ingin menghapus akun ${confirmDelete.name}? Akun ini akan dihapus permanen dan tidak dapat dikembalikan.`}
+          variant="danger"
+          confirmText="Hapus Akun"
+          onConfirm={handleDeleteConfirm}
+          onClose={() => setConfirmDelete(null)}
+        />
+      )}
     <div className="space-y-6">
       <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
@@ -233,11 +254,7 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
                           <Edit2 size={14} />
                         </button>
                         <button
-                          onClick={() => {
-                            if(window.confirm(`Yakin ingin menghapus akun ${user.name}?`)) {
-                              onDeleteUser(user.id);
-                            }
-                          }}
+                          onClick={() => setConfirmDelete(user)}
                           className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
                           title="Hapus"
                           disabled={user.role === UserRole.SUPERADMIN}
@@ -260,5 +277,6 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
         </div>
       </div>
     </div>
+    </>
   );
 }

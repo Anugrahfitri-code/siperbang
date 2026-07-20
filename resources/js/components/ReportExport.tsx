@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ReceiptData, ProcurementMethod } from "../types";
 import { FileSpreadsheet, Search, Filter, DownloadCloud, Sparkles, Check, RefreshCw } from "lucide-react";
+import { AlertDialog } from "./AlertDialog";
 
 interface ReportExportProps {
   receipts: ReceiptData[];
@@ -8,6 +9,7 @@ interface ReportExportProps {
 
 export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
   const [filterMonth, setFilterMonth] = useState("All");
+  const [alertMsg, setAlertMsg] = useState<{ title: string; message: string } | null>(null);
   const [filterYear, setFilterYear] = useState("2026");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAnnualRecap, setIsAnnualRecap] = useState(false);
@@ -123,7 +125,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
       setTimeout(() => setExportSuccess(false), 4000);
     } catch (error) {
       console.error("Proses ekspor gagal:", error);
-      alert("Terjadi kesalahan saat mengekspor laporan ke Excel.");
+      setAlertMsg({ title: "Gagal Ekspor", message: "Terjadi kesalahan saat mengekspor laporan ke Excel." });
     } finally {
       setIsExporting(false);
     }
@@ -138,6 +140,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
   };
 
   return (
+    <>
     <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 border-b border-slate-100 pb-5">
@@ -333,5 +336,15 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
         </div>
       </div>
     </div>
+      {alertMsg && (
+        <AlertDialog
+          open
+          title={alertMsg.title}
+          message={alertMsg.message}
+          variant="danger"
+          onClose={() => setAlertMsg(null)}
+        />
+      )}
+    </>
   );
 };

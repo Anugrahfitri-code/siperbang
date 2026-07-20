@@ -97,15 +97,10 @@
                    class="flex-1 sm:flex-initial text-center px-4 py-2.5 rounded-lg border border-indigo-600 text-xs font-bold text-indigo-700 bg-white hover:bg-indigo-50 shadow-xs transition-colors">
                     Verifikasi Kode Persediaan
                 </a>
-                <form action="{{ route('stok-upload.finalisasi', $batch->id) }}" method="POST"
-                      onsubmit="return confirm('Apakah Anda yakin ingin memfinalisasi data stok yang disetujui ke Master Barang?')"
-                      class="flex-1 sm:flex-initial">
-                    @csrf
-                    <button type="submit"
-                            class="w-full px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors">
-                        Finalisasi Stok
-                    </button>
-                </form>
+                <button type="button" onclick="openConfirmModal('finalPreviewModal')"
+                        class="w-full px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors">
+                    Finalisasi Stok
+                </button>
             @endif
         </div>
     </div>
@@ -189,4 +184,13 @@
         </div>
     </div>
 </div>
+<x-confirm-modal id="finalPreviewModal"
+    title="Finalisasi Stok"
+    message="Apakah Anda yakin ingin memfinalisasi data stok yang disetujui ke Master Barang?"
+    variant="info"
+    confirmText="Ya, Finalisasi"
+    :formAction="route('stok-upload.finalisasi', $batch->id)"
+    formMethod="POST"
+/>
+
 @endsection

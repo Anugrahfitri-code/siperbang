@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { ReceiptData, ReceiptItem, ProcurementMethod, RequestStatus, ItemRequest, ParsedReceiptResult, OcrWarning, OcrField, ReceiptDocument, ReceiptManualDraft } from "../types";
 import { apiFetch } from "../api";
 import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Cpu, Save, FolderOpen, X } from "lucide-react";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface ReceiptOCRProcessorProps {
   receipts: ReceiptData[];
@@ -42,6 +43,18 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     isVerifying,
     setIsVerifying,
   ] = useState(false);
+  const [dialogConfirm, setDialogConfirm] = useState<{
+    title: string;
+    message: string;
+    variant?: "danger" | "warning" | "info" | "success";
+    onConfirm?: () => void | Promise<void>;
+  } | null>(null);
+  const [dialogAlert, setDialogAlert] = useState<{
+    title: string;
+    message: string;
+    variant?: "danger" | "warning" | "info" | "success";
+  } | null>(null);
+  const [dialogLoading, setDialogLoading] = useState(false);
   const pollTimerRef = useRef<number | NodeJS.Timeout | null>(null);
   const documentRequestTokenRef = useRef(0);
 
@@ -148,21 +161,30 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   };
 
   const handleDeleteDraft = async (id: number) => {
-    if (!confirm("Yakin ingin menghapus draft kuitansi ini? Aksi ini tidak dapat dibatalkan.")) return;
-    
-    try {
-      const res = await apiFetch(`/api/receipt-documents/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        throw new Error(await readApiError(res));
-      }
-      alert("Draft kuitansi berhasil dihapus.");
-      await loadPendingDocuments();
-    } catch (e: any) {
-      console.error(e);
-      alert("Gagal menghapus draft: " + (e.message || "Kesalahan server"));
-    }
+    setDialogConfirm({
+      title: "Hapus Draft Kuitansi",
+      message: "Yakin ingin menghapus draft kuitansi ini? Aksi ini tidak dapat dibatalkan.",
+      variant: "danger",
+      onConfirm: async () => {
+        setDialogLoading(true);
+        try {
+          const res = await apiFetch(`/api/receipt-documents/${id}`, {
+            method: "DELETE",
+          });
+          if (!res.ok) {
+            throw new Error(await readApiError(res));
+          }
+          setDialogConfirm(null);
+          setDialogLoading(false);
+          setDialogAlert({ title: "Berhasil", message: "Draft kuitansi berhasil dihapus.", variant: "success" });
+          await loadPendingDocuments();
+        } catch (e: any) {
+          setDialogConfirm(null);
+          setDialogLoading(false);
+          setDialogAlert({ title: "Gagal", message: "Gagal menghapus draft: " + (e.message || "Kesalahan server"), variant: "danger" });
+        }
+      },
+    });
   };
 
   const loadPendingDocuments =
@@ -237,11 +259,11 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       setOcrStatus("timeout");
       setActiveDocumentId(id);
 
-      alert(
-        "Tampilan berhenti menunggu setelah 2 menit. " +
-        "Dokumen tetap tersimpan. Periksa status dokumen " +
-        "dan terminal queue untuk mengetahui hasil akhirnya."
-      );
+      setDialogAlert({
+        title: "Waktu Habis",
+        message: "Tampilan berhenti menunggu setelah 2 menit. Dokumen tetap tersimpan. Periksa status dokumen dan terminal queue untuk mengetahui hasil akhirnya.",
+        variant: "warning",
+      });
 
       return;
     }
@@ -545,7 +567,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         setIsScanning(false);
         setActiveDocumentId(null);
         setOcrStatus("failed");
-        alert("Proses OCR gagal: " + (data.error_message || "Kesalahan tidak diketahui"));
+        setDialogAlert({ title: "OCR Gagal", message: "Proses OCR gagal: " + (data.error_message || "Kesalahan tidak diketahui"), variant: "danger" });
         return;
       }
 
@@ -590,7 +612,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       console.error(e);
       setIsScanning(false);
       setOcrStatus("error");
-      alert("Terjadi kesalahan saat mengecek status OCR.");
+      setDialogAlert({ title: "Kesalahan", message: "Terjadi kesalahan saat mengecek status OCR.", variant: "danger" });
     }
   };
 
@@ -643,7 +665,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       console.error(e);
       setIsScanning(false);
       setOcrStatus("error");
-      alert("Gagal mengunggah dokumen OCR: " + (e.message || "Kesalahan tidak diketahui"));
+      setDialogAlert({ title: "Gagal Unggah", message: "Gagal mengunggah dokumen OCR: " + (e.message || "Kesalahan tidak diketahui"), variant: "danger" });
     }
   };
 
@@ -760,10 +782,10 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       if (!response.ok) throw new Error(await readApiError(response));
       await loadPendingDocuments();
       closeWorkspace();
-      alert("Draft verifikasi berhasil disimpan. Dokumen dapat dibuka kembali dari daftar Menunggu Verifikasi.");
+      setDialogAlert({ title: "Berhasil", message: "Draft verifikasi berhasil disimpan. Dokumen dapat dibuka kembali dari daftar Menunggu Verifikasi.", variant: "success" });
     } catch (error: any) {
       console.error(error);
-      alert("Gagal menyimpan draft:\n" + (error?.message || "Kesalahan tidak diketahui"));
+      setDialogAlert({ title: "Gagal", message: "Gagal menyimpan draft:\n" + (error?.message || "Kesalahan tidak diketahui"), variant: "danger" });
     } finally {
       setIsSavingDraft(false);
     }
@@ -773,11 +795,11 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     if (!activeDraft || !activeDocumentId || isSavingDraft || isVerifying) return;
 
     if (!storeName.trim()) {
-      alert("Nama toko/penyedia wajib diisi sebelum verifikasi.");
+      setDialogAlert({ title: "Validasi Gagal", message: "Nama toko/penyedia wajib diisi sebelum verifikasi.", variant: "warning" });
       return;
     }
     if (!date) {
-      alert("Tanggal kuitansi wajib diisi sebelum verifikasi.");
+      setDialogAlert({ title: "Validasi Gagal", message: "Tanggal kuitansi wajib diisi sebelum verifikasi.", variant: "warning" });
       return;
     }
 
@@ -791,11 +813,13 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     );
 
     if (items.length === 0 || invalidItemIndex >= 0) {
-      alert(
-        invalidItemIndex >= 0
+      setDialogAlert({
+        title: "Validasi Gagal",
+        message: invalidItemIndex >= 0
           ? `Periksa barang ke-${invalidItemIndex + 1}. Nama, jumlah, dan harga wajib valid.`
-          : "Minimal satu barang wajib diisi."
-      );
+          : "Minimal satu barang wajib diisi.",
+        variant: "warning",
+      });
       return;
     }
 
@@ -849,34 +873,44 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       onVerifyReceipt(activeDraft.id, finalReceipt, logMsg);
       setPendingDocuments((prev) => prev.filter((d) => d.id !== activeDocumentId));
       closeWorkspace();
-      alert(responsePayload.message || "Dokumen berhasil diverifikasi.");
+      setDialogAlert({ title: "Berhasil", message: responsePayload.message || "Dokumen berhasil diverifikasi.", variant: "success" });
     } catch (error: any) {
       console.error(error);
-      alert("Gagal menyimpan verifikasi:\n" + (error?.message || "Kesalahan tidak diketahui"));
+      setDialogAlert({ title: "Gagal", message: "Gagal menyimpan verifikasi:\n" + (error?.message || "Kesalahan tidak diketahui"), variant: "danger" });
     } finally {
       setIsVerifying(false);
     }
   };
 
   const handleUnverify = async (id: string, invoiceNo: string, storeName: string) => {
-    if (!window.confirm("Apakah Anda yakin ingin membatalkan validasi dokumen ini? Dokumen akan kembali ke status draft/menunggu verifikasi.")) return;
+    setDialogConfirm({
+      title: "Batalkan Validasi",
+      message: "Apakah Anda yakin ingin membatalkan validasi dokumen ini? Dokumen akan kembali ke status draft/menunggu verifikasi.",
+      variant: "danger",
+      onConfirm: async () => {
+        setDialogLoading(true);
+        try {
+          const response = await apiFetch(`/api/receipts/${id}/unverify`, {
+            method: "PUT",
+          });
 
-    try {
-      const response = await apiFetch(`/api/receipts/${id}/unverify`, {
-        method: "PUT",
-      });
-
-      if (!response.ok) throw new Error(await readApiError(response));
-      
-      const logMsg = `Pembatalan Verifikasi: Petugas membatalkan kuitansi nomor ${invoiceNo || "tanpa nomor"} dari ${storeName}.`;
-      if (onUnverifyReceipt) onUnverifyReceipt(id, logMsg);
-      
-      await loadPendingDocuments(); // refresh list
-      alert("Validasi kuitansi berhasil dibatalkan.");
-    } catch (error: any) {
-      console.error(error);
-      alert("Gagal membatalkan verifikasi:\n" + (error?.message || "Kesalahan tidak diketahui"));
-    }
+          if (!response.ok) throw new Error(await readApiError(response));
+          
+          const logMsg = `Pembatalan Verifikasi: Petugas membatalkan kuitansi nomor ${invoiceNo || "tanpa nomor"} dari ${storeName}.`;
+          if (onUnverifyReceipt) onUnverifyReceipt(id, logMsg);
+          
+          await loadPendingDocuments();
+          setDialogConfirm(null);
+          setDialogLoading(false);
+          setDialogAlert({ title: "Berhasil", message: "Validasi kuitansi berhasil dibatalkan.", variant: "success" });
+        } catch (error: any) {
+          setDialogConfirm(null);
+          setDialogLoading(false);
+          console.error(error);
+          setDialogAlert({ title: "Gagal", message: "Gagal membatalkan verifikasi:\n" + (error?.message || "Kesalahan tidak diketahui"), variant: "danger" });
+        }
+      },
+    });
   };
 
   const formatIDR = (
@@ -1455,6 +1489,32 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
           </table>
         </div>
       </div>
+      {dialogConfirm && (
+        <ConfirmDialog
+          open
+          title={dialogConfirm.title}
+          message={dialogConfirm.message}
+          variant={dialogConfirm.variant || "warning"}
+          confirmText={dialogLoading ? "Memproses..." : "Konfirmasi"}
+          loading={dialogLoading}
+          onConfirm={async () => {
+            if (dialogConfirm.onConfirm) await dialogConfirm.onConfirm();
+          }}
+          onClose={() => { if (!dialogLoading) { setDialogConfirm(null); } }}
+        />
+      )}
+      {dialogAlert && (
+        <ConfirmDialog
+          open
+          title={dialogAlert.title}
+          message={dialogAlert.message}
+          variant={dialogAlert.variant || "info"}
+          confirmText="OK"
+          showCancel={false}
+          onConfirm={() => setDialogAlert(null)}
+          onClose={() => setDialogAlert(null)}
+        />
+      )}
     </div>
   );
 };

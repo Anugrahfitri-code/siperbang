@@ -20,6 +20,7 @@ import { UserManagement } from "./components/UserManagement";
 import { KetuaTimDashboard } from "./components/KetuaTimDashboard";
 import { BonMonitoringList, type BonHeaderRow } from "./components/BonMonitoringList";
 import type { BonDraft } from "./components/BonDigitalForm";
+import { AlertDialog } from "./components/AlertDialog";
 import { LayoutDashboard, FileSpreadsheet, ClipboardList, Package, Receipt, History, AlertCircle, Info, ChevronRight, CheckSquare, Loader2 } from "lucide-react";
 import { apiFetch } from "./api";
 
@@ -325,6 +326,8 @@ useEffect(() => {
     addLog(currentUser, "Hapus Pengguna", `Menghapus akun ID: ${id}`);
   };
 
+  const [alertMsg, setAlertMsg] = useState<{ title: string; message: string; variant?: "danger" | "warning" | "info" | "success" } | null>(null);
+
   // Log activity helper
   // Helper: tulis log ke frontend state DAN backend DB
   const addLog = async (actor: string, action: string, details: string) => {
@@ -560,7 +563,7 @@ useEffect(() => {
       await addLog(currentUser, "Verifikasi Stok", logMessage);
     } catch (err: any) {
       console.error(err);
-      window.alert(err.message || "Terjadi kesalahan saat memverifikasi stok");
+      setAlertMsg({ title: "Gagal Verifikasi Stok", message: err.message || "Terjadi kesalahan saat memverifikasi stok", variant: "danger" });
     }
   };
 
@@ -728,9 +731,7 @@ useEffect(() => {
     } catch (error) {
       console.error(error);
 
-      window.alert(
-        "Logout gagal. Silakan coba kembali."
-      );
+      setAlertMsg({ title: "Logout Gagal", message: "Logout gagal. Silakan coba kembali.", variant: "danger" });
     }
   };
 
@@ -846,26 +847,7 @@ useEffect(() => {
                     </div>
                   </div>
 
-                  {/* Stock quick view */}
-                  <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-sm font-extrabold text-slate-800 tracking-tight uppercase">Ringkasan Ketersediaan Stok</h3>
-                      <button onClick={() => setOfficerTab("stock")} className="text-[11px] text-indigo-600 font-bold hover:text-indigo-700">
-                        Lihat Semua
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {stock.slice(0, 3).map((st) => (
-                        <div key={st.id} className="bg-slate-50 border border-slate-200 rounded p-3 text-xs">
-                          <span className="font-mono text-[9px] text-slate-400 font-bold block uppercase tracking-wider">{st.code}</span>
-                          <span className="font-bold text-slate-800 text-sm mt-1 block truncate">{st.name}</span>
-                          <span className={`mt-2 inline-block font-extrabold text-[11px] ${st.qty < 10 ? "text-rose-500" : "text-emerald-600"}`}>
-                            {st.qty} {st.unit} Tersedia
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+
                 </div>
               )}
 
@@ -1217,6 +1199,16 @@ useEffect(() => {
         </div>
       </footer>
     </div>
+    )}
+
+    {alertMsg && (
+      <AlertDialog
+        open
+        title={alertMsg.title}
+        message={alertMsg.message}
+        variant={alertMsg.variant}
+        onClose={() => setAlertMsg(null)}
+      />
     )}
     </>
   );
