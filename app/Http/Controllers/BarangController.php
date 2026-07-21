@@ -32,7 +32,8 @@ class BarangController extends Controller
             $query->where('category', $request->kategori_id);
         }
 
-        $barangs   = $query->orderBy('name')->paginate(20)->withQueryString();
+        $perPage = $request->input('per_page', 10);
+        $barangs   = $query->orderBy('name')->paginate($perPage)->withQueryString();
 
         // Hanya tampilkan kategori yang memang ada di stock_items
         $kategoris = KategoriBarang::orderBy('nama')
