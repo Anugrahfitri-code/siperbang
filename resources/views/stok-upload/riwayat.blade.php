@@ -99,38 +99,45 @@ $statusColors = [
 
                             @if($batch->status === SU::STATUS_MENUNGGU_VERIFIKASI)
                                 <a href="{{ route('stok-upload.stepper', ['id' => $batch->id, 'step' => 3]) }}"
-                                   class="btn-action bg-amber-500 hover:bg-amber-600 text-white">
+                                   class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors">
                                     Verifikasi Kode
                                 </a>
+                                <button type="button" onclick="openConfirmModal('delRiwayat{{ $batch->id }}')"
+                                        class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 hover:bg-rose-100 hover:text-rose-700 transition-colors">
+                                    Hapus
+                                </button>
 
                             @elseif($batch->status === SU::STATUS_SIAP_DIFINALISASI)
                                 <a href="{{ route('stok-upload.stepper', ['id' => $batch->id, 'step' => 4]) }}"
-                                   class="btn-action bg-indigo-600 hover:bg-indigo-700 text-white">
+                                   class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-800 hover:bg-indigo-200 transition-colors">
                                     Review &amp; Finalisasi
                                 </a>
+                                <button type="button" onclick="openConfirmModal('delRiwayat{{ $batch->id }}')"
+                                        class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 hover:bg-rose-100 hover:text-rose-700 transition-colors">
+                                    Hapus
+                                </button>
 
                             @elseif($batch->status === SU::STATUS_SELESAI)
                                 <a href="{{ route('stok-upload.stepper', ['id' => $batch->id, 'step' => 4]) }}"
-                                   class="btn-action border border-emerald-300 text-emerald-700 hover:bg-emerald-50">
+                                   class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">
                                     Lihat Detail
                                 </a>
                                 <button type="button"
                                         onclick="openConfirmModal('batalkanRiwayat{{ $batch->id }}')"
-                                        class="btn-action border border-rose-200 text-rose-600 hover:bg-rose-50">
+                                        class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 hover:bg-rose-200 transition-colors">
                                     Batalkan
                                 </button>
 
                             @elseif($batch->status === SU::STATUS_DIBATALKAN)
-                                {{-- Dibatalkan: no action allowed, show info text only --}}
-                                <span class="text-[11px] text-slate-400 italic">
-                                    Dibatalkan — tidak dapat dibuka
+                                <span class="text-[11px] text-slate-400 italic px-1">
+                                    Tidak dapat dibuka
                                 </span>
                             @endif
 
-                            {{-- Hapus (soft) — only non-finalised --}}
-                            @if($batch->isDeletable())
+                            {{-- Hapus (soft) — hanya untuk status yang belum final dan belum ditampilkan di atas --}}
+                            @if($batch->isDeletable() && !in_array($batch->status, [SU::STATUS_MENUNGGU_VERIFIKASI, SU::STATUS_SIAP_DIFINALISASI]))
                             <button type="button" onclick="openConfirmModal('delRiwayat{{ $batch->id }}')"
-                                    class="btn-action border border-slate-200 text-slate-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200">
+                                    class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 hover:bg-rose-100 hover:text-rose-700 transition-colors">
                                 Hapus
                             </button>
                             @endif
@@ -162,7 +169,7 @@ $statusColors = [
 
 <style>
 .btn-action {
-    @apply inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors border border-transparent;
+    @apply inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors;
 }
 </style>
 
