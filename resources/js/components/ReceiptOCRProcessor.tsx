@@ -1255,8 +1255,8 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
-          <div className="bg-indigo-50 text-indigo-600 p-3 rounded-lg border border-indigo-100 shadow-xs">
-            <FileText size={22} strokeWidth={2} />
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-indigo-50 text-indigo-600 border-indigo-100">
+            <FileText size={24} />
           </div>
           <div>
             <h2 className="text-lg font-semibold leading-7 text-slate-900">Pembacaan Kuitansi Otomatis (OCR)</h2>
@@ -1441,7 +1441,9 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
           {/* RIGHT: Manual Override Form (Double Check) */}
           <div className="xl:col-span-7 bg-white border border-slate-200 rounded p-5 shadow-xs space-y-5">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Calculator size={16} className="text-indigo-600" />
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-indigo-50 text-indigo-600 border-indigo-100">
+                <Calculator size={24} />
+              </div>
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Workspace Verifikasi Manual & Penyesuaian Pajak</h3>
             </div>
 

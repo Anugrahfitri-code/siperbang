@@ -325,8 +325,8 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
             <ArrowLeft size={15} />
           </button>
         )}
-        <div className="bg-amber-50 text-amber-600 p-2 rounded border border-amber-100 shrink-0">
-          {isEditMode ? <Edit3 size={18} /> : <ClipboardList size={18} />}
+        <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
+          {isEditMode ? <Edit3 size={24} /> : <ClipboardList size={24} />}
         </div>
         <div className="flex-1">
           <h2 className="text-lg font-semibold leading-7 text-slate-900">

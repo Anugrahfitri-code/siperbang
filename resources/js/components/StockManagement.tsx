@@ -102,8 +102,8 @@ export const StockManagement: React.FC<StockManagementProps> = ({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
-          <div className="bg-indigo-50 text-indigo-600 p-3 rounded-lg border border-indigo-100 shadow-xs">
-            <Database size={22} strokeWidth={2} />
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-indigo-50 text-indigo-600 border-indigo-100">
+            <Database size={24} />
           </div>
           <div>
             <h2 className="text-lg font-semibold leading-7 text-slate-900">Manajemen Stok & Kode Persediaan</h2>

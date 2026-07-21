@@ -189,8 +189,8 @@ export function RequesterStockList() {
 
       {/* ── Header ── */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 flex items-center gap-4">
-        <div className="bg-amber-50 text-amber-600 p-3 rounded-lg border border-amber-100 shrink-0">
-          <Package size={20} />
+        <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
+          <Package size={24} />
         </div>
         <div>
           <h2 className="text-lg font-semibold leading-7 text-slate-900">

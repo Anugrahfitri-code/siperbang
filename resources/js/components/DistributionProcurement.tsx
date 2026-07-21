@@ -235,8 +235,8 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
         </div>
       )}
       <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-        <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded border border-indigo-150">
-          <Package size={18} />
+        <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-indigo-50 text-indigo-600 border-indigo-100">
+          <Package size={24} />
         </div>
         <div>
           <h2 className="text-lg font-semibold leading-7 text-slate-900">Distribusi & Pengadaan</h2>
@@ -601,7 +601,9 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
           {/* Price Summary */}
           <div className="bg-indigo-50 border border-indigo-200 rounded p-4">
             <div className="flex items-center gap-2 mb-3">
-              <Calculator className="text-indigo-600" size={16} />
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-indigo-50 text-indigo-600 border-indigo-100">
+                <Calculator size={24} />
+              </div>
               <span className="text-xs font-bold text-indigo-800 uppercase tracking-wider">Ringkasan Harga</span>
             </div>
             <div className="space-y-2 text-xs">
