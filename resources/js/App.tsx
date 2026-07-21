@@ -21,7 +21,7 @@ import { KetuaTimDashboard } from "./components/KetuaTimDashboard";
 import { BonMonitoringList, type BonHeaderRow } from "./components/BonMonitoringList";
 import type { BonDraft } from "./components/BonDigitalForm";
 import { AlertDialog } from "./components/AlertDialog";
-import { LayoutDashboard, FileSpreadsheet, ClipboardList, Package, Receipt, History, AlertCircle, Info, ChevronRight, CheckSquare, Loader2 } from "lucide-react";
+import { LayoutDashboard, FileSpreadsheet, ClipboardList, Package, Receipt, History, AlertCircle, Info, ChevronRight, CheckSquare, Loader2, Bell, User, FileText, Search } from "lucide-react";
 import { apiFetch } from "./api";
 
 type AuthenticatedUser = {
@@ -104,7 +104,27 @@ export default function App() {
   const [requestsError, setRequestsError] = useState<string | null>(null);
 
   // Navigation tab states
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return window.matchMedia("(min-width: 1024px)").matches;
+  });
+
+  useEffect(() => {
+    const desktopMedia = window.matchMedia("(min-width: 1024px)");
+
+    const syncSidebarWithViewport = (event: MediaQueryListEvent) => {
+      setIsSidebarOpen(event.matches);
+    };
+
+    setIsSidebarOpen(desktopMedia.matches);
+    desktopMedia.addEventListener("change", syncSidebarWithViewport);
+
+    return () => {
+      desktopMedia.removeEventListener("change", syncSidebarWithViewport);
+    };
+  }, []);
   const [officerTab, setOfficerTab] = useState<"dashboard" | "checking" | "stock" | "ocr" | "report" | "history">(
     () => (localStorage.getItem("officerTab") as any) || "dashboard"
   );
@@ -804,7 +824,9 @@ useEffect(() => {
             onChangeRole={handleRoleChange}
             currentUser={currentUser}
             onLogout={handleLogout}
-            onToggleSidebar={() => setIsSidebarOpen(true)}
+            onToggleSidebar={() =>
+              setIsSidebarOpen((previous) => !previous)
+            }
           />
 
           <Sidebar 
@@ -821,7 +843,12 @@ useEffect(() => {
             receipts={receipts}
           />
 
-          <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+          <div
+            className={`flex min-h-[calc(100vh-4rem)] flex-1 flex-col transition-[margin] duration-300 ease-in-out ${
+              isSidebarOpen ? "lg:ml-72" : "lg:ml-0"
+            }`}
+          >
+            <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-7 sm:px-6 lg:px-8">
 
         {/* Stats Section */}
         <DashboardStats requests={requests} receipts={receipts} />
@@ -835,27 +862,34 @@ useEffect(() => {
             {officerTab === "dashboard" && (
               <div className="space-y-6">
                 {/* Task list quick peek */}
-                <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                    <h3 className="text-sm font-extrabold text-slate-800 tracking-tight mb-4 flex items-center gap-1.5 uppercase">
-                      <AlertCircle className="text-amber-500" size={16} />
-                      Antrean Pengajuan BON Masuk Baru
+                <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                    <h3 className="text-[14px] font-extrabold text-slate-800 tracking-wide mb-5 flex items-center gap-2 uppercase">
+                      <Bell className="text-amber-500" size={18} strokeWidth={2.5} />
+                      Antrian Pengajuan BON Masuk Baru
                     </h3>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => (
-                        <div key={r.id} className="flex justify-between items-center bg-amber-50/30 border border-amber-200 rounded p-4 text-xs">
+                        <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-md p-5 shadow-xs gap-4">
                           <div>
-                            <span className="font-mono text-[10px] font-bold text-slate-500 block uppercase tracking-wider">{r.bonNo}</span>
-                            <span className="font-bold text-slate-800 text-sm mt-1 block">{r.itemName}</span>
-                            <span className="text-[11px] text-slate-500 mt-1 block">Diminta oleh {r.requester} • {r.section}</span>
+                            <span className="font-mono text-[11px] font-bold text-slate-400 block uppercase tracking-wider mb-1">{r.bonNo}</span>
+                            <span className="font-extrabold text-slate-800 text-[15px] block">{r.itemName}</span>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium mt-2">
+                              <User size={12} className="text-slate-400" />
+                              <span>Diminta oleh {r.requester}</span>
+                              <span className="text-slate-300 mx-1">•</span>
+                              <FileText size={12} className="text-slate-400" />
+                              <span>{r.section}</span>
+                            </div>
                           </div>
                           <button
                             onClick={() => {
                               setOfficerTab("checking");
                             }}
-                            className="bg-indigo-600 text-white px-3 py-1.5 rounded font-bold flex items-center gap-1 hover:bg-indigo-700 transition-colors text-[11px] shadow-xs"
+                            className="bg-blue-600 text-white px-5 py-2.5 rounded font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors text-xs shadow-sm self-start sm:self-auto"
                           >
+                            <Search size={14} />
                             <span>Proses Cek</span>
-                            <ChevronRight size={11} />
+                            <ChevronRight size={14} />
                           </button>
                         </div>
                       ))}
@@ -1048,27 +1082,34 @@ useEffect(() => {
             {superadminTab === "dashboard" && (
               <div className="space-y-6">
                 {/* Task list quick peek */}
-                <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                    <h3 className="text-sm font-extrabold text-slate-800 tracking-tight mb-4 flex items-center gap-1.5 uppercase">
-                      <AlertCircle className="text-amber-500" size={16} />
-                      Antrean Pengajuan BON Masuk Baru
+                <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                    <h3 className="text-[14px] font-extrabold text-slate-800 tracking-wide mb-5 flex items-center gap-2 uppercase">
+                      <Bell className="text-amber-500" size={18} strokeWidth={2.5} />
+                      Antrian Pengajuan BON Masuk Baru
                     </h3>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => (
-                        <div key={r.id} className="flex justify-between items-center bg-amber-50/30 border border-amber-200 rounded p-4 text-xs">
+                        <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-md p-5 shadow-xs gap-4">
                           <div>
-                            <span className="font-mono text-[10px] font-bold text-slate-500 block uppercase tracking-wider">{r.bonNo}</span>
-                            <span className="font-bold text-slate-800 text-sm mt-1 block">{r.itemName}</span>
-                            <span className="text-[11px] text-slate-500 mt-1 block">Diminta oleh {r.requester} • {r.section}</span>
+                            <span className="font-mono text-[11px] font-bold text-slate-400 block uppercase tracking-wider mb-1">{r.bonNo}</span>
+                            <span className="font-extrabold text-slate-800 text-[15px] block">{r.itemName}</span>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium mt-2">
+                              <User size={12} className="text-slate-400" />
+                              <span>Diminta oleh {r.requester}</span>
+                              <span className="text-slate-300 mx-1">•</span>
+                              <FileText size={12} className="text-slate-400" />
+                              <span>{r.section}</span>
+                            </div>
                           </div>
                           <button
                             onClick={() => {
                               setSuperadminTab("checking");
                             }}
-                            className="bg-indigo-600 text-white px-3 py-1.5 rounded font-bold flex items-center gap-1 hover:bg-indigo-700 transition-colors text-[11px] shadow-xs"
+                            className="bg-blue-600 text-white px-5 py-2.5 rounded font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors text-xs shadow-sm self-start sm:self-auto"
                           >
+                            <Search size={14} />
                             <span>Proses Cek</span>
-                            <ChevronRight size={11} />
+                            <ChevronRight size={14} />
                           </button>
                         </div>
                       ))}
@@ -1209,10 +1250,11 @@ useEffect(() => {
             {superadminTab === "history" && <HistoryLog logs={logs} />}
           </div>
         )}
-      </main>
+            </main>
+          </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 mt-12 text-center text-[11px] text-slate-500 font-medium">
+      <footer className="mt-12 border-t border-slate-200 bg-white py-6 text-center text-[11px] font-medium text-slate-500 lg:pl-72">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p>© 2026 BBPSDM Komunikasi dan Digital Makassar. Seluruh hak cipta dilindungi.</p>
           <p className="mt-1 text-[9px] text-slate-400 font-bold uppercase tracking-wider">SIPERBANG v1.1</p>

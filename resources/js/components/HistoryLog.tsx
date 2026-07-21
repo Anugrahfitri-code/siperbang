@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { HistoryLog as LogType } from "../types";
-import { History, User, Clock, Loader2 } from "lucide-react";
+import { History, User, Clock, Loader2, Settings } from "lucide-react";
 
 interface HistoryLogProps {
   // Kita jadikan props logs bersifat opsional (?) agar jika frontend 
@@ -55,15 +55,15 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ logs: incomingLogs }) =>
   }, []); // fetch once on mount
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-      <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-5">
-        <div className="bg-slate-50 text-slate-700 p-2.5 rounded border border-slate-200">
-          <History size={18} />
+    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+      <div className="flex items-center gap-4 mb-8">
+        <div className="bg-blue-50 text-blue-600 p-3 rounded-xl border border-blue-100 shadow-xs">
+          <History size={22} strokeWidth={2} />
         </div>
         <div className="flex-1">
-          <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Histori Perubahan & Audit Log</h2>
-          <p className="text-[11px] text-slate-500">
-            Riwayat lengkap semua tindakan dari seluruh pengguna sistem
+          <h2 className="text-[16px] font-extrabold text-slate-800 tracking-tight">Histori Perubahan & Audit Log</h2>
+          <p className="text-[12px] text-slate-500 mt-1">
+            Riwayat lengkap semua tindakan dari seluruh pengguna sistem.
           </p>
         </div>
         <button
@@ -79,11 +79,11 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ logs: incomingLogs }) =>
               .catch(() => setError("Gagal memuat ulang log."))
               .finally(() => setLoading(false));
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-200 text-xs font-bold text-blue-600 hover:bg-slate-50 transition-colors shadow-sm"
           title="Muat ulang log"
         >
-          <svg className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          <svg className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
           Refresh
         </button>
@@ -106,51 +106,85 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ logs: incomingLogs }) =>
 
       {/* 5. Tampilkan Timeline Data jika data sukses dimuat */}
       {!loading && !error && (
-        <div className="relative border-l border-slate-200 ml-4 pl-6 space-y-6 max-h-[500px] overflow-y-auto">
-          {logs.map((log) => {
-            // Deteksi warna badge berdasarkan konten
-            let badgeColor = "bg-slate-50 text-slate-700 border-slate-200";
-            if (log.action.toLowerCase().includes("ajukan") || log.action.toLowerCase().includes("buat")) {
-              badgeColor = "bg-amber-50 text-amber-800 border-amber-200";
-            } else if (log.action.toLowerCase().includes("verifikasi") || log.action.toLowerCase().includes("valid")) {
-              badgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200";
-            } else if (log.action.toLowerCase().includes("stok") || log.action.toLowerCase().includes("kurang")) {
-              badgeColor = "bg-indigo-50 text-indigo-700 border-indigo-150";
-            } else if (log.action.toLowerCase().includes("tolak") || log.action.toLowerCase().includes("batal")) {
-              badgeColor = "bg-rose-50 text-rose-800 border-rose-200";
-            }
+        <div className="relative ml-[14px] max-h-[600px] overflow-y-auto pr-2 pb-4">
+          {/* Vertical Line */}
+          <div className="absolute left-[7px] top-6 bottom-6 w-[2px] bg-slate-200"></div>
 
-            return (
-              <div key={log.id} className="relative group">
-                {/* Timeline Marker Dot */}
-                <div className="absolute -left-[31px] top-1 bg-white border-2 border-indigo-600 rounded-full w-3.5 h-3.5 group-hover:bg-indigo-600 transition-all" />
+          <div className="space-y-4">
+            {logs.map((log) => {
+              // Deteksi warna badge & dot berdasarkan konten
+              let badgeColor = "bg-slate-100 text-slate-700";
+              let dotColor = "border-blue-600";
+              let iconBg = "bg-slate-50 border-slate-200 text-slate-500";
+              let ActorIcon = User;
+              
+              const actionLower = log.action.toLowerCase();
+              const actorLower = log.actor.toLowerCase();
 
-                <div className="bg-slate-50/50 hover:bg-slate-50 border border-slate-150 rounded p-4 transition-colors">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                        <User size={12} className="text-slate-400" />
-                        {log.actor}
-                      </span>
-                      <span className="text-slate-300">•</span>
-                      <span className={`text-[10px] font-bold border px-2 py-0.5 rounded-full ${badgeColor}`}>
-                        {log.action}
-                      </span>
+              // Icon & Bg
+              if (actorLower.includes("system") || actorLower.includes("sistem")) {
+                ActorIcon = Settings;
+                iconBg = "bg-blue-50 border-blue-100 text-blue-600";
+              } else {
+                iconBg = "bg-rose-50 border-rose-100 text-rose-500";
+              }
+
+              // Badges & Dots
+              if (actionLower.includes("berhasil") || actionLower.includes("verifikasi") || actionLower.includes("valid")) {
+                badgeColor = "bg-emerald-100 text-emerald-700";
+                dotColor = "border-blue-600";
+              } else if (actionLower.includes("ajukan") || actionLower.includes("buat")) {
+                badgeColor = "bg-amber-100 text-amber-700";
+                dotColor = "border-blue-600";
+              } else if (actionLower.includes("tolak") || actionLower.includes("batal")) {
+                badgeColor = "bg-rose-100 text-rose-700";
+                dotColor = "border-rose-500";
+              }
+
+              return (
+                <div key={log.id} className="relative flex items-center gap-6 pl-10">
+                  {/* Timeline Marker Dot */}
+                  <div className={`absolute left-0 top-1/2 -translate-y-1/2 bg-white border-2 rounded-full w-4 h-4 z-10 ${dotColor}`} />
+
+                  {/* Card */}
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 flex-1 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-sm transition-shadow">
+                    
+                    <div className="flex items-center gap-4">
+                      {/* Avatar/Icon Box */}
+                      <div className={`p-2.5 rounded-xl border flex-shrink-0 ${iconBg}`}>
+                        <ActorIcon size={20} strokeWidth={2} />
+                      </div>
+                      
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-3">
+                          <h4 className="text-[13px] font-extrabold text-slate-800">
+                            {log.actor}
+                          </h4>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${badgeColor}`}>
+                            {log.action}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[11px] font-medium text-slate-500">
+                            {actorLower.includes("system") ? "Sistem" : "Petugas Persediaan"}
+                          </span>
+                          <p className="text-[12px] text-slate-600 font-medium">
+                            {log.details}
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
-                    <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1 font-mono">
-                      <Clock size={11} />
+                    {/* Timestamp */}
+                    <div className="flex-shrink-0 flex items-center gap-2 text-slate-500 font-mono text-[11px] font-medium">
+                      <Clock size={14} className="text-slate-400" />
                       {log.timestamp}
-                    </span>
+                    </div>
                   </div>
-
-                  <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                    {log.details}
-                  </p>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
 
           {logs.length === 0 && (
             <div className="text-center py-8 text-slate-400 text-xs">
