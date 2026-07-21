@@ -1,20 +1,22 @@
 @extends('layouts.main')
 
 @section('content')
-<div class="max-w-3xl mx-auto space-y-6">
+<div class="w-full space-y-6">
     
     <!-- Title Page Header -->
-    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs flex items-center gap-4">
-        <div class="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-indigo-50 text-indigo-600 border-indigo-100">
-            <svg class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" x2="12" y1="3" y2="15" />
-            </svg>
-        </div>
-        <div>
-            <h1 class="text-lg font-semibold leading-7 text-slate-900">Upload Stok & Persediaan Excel</h1>
-            <p class="text-sm font-normal leading-5 text-slate-500 mt-0.5">Unggah file laporan belanja belanja barang persediaan untuk memproses penambahan kuantiti stok gudang.</p>
+    <div class="bg-gradient-to-r from-white to-blue-50/50 rounded-xl border border-slate-200 p-6 shadow-xs flex justify-between items-center overflow-hidden relative">
+        <div class="flex items-center gap-4 relative z-10">
+            <div class="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-blue-50 text-blue-600 border-blue-100">
+                <svg class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+                    <path d="M12 12v9" />
+                    <path d="m8 16 4-4 4 4" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-lg font-semibold leading-7 text-slate-900">Upload Stok & Persediaan Excel</h1>
+                <p class="text-sm font-normal leading-5 text-slate-500 mt-0.5">Unggah file laporan belanja belanja barang persediaan untuk memproses penambahan kuantiti stok gudang.</p>
+            </div>
         </div>
     </div>
 
@@ -65,12 +67,16 @@
             <div>
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Pilih File Excel Laporan Belanja</label>
                 
-                <div class="border-2 border-dashed border-slate-200 hover:border-indigo-500 rounded-lg p-8 text-center bg-slate-50/50 hover:bg-indigo-50/10 transition-all cursor-pointer relative group">
+                <div class="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-lg p-8 text-center bg-slate-50/50 hover:bg-blue-50/30 transition-all cursor-pointer relative group">
                     <input type="file" name="file_excel" id="file_excel" accept=".xlsx, .xls" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required onchange="updateFileName(this)">
                     
                     <div class="space-y-2 pointer-events-none">
-                        <div class="mx-auto w-12 h-12 bg-white rounded-lg shadow-sm border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                        <div class="mx-auto w-12 h-12 bg-white rounded-lg shadow-sm border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-blue-600 transition-colors">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+                                <path d="M12 12v9" />
+                                <path d="m8 16 4-4 4 4" />
+                            </svg>
                         </div>
                         <p class="text-xs font-bold text-slate-700" id="file-name-label">Seret & lepas file Anda ke sini, atau klik untuk menelusuri</p>
                         <p class="text-xs text-slate-400">Hanya menerima format Excel (.xlsx, .xls) dengan ukuran maks 10MB</p>
@@ -84,12 +90,16 @@
 
             <!-- Buttons -->
             <div class="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2">
-                <a href="{{ route('stok-upload.template') }}" class="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-indigo-200 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                <a href="{{ route('stok-upload.template') }}" class="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-blue-200 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
                     Download Template Excel
                 </a>
 
-                <button type="submit" class="w-full sm:w-auto flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors">
+                <button type="submit" class="w-full sm:w-auto flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm transition-all hover:shadow">
                     <span>Mulai Proses Upload →</span>
                 </button>
             </div>
@@ -97,22 +107,31 @@
     </div>
 
     <!-- Excel Layout Format Guidance Card -->
+    <!-- Excel Layout Format Guidance Card -->
     <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-4">
-        <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-3">Petunjuk Format Dokumen Excel</h3>
+        <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+            <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <svg class="size-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                </svg>
+            </div>
+            <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Petunjuk Format Dokumen Excel</h3>
+        </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div class="space-y-2">
-                <h4 class="font-bold text-indigo-700">1. Struktur Dokumen</h4>
+                <h4 class="font-bold text-blue-700">1. Struktur Dokumen</h4>
                 <ul class="list-disc pl-4 space-y-1 text-slate-500">
                     <li>Dapat berisi banyak sheet (sistem akan membaca <strong class="text-slate-700">seluruh sheet</strong>).</li>
                     <li>Setiap sheet mewakili satu nota/transaksi (contoh nama: <code class="bg-slate-100 px-1 rounded text-slate-700">020126 RP</code>).</li>
-                    <li>Informasi Supplier/Nama Toko di baris 2 Kolom A (contoh: <code class="bg-slate-100 px-1 rounded text-indigo-700">SUPPLIER : REDZKY PLASTIK</code>).</li>
+                    <li>Informasi Supplier/Nama Toko di baris 2 Kolom A (contoh: <code class="bg-slate-100 px-1 rounded text-blue-700">SUPPLIER : REDZKY PLASTIK</code>).</li>
                     <li>Header tabel di baris 4 dan baris data dimulai dari baris 5.</li>
                 </ul>
             </div>
             
             <div class="space-y-2">
-                <h4 class="font-bold text-indigo-700">2. Layout Tabel yang Didukung</h4>
+                <h4 class="font-bold text-blue-700">2. Layout Tabel yang Didukung</h4>
                 <ul class="list-disc pl-4 space-y-1 text-slate-500">
                     <li><strong class="text-slate-700">Format Tanpa Pajak</strong>: A (No), B (Kode), C (Nama), D (Jumlah), E (Satuan), F (Harga Satuan), G (Total).</li>
                     <li><strong class="text-slate-700">Format Dengan Pajak</strong>: A (No), B (Kode), C (Nama), D (Jumlah), E (Satuan), F (Harga Satuan), G (Harga + Pajak), H (Total), I (Pajak).</li>
@@ -122,7 +141,11 @@
         </div>
 
         <div class="bg-amber-50 border border-amber-100 rounded-lg p-4 text-xs text-slate-600 flex items-start gap-2.5">
-            <svg class="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <svg class="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
             <div>
                 <span class="font-extrabold text-amber-800">Catatan Perhitungan Pajak:</span> Jika sheet memuat kolom <strong class="text-slate-700">Pajak</strong> (bernilai 1.11 atau formula serupa) atau kolom <strong class="text-slate-700">Harga Satuan + Pajak</strong>, sistem akan otomatis melakukan perbandingan total belanja dengan menyertakan PPN 11% sesuai aturan instansi.
             </div>
