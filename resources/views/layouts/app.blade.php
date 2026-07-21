@@ -87,30 +87,10 @@
                       </div>
                     </div>
                     
-                    <!-- Desktop Nav Links -->
-                    <nav class="hidden md:flex items-center gap-1">
-                        <a href="/stok-upload" class="px-3 py-2 rounded-lg text-sm font-semibold {{ request()->is('stok-upload') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
-                            Upload Excel
-                        </a>
-                        <a href="/stok-upload/riwayat" class="px-3 py-2 rounded-lg text-sm font-semibold {{ request()->is('stok-upload/riwayat*') || request()->is('stok-upload/*/preview') || request()->is('stok-upload/*/verifikasi') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
-                            Riwayat Upload
-                        </a>
-                        <a href="/master-barang" class="px-3 py-2 rounded-lg text-sm font-semibold {{ request()->is('master-barang*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
-                            Master Barang
-                        </a>
-                    </nav>
+                    <!-- Top small nav links removed (duplicate of lower nav) -->
                 </div>
 
-                {{-- Tengah: Logo KOMDIGI --}}
-                <div class="hidden md:flex items-center gap-2.5 border-l border-slate-200 pl-6">
-                    <img src="/komdigi.png" alt="KOMDIGI" class="h-7 w-auto"
-                         onerror="this.style.display='none'">
-                    <div class="flex flex-col leading-tight">
-                        <span class="text-xs font-bold text-slate-700">KOMDIGI</span>
-                        <span class="text-2xs text-slate-400 font-medium">Kementerian Komunikasi dan Digital</span>
-                        <span class="text-2xs text-slate-400 font-medium">Republik Indonesia</span>
-                    </div>
-                </div>
+
 
                 {{-- Kanan: User info + Tombol kembali --}}
                 <div class="flex items-center gap-3 shrink-0">
@@ -139,21 +119,21 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <nav class="flex items-center h-10">
                     <a href="/stok-upload"
-                       class="flex-1 h-full inline-flex items-center justify-center text-sm font-semibold border-b-2 transition-colors
+                       class="flex-1 h-full inline-flex items-center justify-center text-[13px] font-semibold border-b-2 transition-colors
                        {{ request()->is('stok-upload') && !request()->is('stok-upload/*')
                             ? 'border-indigo-600 text-indigo-700'
                             : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}">
                         Upload Excel
                     </a>
                     <a href="/stok-upload/riwayat"
-                       class="flex-1 h-full inline-flex items-center justify-center text-sm font-semibold border-b-2 transition-colors
+                       class="flex-1 h-full inline-flex items-center justify-center text-[13px] font-semibold border-b-2 transition-colors
                        {{ request()->is('stok-upload/riwayat*') || request()->is('stok-upload/*/stepper') || request()->is('stok-upload/sampah')
                             ? 'border-indigo-600 text-indigo-700'
                             : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}">
                         Riwayat Upload
                     </a>
                     <a href="/master-barang"
-                       class="flex-1 h-full inline-flex items-center justify-center text-sm font-semibold border-b-2 transition-colors
+                       class="flex-1 h-full inline-flex items-center justify-center text-[13px] font-semibold border-b-2 transition-colors
                        {{ request()->is('master-barang*')
                             ? 'border-indigo-600 text-indigo-700'
                             : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}">
@@ -165,30 +145,6 @@
 
     </header>
 
-    {{-- ── Mobile Nav (dropdown) ── --}}
-    <div id="mobileMenu" class="hidden md:hidden bg-white border-b border-slate-200 px-4 py-2 flex flex-col gap-1">
-        <a href="/stok-upload"
-           class="px-3 py-2 rounded-lg text-sm font-semibold
-           {{ request()->is('stok-upload') && !request()->is('stok-upload/*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50' }}">
-            Upload Excel
-        </a>
-        <a href="/stok-upload/riwayat"
-           class="px-3 py-2 rounded-lg text-sm font-semibold
-           {{ request()->is('stok-upload/riwayat*') || request()->is('stok-upload/sampah') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50' }}">
-            Riwayat Upload
-        </a>
-        <a href="/master-barang"
-           class="px-3 py-2 rounded-lg text-sm font-semibold
-           {{ request()->is('master-barang*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50' }}">
-            Master Barang
-        </a>
-    </div>
-
-    <script>
-        document.getElementById('mobileMenuBtn')?.addEventListener('click', function () {
-            document.getElementById('mobileMenu')?.classList.toggle('hidden');
-        });
-    </script>
 
     <!-- Main Content Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
