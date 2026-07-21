@@ -219,25 +219,25 @@
         @if(request()->is('stok-upload*') || request()->is('master-barang*'))
         <div class="border-b border-slate-200 bg-white shrink-0">
             <div class="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8">
-                <nav class="flex items-center h-10 gap-0">
+                <nav class="flex items-center h-10 w-full">
                     <a href="{{ route('stok-upload.index') }}"
-                       class="h-full inline-flex items-center px-4 text-[13px] font-semibold border-b-2 transition-colors
+                       class="h-full inline-flex items-center justify-center flex-1 px-4 text-[13px] font-semibold border-b-2 transition-colors
                        {{ request()->is('stok-upload') && !request()->is('stok-upload/*')
-                            ? 'border-indigo-600 text-indigo-700'
+                            ? 'border-blue-600 text-blue-700'
                             : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}">
                         Upload Excel
                     </a>
                     <a href="{{ route('stok-upload.riwayat') }}"
-                       class="h-full inline-flex items-center px-4 text-[13px] font-semibold border-b-2 transition-colors
+                       class="h-full inline-flex items-center justify-center flex-1 px-4 text-[13px] font-semibold border-b-2 transition-colors
                        {{ request()->is('stok-upload/riwayat*') || request()->is('stok-upload/*/stepper') || request()->is('stok-upload/sampah')
-                            ? 'border-indigo-600 text-indigo-700'
+                            ? 'border-blue-600 text-blue-700'
                             : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}">
                         Riwayat Upload
                     </a>
                     <a href="{{ route('master-barang.index') }}"
-                       class="h-full inline-flex items-center px-4 text-[13px] font-semibold border-b-2 transition-colors
+                       class="h-full inline-flex items-center justify-center flex-1 px-4 text-[13px] font-semibold border-b-2 transition-colors
                        {{ request()->is('master-barang*')
-                            ? 'border-indigo-600 text-indigo-700'
+                            ? 'border-blue-600 text-blue-700'
                             : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}">
                         Master Barang
                     </a>

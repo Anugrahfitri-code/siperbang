@@ -16,7 +16,7 @@
             <p class="px-7 pb-2 pt-5 text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Manajemen Sistem</p>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
                {{ $isTindakanActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -34,7 +34,7 @@
             <p class="px-7 pb-2 pt-5 text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Petugas Persediaan</p>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
                {{ $isTindakanActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -48,7 +48,7 @@
             </a>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -62,7 +62,7 @@
             </a>
 
             <a href="{{ route('stok-upload.index') }}"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
                {{ $isExcelActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -79,7 +79,7 @@
             </a>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -94,7 +94,7 @@
             </a>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -110,7 +110,7 @@
             </a>
 
             <a href="{{ route('master-barang.index') }}"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
                {{ $isMasterActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -127,7 +127,7 @@
             <p class="px-7 pb-2 pt-5 text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Ketua Tim Kerja</p>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -140,7 +140,7 @@
             </a>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -153,7 +153,7 @@
             </a>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -169,7 +169,7 @@
             <p class="px-7 pb-2 pt-5 text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Laporan & Audit</p>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -184,8 +184,8 @@
 @elseif($role === 'Petugas Persediaan')
             {{-- ═══ Petugas Persediaan ═══ --}}
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none
-               {{ $isTindakanActive ? 'bg-indigo-50 text-indigo-700 border-indigo-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-indigo-50/70 hover:text-indigo-700' }}">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
+               {{ $isTindakanActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -195,16 +195,19 @@
                     </span>
                     <span class="truncate">Daftar Tindakan</span>
                 </span>
+                <span class="ml-2 min-w-6 shrink-0 rounded-full px-2 py-0.5 text-center text-xs font-extrabold {{ $isTindakanActive ? 'bg-blue-200 text-blue-800' : 'border border-amber-200 bg-amber-50 text-amber-700' }}">
+                    1
+                </span>
             </a>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-indigo-50/70 hover:text-indigo-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16.5 9.4 7.55 4.24a1 1 0 0 0-1.1 0L3.5 6.1a1 1 0 0 0-.5.87v9.97a1 1 0 0 0 .5.86l3 1.87a1 1 0 0 0 1.1 0l4.9-3.08A1 1 0 0 0 13 15.5V8.4a1 1 0 0 0-.5-.86L9.5 5.5"/>
-                            <path d="m19 7-4.5-2.82A1 1 0 0 0 13.5 5v12a1 1 0 0 0 .5.86L18.5 21"/>
-                            <path d="M16.5 9.4V16"/>
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                            <line x1="12" y1="22.08" x2="12" y2="12"/>
                         </svg>
                     </span>
                     <span class="truncate">Pengecekan & Pemenuhan</span>
@@ -212,8 +215,8 @@
             </a>
 
             <a href="{{ route('stok-upload.index') }}"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none
-               {{ $isExcelActive ? 'bg-indigo-50 text-indigo-700 border-indigo-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-indigo-50/70 hover:text-indigo-700' }}">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
+               {{ $isExcelActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -229,14 +232,13 @@
             </a>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-indigo-50/70 hover:text-indigo-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/>
-                            <path d="M8 7h8"/>
-                            <path d="M8 11h8"/>
-                            <path d="M8 15h5"/>
+                            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1 2 1-2-1z"/>
+                            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
+                            <path d="M12 17.5v-11"/>
                         </svg>
                     </span>
                     <span class="truncate">OCR Kuitansi & Pajak</span>
@@ -244,7 +246,7 @@
             </a>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-indigo-50/70 hover:text-indigo-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -260,8 +262,8 @@
             </a>
 
             <a href="{{ route('master-barang.index') }}"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none
-               {{ $isMasterActive ? 'bg-indigo-50 text-indigo-700 border-indigo-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-indigo-50/70 hover:text-indigo-700' }}">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
+               {{ $isMasterActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -275,7 +277,7 @@
             </a>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-indigo-50/70 hover:text-indigo-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -290,7 +292,7 @@
 @else
             {{-- ═══ Ketua Tim Kerja ═══ --}}
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
                {{ $isTindakanActive ? 'bg-amber-50 text-amber-700 border-amber-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -306,7 +308,7 @@
             </a>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -319,7 +321,7 @@
             </a>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -332,7 +334,7 @@
             </a>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -346,7 +348,7 @@
             </a>
 
             <a href="/"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -359,7 +361,7 @@
             </a>
 
             <a href="{{ route('stok-upload.index') }}"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
                {{ $isExcelActive ? 'bg-amber-50 text-amber-700 border-amber-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -376,7 +378,7 @@
             </a>
 
             <a href="{{ route('master-barang.index') }}"
-               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 rounded-none
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
                {{ $isMasterActive ? 'bg-amber-50 text-amber-700 border-amber-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
