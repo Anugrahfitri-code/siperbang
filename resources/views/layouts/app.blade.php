@@ -25,65 +25,121 @@
 
     <!-- Navigation Header -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+
+        {{-- ── Baris 1: Logo | KOMDIGI | User + Back ── --}}
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <!-- Logo & Brand -->
-                <div class="flex items-center gap-8">
-                    <a href="/" class="flex items-center gap-3">
-                        <img src="/logo.png" alt="SIPERBANG Logo" class="h-12 w-auto" onerror="this.src='https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600'">
-                        <div class="flex flex-col">
-                            <span class="text-xl font-extrabold text-slate-800 tracking-tight leading-none">SIPERBANG</span>
-                            <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Sistem Informasi Persediaan Barang</span>
+            <div class="flex items-center justify-between h-14 gap-4">
+
+                {{-- Kiri: Hamburger (mobile) + Logo SIPERBANG --}}
+                <div class="flex items-center gap-3 shrink-0">
+                    <button class="md:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+                            id="mobileMenuBtn" type="button" aria-label="Menu">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+
+                    <a href="/" class="flex items-center gap-2.5">
+                        <img src="/logo.png" alt="SIPERBANG" class="h-8 w-auto"
+                             onerror="this.src='https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600'">
+                        <div class="flex flex-col leading-tight">
+                            <span class="text-sm font-extrabold text-slate-900 tracking-tight">SIPERBANG</span>
+                            <span class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider hidden sm:block">
+                                Sistem Informasi Persediaan Barang
+                            </span>
                         </div>
                     </a>
-                    
-                    <!-- Desktop Nav Links -->
-                    <nav class="hidden md:flex items-center gap-1">
-                        <a href="/stok-upload" class="px-3 py-2 rounded-lg text-sm font-semibold {{ request()->is('stok-upload') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
-                            Upload Excel
-                        </a>
-                        <a href="/stok-upload/riwayat" class="px-3 py-2 rounded-lg text-sm font-semibold {{ request()->is('stok-upload/riwayat*') || request()->is('stok-upload/*/preview') || request()->is('stok-upload/*/verifikasi') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
-                            Riwayat Upload
-                        </a>
-                        <a href="/master-barang" class="px-3 py-2 rounded-lg text-sm font-semibold {{ request()->is('master-barang*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
-                            Master Barang
-                        </a>
-                    </nav>
                 </div>
 
-                <!-- User Info & Back Button -->
-                <div class="flex items-center gap-4">
-                    <div class="hidden lg:block text-right">
-                        <span class="text-xs font-bold text-slate-800 block">
+                {{-- Tengah: Logo KOMDIGI --}}
+                <div class="hidden md:flex items-center gap-2.5 border-l border-slate-200 pl-6">
+                    <img src="/komdigi.png" alt="KOMDIGI" class="h-7 w-auto"
+                         onerror="this.style.display='none'">
+                    <div class="flex flex-col leading-tight">
+                        <span class="text-xs font-bold text-slate-700">KOMDIGI</span>
+                        <span class="text-[9px] text-slate-400 font-medium">Kementerian Komunikasi dan Digital</span>
+                        <span class="text-[9px] text-slate-400 font-medium">Republik Indonesia</span>
+                    </div>
+                </div>
+
+                {{-- Kanan: User info + Tombol kembali --}}
+                <div class="flex items-center gap-3 shrink-0">
+                    <div class="hidden sm:block text-right">
+                        <span class="text-xs font-bold text-slate-800 block leading-tight">
                             {{ auth()->check() ? auth()->user()->name : 'Petugas Persediaan' }}
                         </span>
-                        <span class="text-[10px] font-medium text-indigo-600 uppercase tracking-wider block">
+                        <span class="text-[10px] font-semibold text-indigo-600 uppercase tracking-wider block">
                             {{ auth()->check() ? auth()->user()->role : 'Petugas Persediaan' }}
                         </span>
                     </div>
-                    
-                    <button onclick="window.location.href='/'" type="button" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white border-2 border-slate-300 hover:bg-slate-50 hover:border-slate-400 text-slate-900 transition-all shadow-sm hover:shadow-md cursor-pointer">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    <button onclick="window.location.href='/'" type="button"
+                            title="Kembali ke aplikasi utama"
+                            class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white border-2 border-slate-200
+                                   hover:border-slate-400 hover:bg-slate-50 text-slate-600 transition-all shadow-xs">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                         </svg>
                     </button>
                 </div>
             </div>
         </div>
+
+        {{-- ── Baris 2: Nav Links (desktop) ── --}}
+        <div class="hidden md:block border-t border-slate-100 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <nav class="flex items-center h-10">
+                    <a href="/stok-upload"
+                       class="flex-1 h-full inline-flex items-center justify-center text-[13px] font-semibold border-b-2 transition-colors
+                       {{ request()->is('stok-upload') && !request()->is('stok-upload/*')
+                            ? 'border-indigo-600 text-indigo-700'
+                            : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}">
+                        Upload Excel
+                    </a>
+                    <a href="/stok-upload/riwayat"
+                       class="flex-1 h-full inline-flex items-center justify-center text-[13px] font-semibold border-b-2 transition-colors
+                       {{ request()->is('stok-upload/riwayat*') || request()->is('stok-upload/*/stepper') || request()->is('stok-upload/sampah')
+                            ? 'border-indigo-600 text-indigo-700'
+                            : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}">
+                        Riwayat Upload
+                    </a>
+                    <a href="/master-barang"
+                       class="flex-1 h-full inline-flex items-center justify-center text-[13px] font-semibold border-b-2 transition-colors
+                       {{ request()->is('master-barang*')
+                            ? 'border-indigo-600 text-indigo-700'
+                            : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}">
+                        Master Barang
+                    </a>
+                </nav>
+            </div>
+        </div>
+
     </header>
 
-    <!-- Mobile Nav Bar -->
-    <div class="md:hidden bg-white border-b border-slate-200 py-2.5 px-4 flex justify-around gap-2 text-center">
-        <a href="/stok-upload" class="flex-1 py-1.5 rounded text-xs font-bold {{ request()->is('stok-upload') ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50' }}">
-            Upload Stok
+    {{-- ── Mobile Nav (dropdown) ── --}}
+    <div id="mobileMenu" class="hidden md:hidden bg-white border-b border-slate-200 px-4 py-2 flex flex-col gap-1">
+        <a href="/stok-upload"
+           class="px-3 py-2 rounded-lg text-sm font-semibold
+           {{ request()->is('stok-upload') && !request()->is('stok-upload/*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50' }}">
+            Upload Excel
         </a>
-        <a href="/stok-upload/riwayat" class="flex-1 py-1.5 rounded text-xs font-bold {{ request()->is('stok-upload/riwayat*') || request()->is('stok-upload/*/preview') || request()->is('stok-upload/*/verifikasi') ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50' }}">
-            Riwayat
+        <a href="/stok-upload/riwayat"
+           class="px-3 py-2 rounded-lg text-sm font-semibold
+           {{ request()->is('stok-upload/riwayat*') || request()->is('stok-upload/sampah') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50' }}">
+            Riwayat Upload
         </a>
-        <a href="/master-barang" class="flex-1 py-1.5 rounded text-xs font-bold {{ request()->is('master-barang*') ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50' }}">
+        <a href="/master-barang"
+           class="px-3 py-2 rounded-lg text-sm font-semibold
+           {{ request()->is('master-barang*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50' }}">
             Master Barang
         </a>
     </div>
+
+    <script>
+        document.getElementById('mobileMenuBtn')?.addEventListener('click', function () {
+            document.getElementById('mobileMenu')?.classList.toggle('hidden');
+        });
+    </script>
 
     <!-- Main Content Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
