@@ -1,0 +1,48 @@
+services:
+  ocr:
+    build:
+      context: ./ocr-service
+      dockerfile: Dockerfile
+
+    container_name: siperbang-ocr
+
+    restart: unless-stopped
+
+    init: true
+
+    env_file:
+      - ./ocr-service/.env
+
+    environment:
+      PADDLE_PDX_MODEL_SOURCE: BOS
+      TZ: Asia/Makassar
+
+    ports:
+      - "0.0.0.0:8001:8001"
+
+    volumes:
+      - siperbang_ocr_models:/root/.paddlex
+
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen(
+          'http://127.0.0.1:8001/health',
+          timeout=5
+          ).read()
+      interval: 15s
+      timeout: 8s
+      retries: 20
+      start_period: 300s
+
+    stop_grace_period: 30s
+
+    shm_size: "1gb"
+
+volumes:
+  siperbang_ocr_models:
+    name: siperbang_ocr_models
