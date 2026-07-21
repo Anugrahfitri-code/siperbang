@@ -329,10 +329,10 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
           {isEditMode ? <Edit3 size={18} /> : <ClipboardList size={18} />}
         </div>
         <div className="flex-1">
-          <h2 className="text-base font-extrabold text-slate-800 tracking-tight">
+          <h2 className="text-lg font-semibold leading-7 text-slate-900">
             {isEditMode ? `Edit Draft — ${initialData?.bonNo}` : "BON Digital"}
           </h2>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
             {isEditMode
               ? "Lengkapi dan kirim draft pengajuan ini, atau simpan kembali sebagai draft."
               : "Form pengajuan kebutuhan barang persediaan unit kerja"}
@@ -356,12 +356,12 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
 
       {/* Section 1 — Info */}
       <div className="space-y-4">
-        <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">
+        <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">
           Informasi Pengajuan
         </h3>
 
         <div>
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
             Keperluan / Tujuan Pengajuan <span className="text-rose-500">*</span>
           </label>
           <textarea
@@ -377,14 +377,14 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
               ${fieldErrors.keperluan ? "border-rose-400 bg-rose-50" : "border-slate-200"}`}
           />
           {fieldErrors.keperluan && (
-            <p className="mt-1 text-[11px] text-rose-600 font-semibold flex items-center gap-1">
+            <p className="mt-1 text-xs text-rose-600 font-semibold flex items-center gap-1">
               <AlertCircle size={11} /> {fieldErrors.keperluan}
             </p>
           )}
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
             Nama Pengaju
           </label>
           <input type="text" value={currentUser} disabled
@@ -392,7 +392,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
             Catatan Tambahan
           </label>
           <textarea rows={2} disabled={isSubmitting}
@@ -406,13 +406,13 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
 
       {/* Section 2 — Items */}
       <div className="space-y-4">
-        <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">
+        <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">
           Daftar Barang yang Diminta <span className="text-rose-500">*</span>
         </h3>
 
         {/* Stock search */}
         <div className="relative" ref={dropdownRef}>
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
             Cari &amp; Tambah Barang dari Gudang
           </label>
           <div className="relative">
@@ -429,7 +429,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
                 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-60"
             />
           </div>
-          {searchError && <p className="mt-1 text-[11px] text-rose-600 font-semibold">{searchError}</p>}
+          {searchError && <p className="mt-1 text-xs text-rose-600 font-semibold">{searchError}</p>}
 
           {showDropdown && searchResults.length > 0 && (
             <div className="absolute z-50 top-full mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -445,8 +445,8 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-[10px] text-indigo-600 font-bold">{result.kode}</span>
-                          <span className="text-[10px] text-slate-400">{result.kategori}</span>
+                          <span className="font-mono text-xs text-indigo-600 font-bold">{result.kode}</span>
+                          <span className="text-xs text-slate-400">{result.kategori}</span>
                         </div>
                         <p className="font-semibold text-slate-800 mt-0.5 truncate">{result.nama}</p>
                       </div>
@@ -454,10 +454,10 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
                         <p className={`font-extrabold text-sm ${result.stok === 0 ? "text-rose-500" : result.stok <= 5 ? "text-amber-600" : "text-emerald-600"}`}>
                           {result.stok}
                         </p>
-                        <p className="text-[10px] text-slate-400">{result.satuan}</p>
+                        <p className="text-xs text-slate-400">{result.satuan}</p>
                       </div>
                     </div>
-                    {alreadyAdded && <span className="text-[10px] text-indigo-500 font-bold">✓ Sudah ditambahkan</span>}
+                    {alreadyAdded && <span className="text-xs text-indigo-500 font-bold">✓ Sudah ditambahkan</span>}
                   </button>
                 );
               })}
@@ -466,7 +466,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
         </div>
 
         {fieldErrors.items && (
-          <p className="text-[11px] text-rose-600 font-semibold flex items-center gap-1">
+          <p className="text-xs text-rose-600 font-semibold flex items-center gap-1">
             <AlertCircle size={11} /> {fieldErrors.items}
           </p>
         )}
@@ -475,7 +475,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
           <div className="border-2 border-dashed border-slate-200 rounded-lg py-8 text-center">
             <Package className="mx-auto text-slate-300 mb-2" size={24} />
             <p className="text-xs font-semibold text-slate-400">Belum ada barang yang dipilih</p>
-            <p className="text-[10px] text-slate-300 mt-0.5">Gunakan kotak pencarian di atas untuk menambah barang</p>
+            <p className="text-xs text-slate-300 mt-0.5">Gunakan kotak pencarian di atas untuk menambah barang</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -486,7 +486,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-extrabold text-slate-800 truncate">{item.nama_barang}</p>
                     {item.stok_tersedia > 0 && (
-                      <p className="text-[10px] text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-400 mt-0.5">
                         Stok gudang:{" "}
                         <span className={`font-bold ${item.stok_tersedia <= 5 ? "text-amber-600" : "text-emerald-600"}`}>
                           {item.stok_tersedia} {item.satuan}
@@ -503,7 +503,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                       Jumlah Diminta <span className="text-rose-500">*</span>
                     </label>
                     <div className="flex items-center gap-2">
@@ -519,15 +519,15 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
                           focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-60
                           ${fieldErrors[`items_${index}`] ? "border-rose-400" : "border-slate-200"}`}
                       />
-                      <span className="text-[11px] text-slate-500 font-semibold shrink-0">{item.satuan}</span>
+                      <span className="text-xs text-slate-500 font-semibold shrink-0">{item.satuan}</span>
                     </div>
                     {fieldErrors[`items_${index}`] && (
-                      <p className="mt-0.5 text-[10px] text-rose-600 font-semibold">{fieldErrors[`items_${index}`]}</p>
+                      <p className="mt-0.5 text-xs text-rose-600 font-semibold">{fieldErrors[`items_${index}`]}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                       Catatan Item
                     </label>
                     <input type="text" disabled={isSubmitting} placeholder="Opsional..."
@@ -544,7 +544,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
         )}
 
         {items.length > 0 && (
-          <p className="text-[11px] text-slate-500 font-semibold text-right">
+          <p className="text-xs text-slate-500 font-semibold text-right">
             {items.length} jenis barang dipilih
           </p>
         )}

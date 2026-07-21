@@ -50,13 +50,13 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       {/* Total Belanja Kuitansi */}
       <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm flex items-center justify-between transition-all hover:border-slate-300">
         <div>
-          <span className="text-[10px] text-slate-400 font-bold tracking-wider uppercase block">
+          <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block">
             Total Belanja Terverifikasi
           </span>
           <h3 className="text-lg font-extrabold text-slate-900 mt-1.5 tracking-tight">
             {formatIDR(totalSpend)}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Dari {verifiedReceipts.length} kuitansi valid
           </p>
         </div>
@@ -68,13 +68,13 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       {/* Total PPN Disetor */}
       <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm flex items-center justify-between transition-all hover:border-slate-300">
         <div>
-          <span className="text-[10px] text-slate-400 font-bold tracking-wider uppercase block">
+          <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block">
             Total Pajak (PPN) Disetor
           </span>
           <h3 className="text-lg font-extrabold text-slate-900 mt-1.5 tracking-tight">
             {formatIDR(totalTax)}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Akumulasi penyesuaian toko
           </p>
         </div>
@@ -86,13 +86,13 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       {/* Usulan Selesai */}
       <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm flex items-center justify-between transition-all hover:border-slate-300">
         <div>
-          <span className="text-[10px] text-slate-400 font-bold tracking-wider uppercase block">
+          <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block">
             Pemenuhan Usulan Selesai
           </span>
           <h3 className="text-lg font-extrabold text-slate-900 mt-1.5 tracking-tight">
             {completed} <span className="text-xs font-normal text-slate-400">/ {totalRequests}</span>
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Permintaan didistribusikan
           </p>
         </div>
@@ -104,7 +104,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       {/* Status Antrean */}
       <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm flex items-center justify-between transition-all hover:border-slate-300">
         <div>
-          <span className="text-[10px] text-slate-400 font-bold tracking-wider uppercase block">
+          <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block">
             Status Tindakan Petugas
           </span>
           <div className="flex gap-3.5 mt-2.5">
@@ -112,21 +112,21 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
               <span className="text-xs font-extrabold text-amber-600 block leading-tight">
                 {pendingCheck}
               </span>
-              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Cek Stok</span>
+              <span className="text-2xs text-slate-400 font-bold uppercase tracking-wider">Cek Stok</span>
             </div>
             <div className="border-r border-slate-200 h-6 self-center" />
             <div>
               <span className="text-xs font-extrabold text-indigo-600 block leading-tight">
                 {inProcurement}
               </span>
-              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Pengadaan</span>
+              <span className="text-2xs text-slate-400 font-bold uppercase tracking-wider">Pengadaan</span>
             </div>
             <div className="border-r border-slate-200 h-6 self-center" />
             <div>
               <span className="text-xs font-extrabold text-rose-500 block leading-tight">
                 {receipts.filter((r) => !r.isVerified).length}
               </span>
-              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Verif</span>
+              <span className="text-2xs text-slate-400 font-bold uppercase tracking-wider">Verif</span>
             </div>
           </div>
         </div>

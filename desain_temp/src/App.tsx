@@ -371,7 +371,7 @@ export default function App() {
         {/* Dynamic Warning Alert */}
         <div className="bg-indigo-50 border border-indigo-150 rounded p-4 mb-8 flex items-start gap-3">
           <Info className="text-indigo-600 mt-0.5 flex-shrink-0" size={16} />
-          <div className="text-[11px] text-slate-600 leading-relaxed font-sans">
+          <div className="text-xs text-slate-600 leading-relaxed font-sans">
             <span className="font-extrabold text-indigo-700">PROTOTIPE DESAIN UI:</span> Aplikasi ini mensimulasikan fungsionalitas penuh modul SIPERBANG yang direncanakan dibangun menggunakan <strong className="font-bold text-slate-800">Laravel 13</strong>. Anda dapat menguji modul login role, BON Digital, pengunggahan data Excel stok, pengecekan stok otomatis, pembacaan OCR kuitansi belanja dengan pajak toko yang dinamis (customizable), pencatatan BAST, serta ekspor rekap excel.
           </div>
         </div>
@@ -397,15 +397,15 @@ export default function App() {
                       {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => (
                         <div key={r.id} className="flex justify-between items-center bg-amber-50/30 border border-amber-200 rounded p-4 text-xs">
                           <div>
-                            <span className="font-mono text-[10px] font-bold text-slate-500 block uppercase tracking-wider">{r.bonNo}</span>
+                            <span className="font-mono text-xs font-bold text-slate-500 block uppercase tracking-wider">{r.bonNo}</span>
                             <span className="font-bold text-slate-800 text-sm mt-1 block">{r.itemName}</span>
-                            <span className="text-[11px] text-slate-500 mt-1 block">Diminta oleh {r.requester} • {r.section}</span>
+                            <span className="text-xs text-slate-500 mt-1 block">Diminta oleh {r.requester} • {r.section}</span>
                           </div>
                           <button
                             onClick={() => {
                               setOfficerTab("checking");
                             }}
-                            className="bg-indigo-600 text-white px-3 py-1.5 rounded font-bold flex items-center gap-1 hover:bg-indigo-700 transition-colors text-[11px] shadow-xs"
+                            className="bg-indigo-600 text-white px-3 py-1.5 rounded font-bold flex items-center gap-1 hover:bg-indigo-700 transition-colors text-xs shadow-xs"
                           >
                             <span>Proses Cek</span>
                             <ChevronRight size={11} />
@@ -424,16 +424,16 @@ export default function App() {
                   <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-sm font-extrabold text-slate-800 tracking-tight uppercase">Ringkasan Ketersediaan Stok</h3>
-                      <button onClick={() => setOfficerTab("stock")} className="text-[11px] text-indigo-600 font-bold hover:text-indigo-700">
+                      <button onClick={() => setOfficerTab("stock")} className="text-xs text-indigo-600 font-bold hover:text-indigo-700">
                         Lihat Semua
                       </button>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {stock.slice(0, 3).map((st) => (
                         <div key={st.id} className="bg-slate-50 border border-slate-200 rounded p-3 text-xs">
-                          <span className="font-mono text-[9px] text-slate-400 font-bold block uppercase tracking-wider">{st.code}</span>
+                          <span className="font-mono text-2xs text-slate-400 font-bold block uppercase tracking-wider">{st.code}</span>
                           <span className="font-bold text-slate-800 text-sm mt-1 block truncate">{st.name}</span>
-                          <span className={`mt-2 inline-block font-extrabold text-[11px] ${st.qty < 10 ? "text-rose-500" : "text-emerald-600"}`}>
+                          <span className={`mt-2 inline-block font-extrabold text-xs ${st.qty < 10 ? "text-rose-500" : "text-emerald-600"}`}>
                             {st.qty} {st.unit} Tersedia
                           </span>
                         </div>
@@ -485,7 +485,7 @@ export default function App() {
                     </div>
                     <div>
                       <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Daftar Pengajuan Kebutuhan Barang</h2>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-xs text-slate-500">
                         Pantau status real-time, ketersediaan stok, hasil pengecekan, serta status pengadaan unit kerja Anda
                       </p>
                     </div>
@@ -496,20 +496,20 @@ export default function App() {
                       <div key={req.id} className="border border-slate-200 rounded p-4 hover:border-slate-300 transition-colors">
                         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                           <div>
-                            <div className="flex items-center gap-2 flex-wrap text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
+                            <div className="flex items-center gap-2 flex-wrap text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
                               <span>{req.bonNo}</span>
                               <span className="text-slate-300">•</span>
                               <span>{req.date}</span>
                             </div>
                             <h3 className="text-sm font-extrabold text-slate-800 mt-1">
                               {req.itemName}
-                              <span className="text-[11px] font-normal text-slate-500 ml-1 font-mono">
+                              <span className="text-xs font-normal text-slate-500 ml-1 font-mono">
                                 ({req.qtyRequested} {req.unit})
                               </span>
                             </h3>
 
                             {/* Fulfillments display info */}
-                            <div className="flex items-center gap-4 mt-2.5 text-[10px] font-bold">
+                            <div className="flex items-center gap-4 mt-2.5 text-xs font-bold">
                               <span className="text-slate-500">
                                 Jumlah Dipenuhi: <strong className="text-slate-800 font-extrabold">{req.qtyFulfilled} {req.unit}</strong>
                               </span>
@@ -521,7 +521,7 @@ export default function App() {
                           </div>
 
                           <div className="flex items-center gap-2 self-start sm:self-auto">
-                            <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold border ${
+                            <span className={`px-2.5 py-0.5 rounded text-xs font-extrabold border ${
                               req.status === RequestStatus.SELESAI || req.status === RequestStatus.TERPENUHI
                                 ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                 : req.status === RequestStatus.DIAJUKAN
@@ -575,15 +575,15 @@ export default function App() {
                       {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => (
                         <div key={r.id} className="flex justify-between items-center bg-amber-50/30 border border-amber-200 rounded p-4 text-xs">
                           <div>
-                            <span className="font-mono text-[10px] font-bold text-slate-500 block uppercase tracking-wider">{r.bonNo}</span>
+                            <span className="font-mono text-xs font-bold text-slate-500 block uppercase tracking-wider">{r.bonNo}</span>
                             <span className="font-bold text-slate-800 text-sm mt-1 block">{r.itemName}</span>
-                            <span className="text-[11px] text-slate-500 mt-1 block">Diminta oleh {r.requester} • {r.section}</span>
+                            <span className="text-xs text-slate-500 mt-1 block">Diminta oleh {r.requester} • {r.section}</span>
                           </div>
                           <button
                             onClick={() => {
                               setSuperadminTab("checking");
                             }}
-                            className="bg-indigo-600 text-white px-3 py-1.5 rounded font-bold flex items-center gap-1 hover:bg-indigo-700 transition-colors text-[11px] shadow-xs"
+                            className="bg-indigo-600 text-white px-3 py-1.5 rounded font-bold flex items-center gap-1 hover:bg-indigo-700 transition-colors text-xs shadow-xs"
                           >
                             <span>Proses Cek</span>
                             <ChevronRight size={11} />
@@ -602,16 +602,16 @@ export default function App() {
                   <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-sm font-extrabold text-slate-800 tracking-tight uppercase">Ringkasan Ketersediaan Stok</h3>
-                      <button onClick={() => setSuperadminTab("stock_manage")} className="text-[11px] text-indigo-600 font-bold hover:text-indigo-700">
+                      <button onClick={() => setSuperadminTab("stock_manage")} className="text-xs text-indigo-600 font-bold hover:text-indigo-700">
                         Lihat Semua
                       </button>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {stock.slice(0, 3).map((st) => (
                         <div key={st.id} className="bg-slate-50 border border-slate-200 rounded p-3 text-xs">
-                          <span className="font-mono text-[9px] text-slate-400 font-bold block uppercase tracking-wider">{st.code}</span>
+                          <span className="font-mono text-2xs text-slate-400 font-bold block uppercase tracking-wider">{st.code}</span>
                           <span className="font-bold text-slate-800 text-sm mt-1 block truncate">{st.name}</span>
-                          <span className={`mt-2 inline-block font-extrabold text-[11px] ${st.qty < 10 ? "text-rose-500" : "text-emerald-600"}`}>
+                          <span className={`mt-2 inline-block font-extrabold text-xs ${st.qty < 10 ? "text-rose-500" : "text-emerald-600"}`}>
                             {st.qty} {st.unit} Tersedia
                           </span>
                         </div>
@@ -656,7 +656,7 @@ export default function App() {
                   </div>
                   <div>
                     <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Daftar Pengajuan Kebutuhan Barang</h2>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       Pantau status real-time, ketersediaan stok, hasil pengecekan, serta status pengadaan unit kerja Anda
                     </p>
                   </div>
@@ -667,20 +667,20 @@ export default function App() {
                     <div key={req.id} className="border border-slate-200 rounded p-4 hover:border-slate-300 transition-colors">
                       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                         <div>
-                          <div className="flex items-center gap-2 flex-wrap text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
+                          <div className="flex items-center gap-2 flex-wrap text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
                             <span>{req.bonNo}</span>
                             <span className="text-slate-300">•</span>
                             <span>{req.date}</span>
                           </div>
                           <h3 className="text-sm font-extrabold text-slate-800 mt-1">
                             {req.itemName}
-                            <span className="text-[11px] font-normal text-slate-500 ml-1 font-mono">
+                            <span className="text-xs font-normal text-slate-500 ml-1 font-mono">
                               ({req.qtyRequested} {req.unit})
                             </span>
                           </h3>
 
                           {/* Fulfillments display info */}
-                          <div className="flex items-center gap-4 mt-2.5 text-[10px] font-bold">
+                          <div className="flex items-center gap-4 mt-2.5 text-xs font-bold">
                             <span className="text-slate-500">
                               Jumlah Dipenuhi: <strong className="text-slate-800 font-extrabold">{req.qtyFulfilled} {req.unit}</strong>
                             </span>
@@ -692,7 +692,7 @@ export default function App() {
                         </div>
 
                         <div className="flex items-center gap-2 self-start sm:self-auto">
-                          <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold border ${
+                          <span className={`px-2.5 py-0.5 rounded text-xs font-extrabold border ${
                             req.status === RequestStatus.SELESAI || req.status === RequestStatus.TERPENUHI
                               ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                               : req.status === RequestStatus.DIAJUKAN
@@ -724,10 +724,10 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 mt-12 text-center text-[11px] text-slate-500 font-medium">
+      <footer className="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-500 font-medium">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p>© 2026 BBPSDM Komunikasi dan Digital Makassar. Seluruh hak cipta dilindungi.</p>
-          <p className="mt-1 text-[9px] text-slate-400 font-bold uppercase tracking-wider">SIPERBANG v1.1 - Prototipe Antarmuka & Verifikasi Pajak Dinamis</p>
+          <p className="mt-1 text-2xs text-slate-400 font-bold uppercase tracking-wider">SIPERBANG v1.1 - Prototipe Antarmuka & Verifikasi Pajak Dinamis</p>
         </div>
       </footer>
     </div>

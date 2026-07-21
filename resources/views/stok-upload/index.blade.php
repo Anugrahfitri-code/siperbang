@@ -13,8 +13,8 @@
             </svg>
         </div>
         <div>
-            <h1 class="text-lg font-extrabold text-slate-900 tracking-tight">Upload Stok & Persediaan Excel</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Unggah file laporan belanja belanja barang persediaan untuk memproses penambahan kuantiti stok gudang.</p>
+            <h1 class="text-lg font-semibold leading-7 text-slate-900">Upload Stok & Persediaan Excel</h1>
+            <p class="text-sm font-normal leading-5 text-slate-500 mt-0.5">Unggah file laporan belanja belanja barang persediaan untuk memproses penambahan kuantiti stok gudang.</p>
         </div>
     </div>
 
@@ -37,7 +37,7 @@
             <div class="bg-rose-50 px-5 py-4 divide-y divide-rose-100">
                 @foreach($uploadErrors as $err)
                 <div class="py-3 flex gap-4 items-start">
-                    <div class="shrink-0 text-[10px] font-mono font-bold text-rose-500 bg-rose-100 px-2 py-1 rounded mt-0.5 whitespace-nowrap">
+                    <div class="shrink-0 text-xs font-mono font-bold text-rose-500 bg-rose-100 px-2 py-1 rounded mt-0.5 whitespace-nowrap">
                         {{ $err['sheet'] }}<br>Baris {{ $err['no_urut'] ?? '?' }}
                     </div>
                     <div class="flex-1">
@@ -73,7 +73,7 @@
                             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                         </div>
                         <p class="text-xs font-bold text-slate-700" id="file-name-label">Seret & lepas file Anda ke sini, atau klik untuk menelusuri</p>
-                        <p class="text-[10px] text-slate-400">Hanya menerima format Excel (.xlsx, .xls) dengan ukuran maks 10MB</p>
+                        <p class="text-xs text-slate-400">Hanya menerima format Excel (.xlsx, .xls) dengan ukuran maks 10MB</p>
                     </div>
                 </div>
                 
@@ -121,7 +121,7 @@
             </div>
         </div>
 
-        <div class="bg-amber-50 border border-amber-100 rounded-lg p-4 text-[11px] text-slate-600 flex items-start gap-2.5">
+        <div class="bg-amber-50 border border-amber-100 rounded-lg p-4 text-xs text-slate-600 flex items-start gap-2.5">
             <svg class="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <div>
                 <span class="font-extrabold text-amber-800">Catatan Perhitungan Pajak:</span> Jika sheet memuat kolom <strong class="text-slate-700">Pajak</strong> (bernilai 1.11 atau formula serupa) atau kolom <strong class="text-slate-700">Harga Satuan + Pajak</strong>, sistem akan otomatis melakukan perbandingan total belanja dengan menyertakan PPN 11% sesuai aturan instansi.

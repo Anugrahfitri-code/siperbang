@@ -55,7 +55,7 @@
                             <span class="text-[#F2B818]">A</span>
                             <span class="text-[#4A4A4A]">NG</span>
                           </div>
-                          <span class="text-[10px] font-medium tracking-wide mt-1 leading-none uppercase text-[#7A7A7A]">
+                          <span class="text-xs font-medium tracking-wide mt-1 leading-none uppercase text-[#7A7A7A]">
                             Sistem Informasi Penyediaan Barang
                           </span>
                         </div>
@@ -107,8 +107,8 @@
                          onerror="this.style.display='none'">
                     <div class="flex flex-col leading-tight">
                         <span class="text-xs font-bold text-slate-700">KOMDIGI</span>
-                        <span class="text-[9px] text-slate-400 font-medium">Kementerian Komunikasi dan Digital</span>
-                        <span class="text-[9px] text-slate-400 font-medium">Republik Indonesia</span>
+                        <span class="text-2xs text-slate-400 font-medium">Kementerian Komunikasi dan Digital</span>
+                        <span class="text-2xs text-slate-400 font-medium">Republik Indonesia</span>
                     </div>
                 </div>
 
@@ -118,7 +118,7 @@
                         <span class="text-xs font-bold text-slate-800 block leading-tight">
                             {{ auth()->check() ? auth()->user()->name : 'Petugas Persediaan' }}
                         </span>
-                        <span class="text-[10px] font-semibold text-indigo-600 uppercase tracking-wider block">
+                        <span class="text-xs font-semibold text-indigo-600 uppercase tracking-wider block">
                             {{ auth()->check() ? auth()->user()->role : 'Petugas Persediaan' }}
                         </span>
                     </div>
@@ -139,21 +139,21 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <nav class="flex items-center h-10">
                     <a href="/stok-upload"
-                       class="flex-1 h-full inline-flex items-center justify-center text-[13px] font-semibold border-b-2 transition-colors
+                       class="flex-1 h-full inline-flex items-center justify-center text-sm font-semibold border-b-2 transition-colors
                        {{ request()->is('stok-upload') && !request()->is('stok-upload/*')
                             ? 'border-indigo-600 text-indigo-700'
                             : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}">
                         Upload Excel
                     </a>
                     <a href="/stok-upload/riwayat"
-                       class="flex-1 h-full inline-flex items-center justify-center text-[13px] font-semibold border-b-2 transition-colors
+                       class="flex-1 h-full inline-flex items-center justify-center text-sm font-semibold border-b-2 transition-colors
                        {{ request()->is('stok-upload/riwayat*') || request()->is('stok-upload/*/stepper') || request()->is('stok-upload/sampah')
                             ? 'border-indigo-600 text-indigo-700'
                             : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}">
                         Riwayat Upload
                     </a>
                     <a href="/master-barang"
-                       class="flex-1 h-full inline-flex items-center justify-center text-[13px] font-semibold border-b-2 transition-colors
+                       class="flex-1 h-full inline-flex items-center justify-center text-sm font-semibold border-b-2 transition-colors
                        {{ request()->is('master-barang*')
                             ? 'border-indigo-600 text-indigo-700'
                             : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}">

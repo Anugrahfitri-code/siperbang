@@ -88,8 +88,8 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
               <Users size={18} />
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-slate-800 tracking-tight uppercase">Kelola Akun Pengguna</h2>
-              <p className="text-[11px] text-slate-500">
+              <h2 className="text-lg font-semibold leading-7 text-slate-900 uppercase">Kelola Akun Pengguna</h2>
+              <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
                 Atur akses untuk Petugas Persediaan dan Ketua Tim.
               </p>
             </div>
@@ -206,7 +206,7 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-y border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+              <tr className="bg-slate-50 border-y border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <th className="py-3 px-4">Nama & Username</th>
                 <th className="py-3 px-4">Peran</th>
                 <th className="py-3 px-4">Unit Kerja</th>
@@ -220,10 +220,10 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
                   <tr key={user.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                     <td className="py-3 px-4">
                       <div className="font-bold text-slate-800 text-xs">{user.name}</div>
-                      <div className="text-[10px] text-slate-500 font-mono mt-0.5">@{user.username}</div>
+                      <div className="text-xs text-slate-500 font-mono mt-0.5">@{user.username}</div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-extrabold ${
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-extrabold ${
                         user.role === UserRole.SUPERADMIN ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
                         user.role === UserRole.PETUGAS_PERSERDIAN ? "bg-indigo-50 text-indigo-700 border border-indigo-200" :
                         "bg-amber-50 text-amber-700 border border-amber-200"
@@ -238,7 +238,7 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
                       {user.section || "-"}
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <span className={`px-2 py-1 rounded text-[10px] font-bold ${
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${
                         user.status === "Aktif" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
                       }`}>
                         {user.status}

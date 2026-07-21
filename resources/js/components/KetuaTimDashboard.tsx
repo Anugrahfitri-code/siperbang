@@ -81,7 +81,7 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
         <div className="absolute right-0 top-0 w-32 h-32 bg-indigo-50 rounded-full -mr-8 -mt-8 opacity-50 blur-xl"></div>
         <div className="relative z-10 space-y-1">
           <div className="flex items-center gap-2">
-            <span className="bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
+            <span className="bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider">
               Dashboard Ketua Tim
             </span>
           </div>
@@ -109,11 +109,11 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
           <AlertCircle className="text-rose-600 flex-shrink-0" size={16} />
           <div className="flex-1">
             <p className="font-bold">Gagal memuat data dashboard</p>
-            <p className="text-[11px] text-rose-600/80 mt-0.5">{error}</p>
+            <p className="text-xs text-rose-600/80 mt-0.5">{error}</p>
           </div>
           <button
             onClick={onRefresh}
-            className="bg-white text-rose-800 border border-rose-200 hover:bg-rose-100/50 px-3 py-1 rounded-lg text-[10px] font-bold transition-colors"
+            className="bg-white text-rose-800 border border-rose-200 hover:bg-rose-100/50 px-3 py-1 rounded-lg text-xs font-bold transition-colors"
           >
             Coba Lagi
           </button>
@@ -124,14 +124,14 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
         {/* Total Pengajuan */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col justify-between transition-all hover:border-indigo-300 hover:shadow-sm">
-          <span className="text-[9px] text-slate-400 font-bold tracking-wider uppercase block">
+          <span className="text-2xs text-slate-400 font-bold tracking-wider uppercase block">
             Total Pengajuan
           </span>
           <div className="flex items-baseline gap-1 mt-3">
             <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
               {loading ? "..." : totalCount}
             </h3>
-            <span className="text-[10px] text-slate-500 font-semibold">berkas</span>
+            <span className="text-xs text-slate-500 font-semibold">berkas</span>
           </div>
           <div className="mt-3 flex items-center gap-1.5 text-indigo-600 bg-indigo-50 p-1.5 rounded-lg w-fit">
             <FileText size={13} />
@@ -140,14 +140,14 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
 
         {/* Pengajuan Draft */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col justify-between transition-all hover:border-slate-300 hover:shadow-sm">
-          <span className="text-[9px] text-slate-400 font-bold tracking-wider uppercase block">
+          <span className="text-2xs text-slate-400 font-bold tracking-wider uppercase block">
             Pengajuan Draft
           </span>
           <div className="flex items-baseline gap-1 mt-3">
             <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
               {loading ? "..." : draftCount}
             </h3>
-            <span className="text-[10px] text-slate-500 font-semibold">berkas</span>
+            <span className="text-xs text-slate-500 font-semibold">berkas</span>
           </div>
           <div className="mt-3 flex items-center gap-1.5 text-slate-500 bg-slate-50 p-1.5 rounded-lg w-fit">
             <FileText size={13} />
@@ -156,14 +156,14 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
 
         {/* Menunggu Verifikasi */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col justify-between transition-all hover:border-amber-300 hover:shadow-sm">
-          <span className="text-[9px] text-slate-400 font-bold tracking-wider uppercase block">
+          <span className="text-2xs text-slate-400 font-bold tracking-wider uppercase block">
             Menunggu Verif
           </span>
           <div className="flex items-baseline gap-1 mt-3">
             <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
               {loading ? "..." : pendingCount}
             </h3>
-            <span className="text-[10px] text-slate-500 font-semibold">berkas</span>
+            <span className="text-xs text-slate-500 font-semibold">berkas</span>
           </div>
           <div className="mt-3 flex items-center gap-1.5 text-amber-600 bg-amber-50 p-1.5 rounded-lg w-fit">
             <Clock size={13} />
@@ -172,14 +172,14 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
 
         {/* Diproses */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col justify-between transition-all hover:border-orange-300 hover:shadow-sm">
-          <span className="text-[9px] text-slate-400 font-bold tracking-wider uppercase block">
+          <span className="text-2xs text-slate-400 font-bold tracking-wider uppercase block">
             Pengajuan Diproses
           </span>
           <div className="flex items-baseline gap-1 mt-3">
             <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
               {loading ? "..." : processedCount}
             </h3>
-            <span className="text-[10px] text-slate-500 font-semibold">berkas</span>
+            <span className="text-xs text-slate-500 font-semibold">berkas</span>
           </div>
           <div className="mt-3 flex items-center gap-1.5 text-orange-600 bg-orange-50 p-1.5 rounded-lg w-fit">
             <RefreshCw size={13} />
@@ -188,14 +188,14 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
 
         {/* Disetujui */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col justify-between transition-all hover:border-teal-300 hover:shadow-sm">
-          <span className="text-[9px] text-slate-400 font-bold tracking-wider uppercase block">
+          <span className="text-2xs text-slate-400 font-bold tracking-wider uppercase block">
             Pengajuan Disetujui
           </span>
           <div className="flex items-baseline gap-1 mt-3">
             <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
               {loading ? "..." : approvedCount}
             </h3>
-            <span className="text-[10px] text-slate-500 font-semibold">berkas</span>
+            <span className="text-xs text-slate-500 font-semibold">berkas</span>
           </div>
           <div className="mt-3 flex items-center gap-1.5 text-teal-600 bg-teal-50 p-1.5 rounded-lg w-fit">
             <FileCheck size={13} />
@@ -204,14 +204,14 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
 
         {/* Ditolak */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col justify-between transition-all hover:border-rose-300 hover:shadow-sm">
-          <span className="text-[9px] text-slate-400 font-bold tracking-wider uppercase block">
+          <span className="text-2xs text-slate-400 font-bold tracking-wider uppercase block">
             Pengajuan Ditolak
           </span>
           <div className="flex items-baseline gap-1 mt-3">
             <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
               {loading ? "..." : rejectedCount}
             </h3>
-            <span className="text-[10px] text-slate-500 font-semibold">berkas</span>
+            <span className="text-xs text-slate-500 font-semibold">berkas</span>
           </div>
           <div className="mt-3 flex items-center gap-1.5 text-rose-600 bg-rose-50 p-1.5 rounded-lg w-fit">
             <XCircle size={13} />
@@ -220,14 +220,14 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
 
         {/* Selesai */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col justify-between transition-all hover:border-emerald-300 hover:shadow-sm">
-          <span className="text-[9px] text-slate-400 font-bold tracking-wider uppercase block">
+          <span className="text-2xs text-slate-400 font-bold tracking-wider uppercase block">
             Pengajuan Selesai
           </span>
           <div className="flex items-baseline gap-1 mt-3">
             <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
               {loading ? "..." : completedCount}
             </h3>
-            <span className="text-[10px] text-slate-500 font-semibold">berkas</span>
+            <span className="text-xs text-slate-500 font-semibold">berkas</span>
           </div>
           <div className="mt-3 flex items-center gap-1.5 text-emerald-600 bg-emerald-50 p-1.5 rounded-lg w-fit">
             <CheckCircle2 size={13} />
@@ -239,14 +239,14 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">
+            <h2 className="text-base font-extrabold text-slate-800 uppercase tracking-wider">
               Daftar Pengajuan Terbaru
             </h2>
-            <p className="text-[10px] text-slate-500 mt-1 font-medium">
+            <p className="text-xs text-slate-500 mt-1 font-medium">
               Riwayat usulan kebutuhan barang persediaan yang diajukan oleh seksi Anda
             </p>
           </div>
-          <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-[10px] font-bold">
+          <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold">
             {requests.length} Pengajuan
           </span>
         </div>
@@ -267,7 +267,7 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
                 <Inbox size={32} className="text-slate-400" />
               </div>
               <h3 className="text-sm font-bold text-slate-800 mt-2">Belum ada pengajuan</h3>
-              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+              <p className="text-sm text-slate-500 leading-relaxed font-medium">
                 Unit kerja Anda belum mengirimkan usulan kebutuhan barang. Silakan ajukan melalui menu **BON Digital**.
               </p>
             </div>
@@ -277,7 +277,7 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/75 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <tr className="bg-slate-50/75 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
                   <th className="py-3.5 px-5">No. BON / Tanggal</th>
                   <th className="py-3.5 px-5">Nama Barang</th>
                   <th className="py-3.5 px-5">Jumlah Permintaan</th>
@@ -292,7 +292,7 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
                   <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="py-4 px-5">
                       <span className="font-mono font-bold text-slate-800 block">{req.bonNo}</span>
-                      <span className="text-[10px] text-slate-400 block mt-0.5">{req.date}</span>
+                      <span className="text-xs text-slate-400 block mt-0.5">{req.date}</span>
                     </td>
                     <td className="py-4 px-5">
                       <span className="font-bold text-slate-800">{req.itemName}</span>
@@ -308,16 +308,16 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
                       )}
                     </td>
                     <td className="py-4 px-5">
-                      <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold border ${getStatusBadgeClass(req.status)}`}>
+                      <span className={`px-2.5 py-0.5 rounded text-xs font-extrabold border ${getStatusBadgeClass(req.status)}`}>
                         {req.status}
                       </span>
                     </td>
                     <td className="py-4 px-5 max-w-xs truncate">
-                      <span className="text-[11px] text-slate-500 block truncate" title={req.notes || "Tidak ada catatan"}>
+                      <span className="text-sm text-slate-500 block truncate" title={req.notes || "Tidak ada catatan"}>
                         {req.notes || "-"}
                       </span>
                       {req.procurementMethod && (
-                        <span className="text-[9px] text-indigo-600 font-bold block mt-1">
+                        <span className="text-2xs text-indigo-600 font-bold block mt-1">
                           {req.procurementMethod} {req.vendorName ? `• ${req.vendorName}` : ""}
                         </span>
                       )}
@@ -326,13 +326,13 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
                       {(req.status as string) === "Draft" && onEditDraft ? (
                         <button
                           onClick={() => onEditDraft(req.bonNo)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold rounded-lg transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors"
                         >
                           <Edit3 size={11} />
                           Lanjutkan Draft
                         </button>
                       ) : (
-                        <span className="text-slate-300 text-[11px]">—</span>
+                        <span className="text-slate-300 text-sm">—</span>
                       )}
                     </td>
                   </tr>

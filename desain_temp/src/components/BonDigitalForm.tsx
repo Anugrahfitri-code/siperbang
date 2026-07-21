@@ -61,7 +61,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
         </div>
         <div>
           <h2 className="text-base font-extrabold text-slate-800 tracking-tight">BON Digital</h2>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             Form pengajuan kebutuhan barang persediaan unit kerja
           </p>
         </div>
@@ -78,7 +78,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Bagian / Seksi */}
           <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
               Bagian / Seksi / Unit Kerja
             </label>
             <select
@@ -96,7 +96,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
 
           {/* Pengaju */}
           <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
               Nama Pengaju (Ketua Tim)
             </label>
             <input
@@ -110,7 +110,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
 
         {/* Nama Barang */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
             Nama Barang Persediaan
           </label>
           <input
@@ -124,7 +124,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
 
           {/* Quick Selection */}
           <div className="mt-3">
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
               Rekomendasi Cepat Barang:
             </span>
             <div className="flex flex-wrap gap-1.5">
@@ -133,7 +133,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
                   key={idx}
                   type="button"
                   onClick={() => selectQuickItem(item.name, item.unit)}
-                  className={`text-[11px] px-2.5 py-1 rounded transition-all font-semibold ${
+                  className={`text-xs px-2.5 py-1 rounded transition-all font-semibold ${
                     itemName === item.name
                       ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
                       : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300"
@@ -149,7 +149,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Jumlah */}
           <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
               Jumlah Diminta
             </label>
             <input
@@ -164,7 +164,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
 
           {/* Satuan */}
           <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
               Satuan Barang
             </label>
             <select
@@ -184,7 +184,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
 
         {/* Keterangan */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
             Maksud & Keterangan Penggunaan
           </label>
           <textarea

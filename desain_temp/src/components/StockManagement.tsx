@@ -107,7 +107,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
           </div>
           <div>
             <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Manajemen Stok & Kode Persediaan</h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               Unggah file Excel stok dan verifikasi kode persediaan barang masuk
             </p>
           </div>
@@ -135,7 +135,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
           >
             Verifikasi Kode
             {drafts.length > 0 && (
-              <span className="bg-amber-100 text-amber-900 text-[9px] px-1.5 py-0.5 rounded font-bold">
+              <span className="bg-amber-100 text-amber-900 text-2xs px-1.5 py-0.5 rounded font-bold">
                 {drafts.length}
               </span>
             )}
@@ -160,7 +160,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
             <div className="flex flex-col items-center py-4">
               <RefreshCcw className="animate-spin text-indigo-600 mb-3" size={24} />
               <p className="text-xs font-bold text-slate-700">Membaca File Excel Stok...</p>
-              <p className="text-[10px] text-slate-400 mt-1">Mengurai baris, mencocokkan kategori barang, & menyusun draf kode</p>
+              <p className="text-xs text-slate-400 mt-1">Mengurai baris, mencocokkan kategori barang, & menyusun draf kode</p>
             </div>
           ) : (
             <div className="flex flex-col items-center">
@@ -170,10 +170,10 @@ export const StockManagement: React.FC<StockManagementProps> = ({
               <h3 className="text-xs font-extrabold text-slate-800 mb-1">
                 Unggah File Excel Stok Baru
               </h3>
-              <p className="text-[11px] text-slate-400 max-w-md mx-auto mb-3">
+              <p className="text-xs text-slate-400 max-w-md mx-auto mb-3">
                 Seret dan lepas file template Excel stok Anda ke sini, atau klik untuk mensimulasikan pembacaan file excel stok
               </p>
-              <div className="flex items-center gap-1 text-[11px] text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1.5 rounded border border-indigo-150">
+              <div className="flex items-center gap-1 text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1.5 rounded border border-indigo-150">
                 <FileUp size={12} />
                 Pilih File Excel
               </div>
@@ -187,7 +187,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
         <div className="overflow-x-auto border border-slate-200 rounded">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-slate-600 text-[10px] font-bold uppercase tracking-wider border-b border-slate-200">
+              <tr className="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                 <th className="px-5 py-3">Kode Persediaan</th>
                 <th className="px-5 py-3">Nama Barang</th>
                 <th className="px-5 py-3">Kategori</th>
@@ -205,7 +205,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
                   <td className="px-5 py-3 font-bold text-slate-800 font-sans">
                     {item.name}
                   </td>
-                  <td className="px-5 py-3 text-[11px] font-medium text-slate-500 font-sans">
+                  <td className="px-5 py-3 text-xs font-medium text-slate-500 font-sans">
                     {item.category}
                   </td>
                   <td className="px-5 py-3 text-right font-bold text-slate-700 font-sans">
@@ -229,7 +229,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
             <div className="text-center py-10 bg-slate-50 rounded border border-slate-200">
               <CheckCircle2 className="text-emerald-500 mx-auto mb-2" size={24} />
               <p className="text-xs font-bold text-slate-700">Tidak ada draf dalam antrean verifikasi</p>
-              <p className="text-[11px] text-slate-400 mt-1">Gunakan pengunggah Excel di atas untuk memproses baris baru</p>
+              <p className="text-xs text-slate-400 mt-1">Gunakan pengunggah Excel di atas untuk memproses baris baru</p>
             </div>
           ) : (
             <div>
@@ -243,7 +243,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
               <div className="overflow-x-auto border border-slate-200 rounded mb-4">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 text-slate-600 text-[10px] font-bold uppercase tracking-wider border-b border-slate-200">
+                    <tr className="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                       <th className="px-5 py-3">Kategori Barang</th>
                       <th className="px-5 py-3">Nama Barang</th>
                       <th className="px-5 py-3">Jumlah Excel</th>
@@ -255,7 +255,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
                   <tbody className="divide-y divide-slate-100">
                     {drafts.map((d) => (
                       <tr key={d.id} className="hover:bg-slate-50/50 transition-colors text-xs font-mono">
-                        <td className="px-5 py-3 text-[11px] text-slate-500 font-semibold font-sans">
+                        <td className="px-5 py-3 text-xs text-slate-500 font-semibold font-sans">
                           {d.category}
                         </td>
                         <td className="px-5 py-3 font-bold text-slate-800 font-sans">
@@ -276,7 +276,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
                           />
                         </td>
                         <td className="px-5 py-3 text-center">
-                          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 font-bold">
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 font-bold">
                             <Check size={11} />
                             Valid (Auto)
                           </span>
