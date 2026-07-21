@@ -80,7 +80,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               <ShieldCheck className="text-emerald-300 mt-1 flex-shrink-0" size={20} />
               <div>
                 <h3 className="text-xs font-bold text-white mb-1 uppercase tracking-wider">Akses Aman</h3>
-                <p className="text-[11px] text-indigo-100 leading-relaxed">
+                <p className="text-xs text-indigo-100 leading-relaxed">
                   Sistem menggunakan autentikasi terenkripsi dari Laravel. Silakan masuk dengan kredensial Anda.
                 </p>
               </div>
@@ -138,8 +138,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
           {/* Hint for dev */}
           <div className="mt-6 p-4 bg-slate-50 border border-slate-100 rounded-xl">
-             <p className="text-[10px] text-slate-500 font-medium">Akun Demo (Password: password):</p>
-             <ul className="text-[11px] text-slate-600 font-medium mt-2 space-y-1">
+             <p className="text-xs text-slate-500 font-medium">Akun Demo (Password: password):</p>
+             <ul className="text-xs text-slate-600 font-medium mt-2 space-y-1">
                <li>Petugas: <strong className="text-slate-800">iwan.s</strong></li>
                <li>Ketua Tim: <strong className="text-slate-800">budi.tu</strong></li>
                <li>Superadmin: <strong className="text-slate-800">admin</strong></li>
@@ -147,7 +147,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           </div>
           
           <div className="mt-6 pt-6 border-t border-slate-100 text-center">
-            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">
               SIPERBANG - Authentication Mode
             </p>
           </div>

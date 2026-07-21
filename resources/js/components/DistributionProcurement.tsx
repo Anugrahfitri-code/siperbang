@@ -239,8 +239,8 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
           <Package size={18} />
         </div>
         <div>
-          <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Distribusi & Pengadaan</h2>
-          <p className="text-[11px] text-slate-500">
+          <h2 className="text-lg font-semibold leading-7 text-slate-900">Distribusi & Pengadaan</h2>
+          <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
             Proses distribusi barang dari stok atau pengadaan untuk {request.bonNo}
           </p>
         </div>
@@ -332,7 +332,7 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                     Pilih Barang Stok
                   </label>
                   <select
@@ -350,7 +350,7 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                     Jumlah Didistribusikan
                   </label>
                   <input
@@ -361,12 +361,12 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
                     onChange={(e) => setQtyDistributed(Math.min(request.qtyFulfilled, Math.max(1, parseInt(e.target.value) || 0)))}
                     className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
-                  <p className="text-[10px] text-slate-400 mt-1">Maks: {request.qtyFulfilled} {request.unit}</p>
+                  <p className="text-xs text-slate-400 mt-1">Maks: {request.qtyFulfilled} {request.unit}</p>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                   Catatan (Opsional)
                 </label>
                 <textarea
@@ -404,14 +404,14 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
           {/* Existing Procurements */}
           {request.procurements && request.procurements.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded p-4 mb-4">
-              <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block mb-2">
+              <span className="text-xs font-bold text-amber-800 uppercase tracking-wider block mb-2">
                 Pengadaan Berjalan
               </span>
               {request.procurements.map((proc) => (
                 <div key={proc.id} className="bg-white border border-amber-100 rounded p-3 mb-2 last:mb-0 text-xs">
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-bold text-slate-800">{proc.method}</span>
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                    <span className={`px-2 py-0.5 rounded text-2xs font-bold ${
                       proc.status === "Diterima" 
                         ? "bg-emerald-100 text-emerald-800" 
                         : proc.status === "Dibatalkan"
@@ -433,7 +433,7 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
                     {proc.status === "Diproses" && (
                       <button
                         onClick={() => onCompleteProcurement(request.id, proc.id, currentUser)}
-                        className="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-1.5 px-3 rounded transition-all"
+                        className="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 px-3 rounded transition-all"
                       >
                         Tanda Terima Barang
                       </button>
@@ -447,7 +447,7 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
           {/* New Procurement Form */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                 Metode Pengadaan
               </label>
               <select
@@ -462,7 +462,7 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
 
             {procurementMethod === ProcurementMethod.VENDOR ? (
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                   Nama Vendor
                 </label>
                 <input
@@ -475,7 +475,7 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
               </div>
             ) : (
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                   Nama Toko
                 </label>
                 <input
@@ -491,7 +491,7 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                 Jumlah Diadakan
               </label>
               <input
@@ -502,11 +502,11 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
                 onChange={(e) => setQtyProcured(Math.min(request.qtyToProcure, Math.max(1, parseInt(e.target.value) || 0)))}
                 className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
-              <p className="text-[10px] text-slate-400 mt-1">Kebutuhan: {request.qtyToProcure} {request.unit}</p>
+              <p className="text-xs text-slate-400 mt-1">Kebutuhan: {request.qtyToProcure} {request.unit}</p>
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                 Harga Satuan (Rp)
               </label>
               <input
@@ -568,7 +568,7 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
           {/* Document Fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                 Nomor Invoice (Opsional)
               </label>
               <input
@@ -582,7 +582,7 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
 
             {procurementMethod === ProcurementMethod.VENDOR && (
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                   Nomor Kontrak (Opsional)
                 </label>
                 <input

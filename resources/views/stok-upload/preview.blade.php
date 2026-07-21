@@ -7,7 +7,7 @@
     <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs flex flex-col md:flex-row justify-between gap-4">
         <div>
             <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-[10px] font-mono font-bold text-slate-400 uppercase bg-slate-100 px-2 py-0.5 rounded">BATCH #{{ $batch->id }}</span>
+                <span class="text-xs font-mono font-bold text-slate-400 uppercase bg-slate-100 px-2 py-0.5 rounded">BATCH #{{ $batch->id }}</span>
                 <span class="text-slate-300">•</span>
                 <span class="text-xs text-slate-500 font-semibold">{{ $batch->upload_date->format('d M Y H:i') }}</span>
             </div>
@@ -33,23 +33,23 @@
     <!-- Batch Summary Metrics Grid -->
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-xs text-center">
-            <span class="text-[10px] font-bold text-slate-400 uppercase block tracking-wider">Total Sheet</span>
+            <span class="text-xs font-bold text-slate-400 uppercase block tracking-wider">Total Sheet</span>
             <span class="text-xl font-extrabold text-slate-800 block mt-1">{{ $batch->sheets_count }}</span>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-xs text-center">
-            <span class="text-[10px] font-bold text-slate-400 uppercase block tracking-wider">Total Baris</span>
+            <span class="text-xs font-bold text-slate-400 uppercase block tracking-wider">Total Baris</span>
             <span class="text-xl font-extrabold text-slate-800 block mt-1">{{ $batch->rows_count }}</span>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-xs text-center bg-emerald-50/20 border-emerald-100">
-            <span class="text-[10px] font-bold text-emerald-700 uppercase block tracking-wider">Kondisi Valid</span>
+            <span class="text-xs font-bold text-emerald-700 uppercase block tracking-wider">Kondisi Valid</span>
             <span class="text-xl font-extrabold text-emerald-600 block mt-1">{{ $batch->valid_rows_count }}</span>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-xs text-center bg-rose-50/20 border-rose-100">
-            <span class="text-[10px] font-bold text-rose-700 uppercase block tracking-wider">Perlu Perbaikan</span>
+            <span class="text-xs font-bold text-rose-700 uppercase block tracking-wider">Perlu Perbaikan</span>
             <span class="text-xl font-extrabold text-rose-600 block mt-1">{{ $batch->error_rows_count }}</span>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-xs text-center bg-slate-100/55 border-slate-200">
-            <span class="text-[10px] font-bold text-slate-500 uppercase block tracking-wider">Ditolak</span>
+            <span class="text-xs font-bold text-slate-500 uppercase block tracking-wider">Ditolak</span>
             <span class="text-xl font-extrabold text-slate-700 block mt-1">{{ $batch->rejected_rows_count }}</span>
         </div>
     </div>
@@ -135,13 +135,13 @@
                 <tbody class="divide-y divide-slate-100 font-sans">
                     @foreach($batch->details as $row)
                         <tr class="hover:bg-slate-50/50 transition-colors {{ $row->status_validation === 'Perlu Perbaikan' ? 'bg-rose-50/10' : '' }}">
-                            <td class="px-4 py-3 font-mono font-medium text-[11px] text-slate-500">{{ $row->sheet_name }}</td>
+                            <td class="px-4 py-3 font-mono font-medium text-xs text-slate-500">{{ $row->sheet_name }}</td>
                             <td class="px-4 py-3 font-medium text-slate-800 max-w-[150px] truncate" title="{{ $row->supplier }}">{{ $row->supplier }}</td>
                             <td class="px-2 py-3 text-center text-slate-400 font-mono">{{ $row->no_urut }}</td>
-                            <td class="px-4 py-3 font-mono text-[11px] {{ $row->kode_persediaan_excel ? 'text-indigo-600 font-semibold' : 'text-rose-500' }}">
+                            <td class="px-4 py-3 font-mono text-xs {{ $row->kode_persediaan_excel ? 'text-indigo-600 font-semibold' : 'text-rose-500' }}">
                                 {{ $row->kode_persediaan_excel ?? '-' }}
                             </td>
-                            <td class="px-4 py-3 font-mono text-[11px] text-slate-700 font-semibold bg-slate-50/80">
+                            <td class="px-4 py-3 font-mono text-xs text-slate-700 font-semibold bg-slate-50/80">
                                 {{ $row->verified_kode_persediaan ?? '-' }}
                             </td>
                             <td class="px-4 py-3 font-bold text-slate-800">{{ $row->nama_barang }}</td>
@@ -152,12 +152,12 @@
                             <td class="px-3 py-3 text-right font-mono font-bold text-slate-700">Rp{{ number_format($row->total_excel) }}</td>
                             <td class="px-3 py-3 text-right font-mono font-bold text-indigo-700 bg-indigo-50/10">Rp{{ number_format($row->total_calculated) }}</td>
                             <td class="px-3 py-3 text-center">
-                                <span class="px-2 py-0.5 rounded text-[9px] font-bold {{ $row->is_taxed ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600' }}">
+                                <span class="px-2 py-0.5 rounded text-2xs font-bold {{ $row->is_taxed ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600' }}">
                                     {{ $row->is_taxed ? 'PPN 11%' : 'Nett' }}
                                 </span>
                             </td>
                             <td class="px-3 py-3 text-center">
-                                <span class="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                                <span class="px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider
                                     @if($row->status_verification === 'Setuju') bg-emerald-100 text-emerald-800
                                     @elseif($row->status_verification === 'Tolak') bg-rose-100 text-rose-800
                                     @else bg-amber-100 text-amber-800 @endif">
@@ -168,12 +168,12 @@
                                 @if($row->status_validation === 'Perlu Perbaikan')
                                     <div class="flex items-start gap-1 text-rose-600">
                                         <svg class="h-3.5 w-3.5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                        <span class="text-[10px] leading-tight font-medium" title="{{ $row->notes_error }}">{{ $row->notes_error }}</span>
+                                        <span class="text-xs leading-tight font-medium" title="{{ $row->notes_error }}">{{ $row->notes_error }}</span>
                                     </div>
                                 @else
                                     <div class="flex items-center gap-0.5 text-emerald-600">
                                         <svg class="h-3.5 w-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                        <span class="text-[10px] font-semibold">Valid</span>
+                                        <span class="text-xs font-semibold">Valid</span>
                                     </div>
                                 @endif
                             </td>

@@ -77,7 +77,7 @@ export function Sidebar({
         <div className="flex-1 overflow-y-auto p-4 space-y-1.5">
           {currentRole === UserRole.SUPERADMIN ? (
             <>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-3 mb-3 mt-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block px-3 mb-3 mt-2">
                 Manajemen Sistem
               </span>
               <button
@@ -94,7 +94,7 @@ export function Sidebar({
                 </div>
               </button>
 
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-3 mb-3 mt-4">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block px-3 mb-3 mt-4">
                 Petugas Persediaan
               </span>
 
@@ -168,7 +168,7 @@ export function Sidebar({
                 </div>
               </button>
 
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-3 mb-3 mt-4">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block px-3 mb-3 mt-4">
                 Ketua Tim Kerja
               </span>
 
@@ -214,7 +214,7 @@ export function Sidebar({
                 </div>
               </button>
 
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-3 mb-3 mt-4">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block px-3 mb-3 mt-4">
                 Laporan & Audit
               </span>
 
@@ -234,7 +234,7 @@ export function Sidebar({
             </>
           ) : currentRole === UserRole.PETUGAS_PERSERDIAN ? (
             <>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-3 mb-3 mt-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block px-3 mb-3 mt-2">
                 Petugas Persediaan
               </span>
 
@@ -251,7 +251,7 @@ export function Sidebar({
                   <span>Daftar Tindakan</span>
                 </div>
                 {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).length > 0 && (
-                  <span className={`text-[9px] px-2 py-0.5 rounded font-extrabold ${
+                  <span className={`text-2xs px-2 py-0.5 rounded font-extrabold ${
                     officerTab === "dashboard" ? "bg-white text-indigo-600" : "bg-amber-50 text-amber-600 border border-amber-200"
                   }`}>
                     {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).length}
@@ -300,7 +300,7 @@ export function Sidebar({
                   <span>OCR Kuitansi & Pajak</span>
                 </div>
                 {receipts.filter((r) => !r.isVerified).length > 0 && (
-                  <span className={`text-[9px] px-2 py-0.5 rounded font-extrabold ${
+                  <span className={`text-2xs px-2 py-0.5 rounded font-extrabold ${
                     officerTab === "ocr" ? "bg-white text-indigo-600" : "bg-rose-50 text-rose-600 border border-rose-200"
                   }`}>
                     {receipts.filter((r) => !r.isVerified).length}
@@ -338,7 +338,7 @@ export function Sidebar({
             </>
           ) : (
             <>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-3 mb-3 mt-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block px-3 mb-3 mt-2">
                 Ketua Tim Kerja
               </span>
 
@@ -402,7 +402,7 @@ export function Sidebar({
         </div>
         
         <div className="p-4 border-t border-slate-100 bg-slate-50 mt-auto">
-          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center">
+          <p className="text-2xs text-slate-400 font-bold uppercase tracking-wider text-center">
             SIPERBANG v1.1
           </p>
         </div>

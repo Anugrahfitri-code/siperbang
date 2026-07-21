@@ -172,12 +172,12 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
               <ClipboardList size={18} />
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Monitoring Pengajuan BON</h2>
-              <p className="text-[11px] text-slate-500">Pantau status, lanjutkan draft, atau lihat detail pengajuan</p>
+              <h2 className="text-lg font-semibold leading-7 text-slate-900">Monitoring Pengajuan BON</h2>
+              <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">Pantau status, lanjutkan draft, atau lihat detail pengajuan</p>
             </div>
           </div>
           <button onClick={onRefresh}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] font-semibold text-slate-500 hover:bg-slate-50 transition-colors">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-500 hover:bg-slate-50 transition-colors">
             <RefreshCw size={12} /> Refresh
           </button>
         </div>
@@ -187,7 +187,7 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
           <div className="border-2 border-dashed border-slate-200 rounded-lg py-12 text-center">
             <Package className="mx-auto text-slate-300 mb-2" size={28} />
             <p className="text-sm font-bold text-slate-500">Belum ada pengajuan BON</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               Buat pengajuan baru melalui tab <strong>BON Digital</strong>
             </p>
           </div>
@@ -210,19 +210,19 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
                     {/* Left: BON info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="font-mono text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                        <span className="font-mono text-xs font-extrabold text-slate-500 uppercase tracking-wider">
                           {bon.bonNo}
                         </span>
                         <span className="text-slate-300">•</span>
-                        <span className="text-[10px] text-slate-400">{formatDate(bon.date)}</span>
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${cfg.color}`}>
+                        <span className="text-xs text-slate-400">{formatDate(bon.date)}</span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${cfg.color}`}>
                           {cfg.icon} {cfg.label}
                         </span>
                       </div>
                       <p className="text-sm font-extrabold text-slate-800 leading-snug truncate">
                         {bon.keperluan || <span className="italic text-slate-400">Tanpa keperluan</span>}
                       </p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-400 mt-0.5">
                         {bon.itemsCount} jenis barang &bull; {bon.section}
                       </p>
                     </div>
@@ -245,13 +245,13 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
                                 catatan:       it.notes ?? "",
                               })),
                             })}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold rounded-lg transition-colors">
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors">
                             <Edit3 size={12} /> Lanjutkan Draft
                           </button>
                           <button
                             onClick={() => setConfirmDelete({ id: bon.id, bonNo: bon.bonNo })}
                             disabled={deletingId === bon.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 text-[11px] font-bold rounded-lg transition-colors disabled:opacity-50">
+                            className="flex items-center gap-1.5 px-3 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold rounded-lg transition-colors disabled:opacity-50">
                             {deletingId === bon.id
                               ? <Loader2 size={12} className="animate-spin" />
                               : <Trash2 size={12} />}
@@ -261,7 +261,7 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
                       ) : (
                         <button
                           onClick={() => toggleExpand(bon.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-[11px] font-bold rounded-lg transition-colors">
+                          className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold rounded-lg transition-colors">
                           <Eye size={12} />
                           {isExpanded ? "Sembunyikan" : "Lihat Detail"}
                           {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -283,7 +283,7 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-xs border-collapse">
                             <thead>
-                              <tr className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                              <tr className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs border-b border-slate-200">
                                 <th className="px-3 py-2">Nama Barang</th>
                                 <th className="px-3 py-2 text-right">Diminta</th>
                                 <th className="px-3 py-2 text-right">Dipenuhi</th>
@@ -316,7 +316,7 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
                         </p>
                       )}
 
-                      <p className="text-[10px] text-slate-400 text-right">
+                      <p className="text-xs text-slate-400 text-right">
                         Terakhir diperbarui: {formatDate(bon.lastUpdated)}
                       </p>
                     </div>

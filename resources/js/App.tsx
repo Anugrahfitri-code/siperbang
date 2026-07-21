@@ -863,7 +863,7 @@ useEffect(() => {
               <div className="space-y-6">
                 {/* Task list quick peek */}
                 <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                    <h3 className="text-[14px] font-extrabold text-slate-800 tracking-wide mb-5 flex items-center gap-2 uppercase">
+                    <h3 className="text-sm font-extrabold text-slate-800 tracking-wide mb-5 flex items-center gap-2 uppercase">
                       <Bell className="text-amber-500" size={18} strokeWidth={2.5} />
                       Antrian Pengajuan BON Masuk Baru
                     </h3>
@@ -871,9 +871,9 @@ useEffect(() => {
                       {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => (
                         <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-md p-5 shadow-xs gap-4">
                           <div>
-                            <span className="font-mono text-[11px] font-bold text-slate-400 block uppercase tracking-wider mb-1">{r.bonNo}</span>
-                            <span className="font-extrabold text-slate-800 text-[15px] block">{r.itemName}</span>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium mt-2">
+                            <span className="font-mono text-xs font-bold text-slate-400 block uppercase tracking-wider mb-1">{r.bonNo}</span>
+                            <span className="font-extrabold text-slate-800 text-base block">{r.itemName}</span>
+                            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mt-2">
                               <User size={12} className="text-slate-400" />
                               <span>Diminta oleh {r.requester}</span>
                               <span className="text-slate-300 mx-1">•</span>
@@ -1000,8 +1000,8 @@ useEffect(() => {
                       <CheckSquare size={18} />
                     </div>
                     <div>
-                      <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Daftar Pengajuan Kebutuhan Barang</h2>
-                      <p className="text-[11px] text-slate-500">
+                      <h2 className="text-lg font-semibold leading-7 text-slate-900">Daftar Pengajuan Kebutuhan Barang</h2>
+                      <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
                         Pantau status real-time, ketersediaan stok, hasil pengecekan, serta status pengadaan unit kerja Anda
                       </p>
                     </div>
@@ -1012,20 +1012,20 @@ useEffect(() => {
                       <div key={req.id} className="border border-slate-200 rounded p-4 hover:border-slate-300 transition-colors">
                         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                           <div>
-                            <div className="flex items-center gap-2 flex-wrap text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
+                            <div className="flex items-center gap-2 flex-wrap text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
                               <span>{req.bonNo}</span>
                               <span className="text-slate-300">•</span>
                               <span>{req.date}</span>
                             </div>
                             <h3 className="text-sm font-extrabold text-slate-800 mt-1">
                               {req.itemName}
-                              <span className="text-[11px] font-normal text-slate-500 ml-1 font-mono">
+                              <span className="text-xs font-normal text-slate-500 ml-1 font-mono">
                                 ({req.qtyRequested} {req.unit})
                               </span>
                             </h3>
 
                             {/* Fulfillments display info */}
-                            <div className="flex items-center gap-4 mt-2.5 text-[10px] font-bold">
+                            <div className="flex items-center gap-4 mt-2.5 text-xs font-bold">
                               <span className="text-slate-500">
                                 Jumlah Dipenuhi: <strong className="text-slate-800 font-extrabold">{req.qtyFulfilled} {req.unit}</strong>
                               </span>
@@ -1037,7 +1037,7 @@ useEffect(() => {
                           </div>
 
                           <div className="flex items-center gap-2 self-start sm:self-auto">
-                            <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold border ${
+                            <span className={`px-2.5 py-0.5 rounded text-xs font-extrabold border ${
                               req.status === RequestStatus.SELESAI || req.status === RequestStatus.TERPENUHI
                                 ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                 : req.status === RequestStatus.DIAJUKAN
@@ -1083,7 +1083,7 @@ useEffect(() => {
               <div className="space-y-6">
                 {/* Task list quick peek */}
                 <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                    <h3 className="text-[14px] font-extrabold text-slate-800 tracking-wide mb-5 flex items-center gap-2 uppercase">
+                    <h3 className="text-sm font-extrabold text-slate-800 tracking-wide mb-5 flex items-center gap-2 uppercase">
                       <Bell className="text-amber-500" size={18} strokeWidth={2.5} />
                       Antrian Pengajuan BON Masuk Baru
                     </h3>
@@ -1091,9 +1091,9 @@ useEffect(() => {
                       {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => (
                         <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-md p-5 shadow-xs gap-4">
                           <div>
-                            <span className="font-mono text-[11px] font-bold text-slate-400 block uppercase tracking-wider mb-1">{r.bonNo}</span>
-                            <span className="font-extrabold text-slate-800 text-[15px] block">{r.itemName}</span>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium mt-2">
+                            <span className="font-mono text-xs font-bold text-slate-400 block uppercase tracking-wider mb-1">{r.bonNo}</span>
+                            <span className="font-extrabold text-slate-800 text-base block">{r.itemName}</span>
+                            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mt-2">
                               <User size={12} className="text-slate-400" />
                               <span>Diminta oleh {r.requester}</span>
                               <span className="text-slate-300 mx-1">•</span>
@@ -1125,16 +1125,16 @@ useEffect(() => {
                   <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-sm font-extrabold text-slate-800 tracking-tight uppercase">Ringkasan Ketersediaan Stok</h3>
-                      <button onClick={() => setSuperadminTab("stock_manage")} className="text-[11px] text-indigo-600 font-bold hover:text-indigo-700">
+                      <button onClick={() => setSuperadminTab("stock_manage")} className="text-xs text-indigo-600 font-bold hover:text-indigo-700">
                         Lihat Semua
                       </button>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {stock.slice(0, 3).map((st) => (
                         <div key={st.id} className="bg-slate-50 border border-slate-200 rounded p-3 text-xs">
-                          <span className="font-mono text-[9px] text-slate-400 font-bold block uppercase tracking-wider">{st.code}</span>
+                          <span className="font-mono text-2xs text-slate-400 font-bold block uppercase tracking-wider">{st.code}</span>
                           <span className="font-bold text-slate-800 text-sm mt-1 block truncate">{st.name}</span>
-                          <span className={`mt-2 inline-block font-extrabold text-[11px] ${st.qty < 10 ? "text-rose-500" : "text-emerald-600"}`}>
+                          <span className={`mt-2 inline-block font-extrabold text-xs ${st.qty < 10 ? "text-rose-500" : "text-emerald-600"}`}>
                             {st.qty} {st.unit} Tersedia
                           </span>
                         </div>
@@ -1184,8 +1184,8 @@ useEffect(() => {
                     <CheckSquare size={18} />
                   </div>
                   <div>
-                    <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Daftar Pengajuan Kebutuhan Barang</h2>
-                    <p className="text-[11px] text-slate-500">
+                    <h2 className="text-lg font-semibold leading-7 text-slate-900">Daftar Pengajuan Kebutuhan Barang</h2>
+                    <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
                       Pantau status real-time, ketersediaan stok, hasil pengecekan, serta status pengadaan unit kerja Anda
                     </p>
                   </div>
@@ -1196,20 +1196,20 @@ useEffect(() => {
                     <div key={req.id} className="border border-slate-200 rounded p-4 hover:border-slate-300 transition-colors">
                       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                         <div>
-                          <div className="flex items-center gap-2 flex-wrap text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
+                          <div className="flex items-center gap-2 flex-wrap text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
                             <span>{req.bonNo}</span>
                             <span className="text-slate-300">•</span>
                             <span>{req.date}</span>
                           </div>
                           <h3 className="text-sm font-extrabold text-slate-800 mt-1">
                             {req.itemName}
-                            <span className="text-[11px] font-normal text-slate-500 ml-1 font-mono">
+                            <span className="text-xs font-normal text-slate-500 ml-1 font-mono">
                               ({req.qtyRequested} {req.unit})
                             </span>
                           </h3>
 
                           {/* Fulfillments display info */}
-                          <div className="flex items-center gap-4 mt-2.5 text-[10px] font-bold">
+                          <div className="flex items-center gap-4 mt-2.5 text-xs font-bold">
                             <span className="text-slate-500">
                               Jumlah Dipenuhi: <strong className="text-slate-800 font-extrabold">{req.qtyFulfilled} {req.unit}</strong>
                             </span>
@@ -1221,7 +1221,7 @@ useEffect(() => {
                         </div>
 
                         <div className="flex items-center gap-2 self-start sm:self-auto">
-                          <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold border ${
+                          <span className={`px-2.5 py-0.5 rounded text-xs font-extrabold border ${
                             req.status === RequestStatus.SELESAI || req.status === RequestStatus.TERPENUHI
                               ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                               : req.status === RequestStatus.DIAJUKAN
@@ -1254,10 +1254,10 @@ useEffect(() => {
           </div>
 
       {/* Footer */}
-      <footer className="mt-12 border-t border-slate-200 bg-white py-6 text-center text-[11px] font-medium text-slate-500 lg:pl-72">
+      <footer className="mt-12 border-t border-slate-200 bg-white py-6 text-center text-xs font-medium text-slate-500 lg:pl-72">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p>© 2026 BBPSDM Komunikasi dan Digital Makassar. Seluruh hak cipta dilindungi.</p>
-          <p className="mt-1 text-[9px] text-slate-400 font-bold uppercase tracking-wider">SIPERBANG v1.1</p>
+          <p className="mt-1 text-2xs text-slate-400 font-bold uppercase tracking-wider">SIPERBANG v1.1</p>
         </div>
       </footer>
     </div>

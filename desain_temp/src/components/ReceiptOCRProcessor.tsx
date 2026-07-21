@@ -161,7 +161,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
           </div>
           <div>
             <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Pembacaan Kuitansi Otomatis (OCR)</h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               Unggah struk belanja, baca otomatis dengan AI, verifikasi manual, sesuaikan pajak toko
             </p>
           </div>
@@ -194,7 +194,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
 
       {/* Simulator Quick OCR Panel */}
       <div className="bg-slate-50 rounded p-4 mb-6 border border-slate-200">
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2.5">
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2.5">
           Simulasikan Pengunggahan & Pembacaan OCR (Pilih Struk di Bawah):
         </span>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -210,10 +210,10 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                 </div>
                 <span className="text-xs font-bold text-slate-850 line-clamp-1">{sample.name}</span>
               </div>
-              <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed mb-3 font-sans">
+              <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mb-3 font-sans">
                 {sample.description}
               </p>
-              <div className="flex justify-between items-center border-t border-slate-100 pt-2 text-[10px] font-bold text-indigo-600">
+              <div className="flex justify-between items-center border-t border-slate-100 pt-2 text-xs font-bold text-indigo-600">
                 <span>Format: {sample.method}</span>
                 <span className="bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">Pajak: {sample.isTaxed ? `${sample.taxRate}%` : "Bebas"}</span>
               </div>
@@ -226,7 +226,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       <div className="border border-dashed border-slate-200 rounded p-6 text-center hover:bg-slate-50/50 cursor-pointer mb-6" onClick={() => handleTriggerOCR(SAMPLE_RECEIPTS[0])}>
         <UploadCloud size={24} className="text-indigo-600 mx-auto mb-2" />
         <h4 className="text-xs font-bold text-slate-700">Atau Unggah File Kuitansi / Foto Struk Baru</h4>
-        <p className="text-[10px] text-slate-400 mt-1">Dukung format JPG, PNG, PDF. Sistem akan membaca detail kuitansi secara otomatis.</p>
+        <p className="text-xs text-slate-400 mt-1">Dukung format JPG, PNG, PDF. Sistem akan membaca detail kuitansi secara otomatis.</p>
       </div>
 
       {/* OCR Scanner Loading Animation */}
@@ -234,7 +234,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         <div className="flex flex-col items-center py-10 bg-slate-50 rounded border border-slate-200 mb-6">
           <RefreshCw className="animate-spin text-indigo-600 mb-3" size={24} />
           <h3 className="text-xs font-bold text-slate-800">Mesin OCR Gemini Sedang Membaca Dokumen...</h3>
-          <p className="text-[11px] text-slate-400 max-w-sm text-center mt-1 leading-relaxed">
+          <p className="text-xs text-slate-400 max-w-sm text-center mt-1 leading-relaxed">
             Mengekstrak nama toko, nomor kuitansi, daftar barang belanjaan, subtotal, dan mendeteksi persentase PPN...
           </p>
         </div>
@@ -248,7 +248,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             <div className="bg-white border border-slate-200 rounded p-4 shadow-xs font-mono text-xs text-slate-700 space-y-4">
               <div className="text-center border-b border-dashed border-slate-200 pb-4">
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">{storeName || "NAMA TOKO"}</h4>
-                <p className="text-[10px] text-slate-400 mt-0.5">Makassar, Sulawesi Selatan</p>
+                <p className="text-xs text-slate-400 mt-0.5">Makassar, Sulawesi Selatan</p>
               </div>
 
               <div className="space-y-1">
@@ -274,7 +274,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   <div key={idx} className="flex justify-between items-start">
                     <div className="max-w-[60%]">
                       <p className="font-bold text-slate-850">{it.name || "Nama Barang"}</p>
-                      <p className="text-[10px] text-slate-450">
+                      <p className="text-xs text-slate-450">
                         {it.qty} x {formatIDR(it.price)}
                       </p>
                     </div>
@@ -301,7 +301,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                 </div>
               </div>
 
-              <div className="text-center bg-indigo-50 text-indigo-700 p-2 rounded border border-indigo-150 font-sans text-[10px] font-bold uppercase tracking-wider">
+              <div className="text-center bg-indigo-50 text-indigo-700 p-2 rounded border border-indigo-150 font-sans text-xs font-bold uppercase tracking-wider">
                 DRAFT PEMBACAAN OCR GEMINI AI
               </div>
             </div>
@@ -317,7 +317,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Nama Toko */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                   Nama Toko / Penyedia
                 </label>
                 <input
@@ -330,7 +330,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
 
               {/* No Nota */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                   Nomor Nota / Invoice
                 </label>
                 <input
@@ -343,7 +343,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
 
               {/* Tanggal */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                   Tanggal Kuitansi
                 </label>
                 <input
@@ -356,7 +356,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
 
               {/* Metode Pengadaan */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                   Metode Pengadaan
                 </label>
                 <select
@@ -417,11 +417,11 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             {/* Editable Items Table */}
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Item Barang Belanja</span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Item Barang Belanja</span>
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 bg-indigo-50 px-2.5 py-1 rounded border border-indigo-150"
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 bg-indigo-50 px-2.5 py-1 rounded border border-indigo-150"
                 >
                   <Plus size={11} />
                   Tambah Barang
@@ -431,7 +431,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
               <div className="overflow-x-auto border border-slate-200 rounded max-h-[250px] overflow-y-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 text-slate-600 text-[9px] font-bold uppercase tracking-wider border-b border-slate-200">
+                    <tr className="bg-slate-50 text-slate-600 text-2xs font-bold uppercase tracking-wider border-b border-slate-200">
                       <th className="px-3 py-2">Nama Barang</th>
                       <th className="px-3 py-2 w-16 text-center">Jumlah</th>
                       <th className="px-3 py-2 w-24">Harga Satuan (Rp)</th>
@@ -495,7 +495,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                     Nama Toko / Mitra BAST
                   </label>
                   <input
@@ -507,7 +507,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                     Tanggal BAST
                   </label>
                   <input
@@ -518,7 +518,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   />
                 </div>
               </div>
-              <p className="text-[10px] text-slate-450 leading-relaxed italic">
+              <p className="text-xs text-slate-450 leading-relaxed italic">
                 * Sesuai ketentuan PRD, dokumen BAST cukup memuat nama toko/penyedia dan tanggal serah terima. Detail transaksi dan nilai barang akan mengacu sepenuhnya pada data kuitansi kuitansi_detail (Section 4.9).
               </p>
             </div>
@@ -548,7 +548,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       {/* Verified / Historical Receipts List */}
       <div className="mt-6">
         <div className="flex justify-between items-center mb-3">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
             {activeTab === "pending" ? "Daftar Dokumen Masuk Menunggu Verifikasi" : "Daftar Kuitansi Valid Terverifikasi"}
           </span>
         </div>
@@ -556,7 +556,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         <div className="overflow-x-auto border border-slate-200 rounded">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-slate-600 text-[10px] font-bold uppercase tracking-wider border-b border-slate-200">
+              <tr className="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                 <th className="px-5 py-3">No Nota / Invoice</th>
                 <th className="px-5 py-3">Nama Toko</th>
                 <th className="px-5 py-3">Tanggal Belanja</th>
@@ -591,7 +591,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                     </td>
                     <td className="px-5 py-3 text-center font-sans">
                       <span
-                        className={`inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded border font-bold ${
+                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded border font-bold ${
                           rc.isVerified
                             ? "bg-emerald-50 text-emerald-800 border-emerald-100"
                             : "bg-amber-50 text-amber-800 border-amber-100"

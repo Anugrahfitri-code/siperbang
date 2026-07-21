@@ -66,7 +66,7 @@ export const SiperbangLogo: React.FC<{ className?: string; iconOnly?: boolean; l
             <span className="text-[#F2B818]">A</span>
             <span className="text-[#4A4A4A]">NG</span>
           </div>
-          <span className={`text-[10px] font-medium tracking-wide mt-1 leading-none uppercase ${lightText ? 'text-indigo-200' : 'text-[#7A7A7A]'}`}>
+          <span className={`text-xs font-medium tracking-wide mt-1 leading-none uppercase ${lightText ? 'text-indigo-200' : 'text-[#7A7A7A]'}`}>
             Sistem Informasi Penyediaan Barang
           </span>
         </div>
@@ -113,7 +113,7 @@ export const KomdigiLogo: React.FC<{ className?: string; iconOnly?: boolean }> =
           <span className="text-sm font-extrabold text-[#4A4A4A] tracking-wider leading-none">
             KOMDIGI
           </span>
-          <span className="text-[8px] text-[#7A7A7A] font-semibold tracking-tight leading-tight mt-0.5">
+          <span className="text-2xs text-[#7A7A7A] font-semibold tracking-tight leading-tight mt-0.5">
             Kementerian Komunikasi dan Digital<br />Republik Indonesia
           </span>
         </div>

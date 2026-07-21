@@ -61,8 +61,8 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ logs: incomingLogs }) =>
           <History size={22} strokeWidth={2} />
         </div>
         <div className="flex-1">
-          <h2 className="text-[16px] font-extrabold text-slate-800 tracking-tight">Histori Perubahan & Audit Log</h2>
-          <p className="text-[12px] text-slate-500 mt-1">
+          <h2 className="text-lg font-semibold leading-7 text-slate-900">Histori Perubahan & Audit Log</h2>
+          <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
             Riwayat lengkap semua tindakan dari seluruh pengguna sistem.
           </p>
         </div>
@@ -157,18 +157,18 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ logs: incomingLogs }) =>
                       
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-3">
-                          <h4 className="text-[13px] font-extrabold text-slate-800">
+                          <h4 className="text-sm font-extrabold text-slate-800">
                             {log.actor}
                           </h4>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${badgeColor}`}>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded ${badgeColor}`}>
                             {log.action}
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <span className="text-[11px] font-medium text-slate-500">
+                          <span className="text-xs font-medium text-slate-500">
                             {actorLower.includes("system") ? "Sistem" : "Petugas Persediaan"}
                           </span>
-                          <p className="text-[12px] text-slate-600 font-medium">
+                          <p className="text-sm text-slate-600 font-medium">
                             {log.details}
                           </p>
                         </div>
@@ -176,7 +176,7 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ logs: incomingLogs }) =>
                     </div>
 
                     {/* Timestamp */}
-                    <div className="flex-shrink-0 flex items-center gap-2 text-slate-500 font-mono text-[11px] font-medium">
+                    <div className="flex-shrink-0 flex items-center gap-2 text-slate-500 font-mono text-xs font-medium">
                       <Clock size={14} className="text-slate-400" />
                       {log.timestamp}
                     </div>

@@ -60,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <User size={16} />
               </div>
               <div className="flex flex-col text-left hidden sm:flex">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-1">
+                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider leading-none mb-1">
                   {currentRole === UserRole.SUPERADMIN ? 'Superadmin' : currentRole === UserRole.PETUGAS_PERSERDIAN ? 'Petugas' : 'Ketua Tim'}
                 </span>
                 <span className="text-xs font-bold text-slate-800 leading-none flex items-center gap-1">
@@ -79,7 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </div>
                     <div>
                       <p className="text-sm font-extrabold text-slate-800 line-clamp-1" title={currentUser.split(' (')[0]}>{currentUser.split(' (')[0]}</p>
-                      <p className="text-[11px] font-medium text-slate-500 mt-0.5">{currentRole === UserRole.SUPERADMIN ? 'Superadmin' : currentRole === UserRole.PETUGAS_PERSERDIAN ? 'Petugas Persediaan' : 'Ketua Tim Kerja'}</p>
+                      <p className="text-xs font-medium text-slate-500 mt-0.5">{currentRole === UserRole.SUPERADMIN ? 'Superadmin' : currentRole === UserRole.PETUGAS_PERSERDIAN ? 'Petugas Persediaan' : 'Ketua Tim Kerja'}</p>
                     </div>
                   </div>
                 </div>

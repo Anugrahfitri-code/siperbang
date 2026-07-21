@@ -15,7 +15,7 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ logs }) => {
         </div>
         <div>
           <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Histori Perubahan & Audit Log</h2>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             Riwayat lengkap penambahan, pengurangan, perubahan status, dan verifikasi dokumen kuitansi
           </p>
         </div>
@@ -48,12 +48,12 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ logs }) => {
                       {log.actor}
                     </span>
                     <span className="text-slate-300">•</span>
-                    <span className={`text-[10px] font-bold border px-2 py-0.5 rounded-full ${badgeColor}`}>
+                    <span className={`text-xs font-bold border px-2 py-0.5 rounded-full ${badgeColor}`}>
                       {log.action}
                     </span>
                   </div>
 
-                  <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1 font-mono">
+                  <span className="text-xs text-slate-400 font-semibold flex items-center gap-1 font-mono">
                     <Clock size={11} />
                     {log.timestamp}
                   </span>

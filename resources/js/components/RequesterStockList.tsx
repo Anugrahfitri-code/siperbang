@@ -62,21 +62,21 @@ const statusBadge = (status: StockRow["status_stok"]) => {
   switch (status) {
     case "Tersedia":
       return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+        <span className="inline-flex items-center gap-1 text-xs font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
           <CheckCircle size={10} />
           Tersedia
         </span>
       );
     case "Stok Terbatas":
       return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">
+        <span className="inline-flex items-center gap-1 text-xs font-extrabold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">
           <AlertCircle size={10} />
           Stok Terbatas
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-rose-700 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-full">
+        <span className="inline-flex items-center gap-1 text-xs font-extrabold text-rose-700 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-full">
           <XCircle size={10} />
           Tidak Tersedia
         </span>
@@ -193,10 +193,10 @@ export function RequesterStockList() {
           <Package size={20} />
         </div>
         <div>
-          <h2 className="text-base font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-lg font-semibold leading-7 text-slate-900">
             Katalog Stok Gudang
           </h2>
-          <p className="text-[11px] text-slate-500 mt-0.5">
+          <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
             Cari dan periksa ketersediaan barang sebelum mengajukan BON.
             Data diperbarui secara langsung dari database gudang.
           </p>
@@ -278,19 +278,19 @@ export function RequesterStockList() {
         {isFiltered && (
           <div className="mt-3 flex flex-wrap gap-2">
             {query && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">
                 Pencarian: "{query}"
                 <button onClick={() => handleQueryChange("")} className="ml-0.5 hover:text-amber-900"><X size={10} /></button>
               </span>
             )}
             {category && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full">
                 Kategori: {category}
                 <button onClick={() => { setCategory(""); setPage(1); }} className="ml-0.5 hover:text-indigo-900"><X size={10} /></button>
               </span>
             )}
             {statusFilter && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-full">
                 Status: {statusFilter === "tersedia" ? "Tersedia" : statusFilter === "terbatas" ? "Stok Terbatas" : "Tidak Tersedia"}
                 <button onClick={() => { setStatus(""); setPage(1); }} className="ml-0.5 hover:text-slate-900"><X size={10} /></button>
               </span>
@@ -363,7 +363,7 @@ export function RequesterStockList() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-xs">
                     <th className="px-5 py-3">Kode Persediaan</th>
                     <th className="px-5 py-3">Nama Barang</th>
                     <th className="px-5 py-3">Kategori</th>
@@ -380,7 +380,7 @@ export function RequesterStockList() {
                       className="hover:bg-amber-50/30 transition-colors"
                     >
                       <td className="px-5 py-3.5 whitespace-nowrap">
-                        <span className="font-mono text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
+                        <span className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
                           {item.kode}
                         </span>
                       </td>
@@ -401,7 +401,7 @@ export function RequesterStockList() {
                       <td className="px-4 py-3.5 text-center whitespace-nowrap">
                         {statusBadge(item.status_stok)}
                       </td>
-                      <td className="px-4 py-3.5 text-right text-slate-400 whitespace-nowrap text-[11px]">
+                      <td className="px-4 py-3.5 text-right text-slate-400 whitespace-nowrap text-xs">
                         {item.update_terakhir
                           ? new Date(item.update_terakhir).toLocaleDateString("id-ID", {
                               day: "2-digit",
@@ -419,7 +419,7 @@ export function RequesterStockList() {
             {/* Pagination + summary */}
             {meta && (
               <div className="px-5 py-3.5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50">
-                <p className="text-[11px] text-slate-400 font-medium">
+                <p className="text-xs text-slate-400 font-medium">
                   {meta.total === 0
                     ? "Tidak ada data"
                     : `Menampilkan ${meta.from ?? 0}–${meta.to ?? 0} dari ${meta.total.toLocaleString("id-ID")} barang`}
@@ -430,7 +430,7 @@ export function RequesterStockList() {
                     <button
                       disabled={page <= 1 || loading}
                       onClick={() => setPage((p) => p - 1)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold
                                  text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                       <ChevronLeft size={13} />
@@ -446,7 +446,7 @@ export function RequesterStockList() {
                             key={p}
                             onClick={() => setPage(p)}
                             disabled={loading}
-                            className={`w-8 h-8 rounded-lg text-[11px] font-extrabold border transition-colors
+                            className={`w-8 h-8 rounded-lg text-xs font-extrabold border transition-colors
                               ${p === page
                                 ? "bg-amber-500 text-white border-amber-500 shadow-xs"
                                 : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
@@ -460,7 +460,7 @@ export function RequesterStockList() {
                     <button
                       disabled={page >= meta.last_page || loading}
                       onClick={() => setPage((p) => p + 1)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold
                                  text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                       Berikutnya

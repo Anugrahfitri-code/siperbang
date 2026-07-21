@@ -108,7 +108,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
           </div>
           <div>
             <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Rekap Laporan & Export Excel</h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               Saring laporan kuitansi tervalidasi dan unduh spreadsheet Excel untuk pembukuan
             </p>
           </div>
@@ -149,7 +149,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Month filter */}
           <div>
-            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
               Saring Bulan
             </label>
             <select
@@ -168,7 +168,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
 
           {/* Year Filter */}
           <div>
-            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
               Saring Tahun
             </label>
             <select
@@ -183,7 +183,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
 
           {/* Search */}
           <div className="md:col-span-2">
-            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
               Cari Kuitansi / Barang
             </label>
             <div className="relative">
@@ -213,7 +213,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
             />
             Aktifkan Rekap Tahunan (Kosongkan Kolom BAST & Tanggal Buku)
           </label>
-          <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1 rounded border border-indigo-100 italic">
+          <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1 rounded border border-indigo-100 italic">
             * Rekap tahunan akan secara otomatis mengosongkan kolom BAST dan tanggal buku sesuai ketentuan Section 4.11
           </span>
         </div>
@@ -222,7 +222,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
       {/* Spreadsheet Preview */}
       <div>
         <div className="flex justify-between items-center mb-3">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
             Pratinjau Spreadsheet Excel: {reportRows.length} Baris Data Terpilih
           </span>
         </div>
@@ -230,7 +230,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
         <div className="overflow-x-auto border border-slate-200 rounded">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-slate-700 text-[10px] font-bold uppercase tracking-wider border-b border-slate-200">
+              <tr className="bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                 <th className="px-4 py-3">No Nota</th>
                 <th className="px-4 py-3">Tanggal</th>
                 <th className="px-4 py-3">Nama Toko</th>

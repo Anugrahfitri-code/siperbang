@@ -27,7 +27,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               </div>
               <div>
                 <h1 className="text-xl font-extrabold tracking-tight">SIPERBANG</h1>
-                <p className="text-[10px] font-medium text-indigo-200 uppercase tracking-widest">Sistem Penyediaan Barang</p>
+                <p className="text-xs font-medium text-indigo-200 uppercase tracking-widest">Sistem Penyediaan Barang</p>
               </div>
             </div>
 
@@ -46,7 +46,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               <ShieldCheck className="text-emerald-300 mt-1 flex-shrink-0" size={20} />
               <div>
                 <h3 className="text-xs font-bold text-white mb-1 uppercase tracking-wider">Akses Terotorisasi</h3>
-                <p className="text-[11px] text-indigo-100 leading-relaxed">
+                <p className="text-xs text-indigo-100 leading-relaxed">
                   Pilih peran Anda untuk memasuki dashboard khusus yang disesuaikan dengan tanggung jawab kerja Anda.
                 </p>
               </div>
@@ -121,7 +121,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           </div>
           
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">
               SIPERBANG Prototype v1.1
             </p>
           </div>

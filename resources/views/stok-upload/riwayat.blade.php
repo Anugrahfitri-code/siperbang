@@ -39,7 +39,7 @@ $statusColors = [
     <div class="overflow-x-auto">
         <table class="w-full text-left text-xs border-collapse">
             <thead>
-                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-xs">
                     <th class="px-5 py-3">Tanggal Upload</th>
                     <th class="px-5 py-3">File</th>
                     <th class="px-5 py-3">Diupload Oleh</th>
@@ -55,7 +55,7 @@ $statusColors = [
                     {{-- Tanggal --}}
                     <td class="px-5 py-4 whitespace-nowrap">
                         <span class="font-semibold text-slate-800">{{ $batch->upload_date->format('d M Y') }}</span>
-                        <span class="block text-[10px] text-slate-400 mt-0.5">{{ $batch->upload_date->format('H:i') }}</span>
+                        <span class="block text-xs text-slate-400 mt-0.5">{{ $batch->upload_date->format('H:i') }}</span>
                     </td>
 
                     {{-- File --}}
@@ -63,7 +63,7 @@ $statusColors = [
                         <span class="font-semibold text-slate-800 block max-w-[220px] truncate" title="{{ $batch->file_name_original }}">
                             {{ $batch->file_name_original }}
                         </span>
-                        <span class="text-[10px] text-slate-400 mt-0.5 block">
+                        <span class="text-xs text-slate-400 mt-0.5 block">
                             {{ $batch->sheets_count }} sheet &bull; {{ $batch->rows_count }} baris
                         </span>
                     </td>
@@ -75,12 +75,12 @@ $statusColors = [
 
                     {{-- Status --}}
                     <td class="px-5 py-4 text-center whitespace-nowrap">
-                        <span class="px-2.5 py-1 inline-flex text-[10px] leading-4 font-bold rounded-full uppercase tracking-wider
+                        <span class="px-2.5 py-1 inline-flex text-xs leading-4 font-bold rounded-full uppercase tracking-wider
                             {{ $statusColors[$batch->status] ?? 'bg-slate-100 text-slate-600' }}">
                             {{ $batch->status }}
                         </span>
                         @if($batch->status === SU::STATUS_DIBATALKAN && $batch->cancelled_at)
-                        <span class="block text-[9px] text-gray-400 mt-0.5">{{ $batch->cancelled_at->format('d M Y') }}</span>
+                        <span class="block text-2xs text-gray-400 mt-0.5">{{ $batch->cancelled_at->format('d M Y') }}</span>
                         @endif
                     </td>
 
@@ -99,37 +99,37 @@ $statusColors = [
 
                             @if($batch->status === SU::STATUS_MENUNGGU_VERIFIKASI)
                                 <a href="{{ route('stok-upload.stepper', ['id' => $batch->id, 'step' => 3]) }}"
-                                   class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors">
+                                   class="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors">
                                     Verifikasi Kode
                                 </a>
                                 <button type="button" onclick="openConfirmModal('delRiwayat{{ $batch->id }}')"
-                                        class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 hover:bg-rose-100 hover:text-rose-700 transition-colors">
+                                        class="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 hover:bg-rose-100 hover:text-rose-700 transition-colors">
                                     Hapus
                                 </button>
 
                             @elseif($batch->status === SU::STATUS_SIAP_DIFINALISASI)
                                 <a href="{{ route('stok-upload.stepper', ['id' => $batch->id, 'step' => 4]) }}"
-                                   class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-800 hover:bg-indigo-200 transition-colors">
+                                   class="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 hover:bg-indigo-200 transition-colors">
                                     Review &amp; Finalisasi
                                 </a>
                                 <button type="button" onclick="openConfirmModal('delRiwayat{{ $batch->id }}')"
-                                        class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 hover:bg-rose-100 hover:text-rose-700 transition-colors">
+                                        class="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 hover:bg-rose-100 hover:text-rose-700 transition-colors">
                                     Hapus
                                 </button>
 
                             @elseif($batch->status === SU::STATUS_SELESAI)
                                 <a href="{{ route('stok-upload.stepper', ['id' => $batch->id, 'step' => 4]) }}"
-                                   class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">
+                                   class="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">
                                     Lihat Detail
                                 </a>
                                 <button type="button"
                                         onclick="openConfirmModal('batalkanRiwayat{{ $batch->id }}')"
-                                        class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 hover:bg-rose-200 transition-colors">
+                                        class="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 hover:bg-rose-200 transition-colors">
                                     Batalkan
                                 </button>
 
                             @elseif($batch->status === SU::STATUS_DIBATALKAN)
-                                <span class="text-[11px] text-slate-400 italic px-1">
+                                <span class="text-xs text-slate-400 italic px-1">
                                     Tidak dapat dibuka
                                 </span>
                             @endif
@@ -137,7 +137,7 @@ $statusColors = [
                             {{-- Hapus (soft) — hanya untuk status yang belum final dan belum ditampilkan di atas --}}
                             @if($batch->isDeletable() && !in_array($batch->status, [SU::STATUS_MENUNGGU_VERIFIKASI, SU::STATUS_SIAP_DIFINALISASI]))
                             <button type="button" onclick="openConfirmModal('delRiwayat{{ $batch->id }}')"
-                                    class="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 hover:bg-rose-100 hover:text-rose-700 transition-colors">
+                                    class="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 hover:bg-rose-100 hover:text-rose-700 transition-colors">
                                 Hapus
                             </button>
                             @endif
@@ -169,7 +169,7 @@ $statusColors = [
 
 <style>
 .btn-action {
-    @apply inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors;
+    @apply inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold transition-colors;
 }
 </style>
 

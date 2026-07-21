@@ -21,9 +21,9 @@
 <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
     <div>
         <div class="flex items-center gap-2 flex-wrap mb-1">
-            <span class="text-[10px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">BATCH #{{ $batch->id }}</span>
-            <span class="text-[10px] text-slate-400">{{ $batch->upload_date->format('d M Y, H:i') }}</span>
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $batch->statusColor() }}">{{ $batch->status }}</span>
+            <span class="text-xs font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">BATCH #{{ $batch->id }}</span>
+            <span class="text-xs text-slate-400">{{ $batch->upload_date->format('d M Y, H:i') }}</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase {{ $batch->statusColor() }}">{{ $batch->status }}</span>
         </div>
         <h1 class="text-base font-extrabold text-slate-900 tracking-tight">{{ $batch->file_name_original }}</h1>
         <p class="text-xs text-slate-500 mt-0.5">Diupload oleh {{ $batch->user?->name ?? '—' }}</p>
@@ -54,7 +54,7 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
                 @if($isDone)<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                 @else{{ $n }}@endif
             </div>
-            <span class="mt-1.5 text-[10px] font-bold {{ $isActive ? 'text-indigo-700' : ($isDone ? 'text-emerald-600' : 'text-slate-400') }} hidden sm:block">{{ $label }}</span>
+            <span class="mt-1.5 text-xs font-bold {{ $isActive ? 'text-indigo-700' : ($isDone ? 'text-emerald-600' : 'text-slate-400') }} hidden sm:block">{{ $label }}</span>
         </a>
         @if($n < 4)
         <div class="flex-1 h-0.5 {{ $n < $step ? 'bg-emerald-400' : 'bg-slate-200' }} -mt-5 sm:-mt-3 max-w-[60px]"></div>
@@ -88,19 +88,19 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
 {{-- Stats bar --}}
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
     <div class="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-xs">
-        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Baris</span>
+        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Total Baris</span>
         <span class="block text-2xl font-extrabold text-slate-800 mt-1">{{ $batch->rows_count }}</span>
     </div>
     <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center shadow-xs">
-        <span class="block text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Valid</span>
+        <span class="block text-xs font-bold text-emerald-600 uppercase tracking-wider">Valid</span>
         <span class="block text-2xl font-extrabold text-emerald-700 mt-1">{{ $validRows->count() }}</span>
     </div>
     <div class="bg-rose-50 border border-rose-100 rounded-xl p-4 text-center shadow-xs">
-        <span class="block text-[10px] font-bold text-rose-600 uppercase tracking-wider">Perlu Perbaikan</span>
+        <span class="block text-xs font-bold text-rose-600 uppercase tracking-wider">Perlu Perbaikan</span>
         <span class="block text-2xl font-extrabold text-rose-700 mt-1">{{ $errorRows->count() }}</span>
     </div>
     <div class="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-xs">
-        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sheet</span>
+        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Sheet</span>
         <span class="block text-2xl font-extrabold text-slate-700 mt-1">{{ $batch->sheets_count }}</span>
     </div>
 </div>
@@ -150,9 +150,9 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
             <tbody class="divide-y divide-slate-100">
                 @foreach($validRows as $row)
                 <tr class="hover:bg-slate-50/50">
-                    <td class="px-4 py-3 font-mono text-[11px] text-slate-500">{{ $row->sheet_name }} • {{ $row->no_urut }}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ $row->sheet_name }} • {{ $row->no_urut }}</td>
                     <td class="px-4 py-3 font-semibold text-slate-800">{{ $row->nama_barang }}</td>
-                    <td class="px-4 py-3 font-mono text-[11px] text-indigo-700 font-bold">{{ $row->verified_kode_persediaan ?? $row->kode_persediaan_excel }}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-indigo-700 font-bold">{{ $row->verified_kode_persediaan ?? $row->kode_persediaan_excel }}</td>
                     <td class="px-3 py-3 text-right font-bold">{{ number_format($row->qty) }}</td>
                     <td class="px-3 py-3 text-slate-500">{{ $row->unit }}</td>
                     <td class="px-3 py-3 text-right font-mono text-slate-600">Rp{{ number_format((int)$row->price_unit,0,',','.') }}</td>
@@ -176,19 +176,19 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
 
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
     <div class="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-xs">
-        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Baris</span>
+        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Total Baris</span>
         <span class="block text-2xl font-extrabold text-slate-800 mt-1">{{ $allDetails->count() }}</span>
     </div>
     <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 text-center shadow-xs">
-        <span class="block text-[10px] font-bold text-amber-600 uppercase tracking-wider">Menunggu</span>
+        <span class="block text-xs font-bold text-amber-600 uppercase tracking-wider">Menunggu</span>
         <span class="block text-2xl font-extrabold text-amber-700 mt-1">{{ $pendingRows->count() }}</span>
     </div>
     <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center shadow-xs">
-        <span class="block text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Disetujui</span>
+        <span class="block text-xs font-bold text-emerald-600 uppercase tracking-wider">Disetujui</span>
         <span class="block text-2xl font-extrabold text-emerald-700 mt-1">{{ $approvedRows->count() }}</span>
     </div>
     <div class="bg-rose-50 border border-rose-100 rounded-xl p-4 text-center shadow-xs">
-        <span class="block text-[10px] font-bold text-rose-600 uppercase tracking-wider">Ditolak</span>
+        <span class="block text-xs font-bold text-rose-600 uppercase tracking-wider">Ditolak</span>
         <span class="block text-2xl font-extrabold text-rose-700 mt-1">{{ $rejectedRows->count() }}</span>
     </div>
 </div>
@@ -211,7 +211,7 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs border-collapse">
                 <thead>
-                    <tr class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
+                    <tr class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
                         <th class="px-4 py-3">Sheet / No</th>
                         <th class="px-4 py-3">Nama Barang</th>
                         <th class="px-4 py-3">Kode dari Excel</th>
@@ -229,18 +229,18 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
                         };
                     @endphp
                     <tr class="hover:bg-slate-50/50 transition-colors align-middle {{ $rowBg }}">
-                        <td class="px-4 py-3 whitespace-nowrap font-mono text-[11px] text-slate-500">
+                        <td class="px-4 py-3 whitespace-nowrap font-mono text-xs text-slate-500">
                             {{ $row->sheet_name }}<br>Baris {{ $row->no_urut }}
                             <input type="hidden" name="items[{{ $i }}][detail_id]" value="{{ $row->id }}">
                             <input type="hidden" name="items[{{ $i }}][action]" value="Setuju">
                         </td>
                         <td class="px-4 py-3 font-semibold text-slate-800">{{ $row->nama_barang }}</td>
-                        <td class="px-4 py-3 font-mono text-[11px] text-slate-600">
+                        <td class="px-4 py-3 font-mono text-xs text-slate-600">
                             {{ $row->kode_persediaan_excel ?? '—' }}
                         </td>
                         <td class="px-4 py-3 min-w-[260px]">
                             <select id="kode_v_{{ $i }}" name="items[{{ $i }}][kode_persediaan]"
-                                    class="w-full px-2 py-1.5 rounded border border-slate-200 bg-white text-[11px] font-mono focus:ring-1 focus:ring-indigo-400">
+                                    class="w-full px-2 py-1.5 rounded border border-slate-200 bg-white text-xs font-mono focus:ring-1 focus:ring-indigo-400">
                                 <option value="">-- Pilih Kode --</option>
                                 @foreach($masterCodes as $mc)
                                 <option value="{{ $mc->kode }}"
@@ -284,19 +284,19 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
 {{-- Summary stats --}}
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
     <div class="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-xs">
-        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Baris</span>
+        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Total Baris</span>
         <span class="block text-2xl font-extrabold text-slate-800 mt-1">{{ $allDetails->count() }}</span>
     </div>
     <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center shadow-xs">
-        <span class="block text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Disetujui</span>
+        <span class="block text-xs font-bold text-emerald-600 uppercase tracking-wider">Disetujui</span>
         <span class="block text-2xl font-extrabold text-emerald-700 mt-1">{{ $totalApproved }}</span>
     </div>
     <div class="bg-rose-50 border border-rose-100 rounded-xl p-4 text-center shadow-xs">
-        <span class="block text-[10px] font-bold text-rose-600 uppercase tracking-wider">Ditolak</span>
+        <span class="block text-xs font-bold text-rose-600 uppercase tracking-wider">Ditolak</span>
         <span class="block text-2xl font-extrabold text-rose-700 mt-1">{{ $rejectedRows->count() }}</span>
     </div>
     <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-center shadow-xs">
-        <span class="block text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Total Nilai</span>
+        <span class="block text-xs font-bold text-indigo-600 uppercase tracking-wider">Total Nilai</span>
         <span class="block text-sm font-extrabold text-indigo-700 mt-1">Rp{{ number_format($totalValue,0,',','.') }}</span>
     </div>
 </div>
@@ -319,7 +319,7 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
     <div class="overflow-x-auto">
         <table class="w-full text-left text-xs border-collapse">
             <thead>
-                <tr class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
+                <tr class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
                     <th class="px-4 py-3">Sheet / No</th>
                     <th class="px-4 py-3">Nama Barang</th>
                     <th class="px-4 py-3">Kode Final</th>
@@ -334,15 +334,15 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
             <tbody class="divide-y divide-slate-100">
                 @foreach($approvedRows as $row)
                 <tr class="hover:bg-emerald-50/30 transition-colors">
-                    <td class="px-4 py-3 font-mono text-[11px] text-slate-500">{{ $row->sheet_name }} • {{ $row->no_urut }}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ $row->sheet_name }} • {{ $row->no_urut }}</td>
                     <td class="px-4 py-3 font-semibold text-slate-800">{{ $row->nama_barang }}</td>
-                    <td class="px-4 py-3 font-mono text-[11px] text-indigo-700 font-extrabold">{{ $row->verified_kode_persediaan ?? $row->kode_persediaan_excel }}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-indigo-700 font-extrabold">{{ $row->verified_kode_persediaan ?? $row->kode_persediaan_excel }}</td>
                     <td class="px-3 py-3 text-right font-bold text-slate-700">{{ number_format($row->qty) }}</td>
                     <td class="px-3 py-3 text-slate-500">{{ $row->unit }}</td>
                     <td class="px-3 py-3 text-right font-mono text-slate-600">Rp{{ number_format((int)$row->price_unit,0,',','.') }}</td>
                     <td class="px-3 py-3 text-right font-mono text-slate-700 font-semibold">Rp{{ number_format((int)$row->price_unit_taxed,0,',','.') }}</td>
                     <td class="px-3 py-3 text-center">
-                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold {{ $row->is_taxed ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500' }}">
+                        <span class="px-1.5 py-0.5 rounded text-2xs font-bold {{ $row->is_taxed ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500' }}">
                             {{ $row->is_taxed ? 'PPN 11%' : 'Nett' }}
                         </span>
                     </td>
@@ -369,7 +369,7 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
     <div id="rejectedTable" class="hidden overflow-x-auto">
         <table class="w-full text-left text-xs border-collapse">
             <thead>
-                <tr class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 text-[10px]">
+                <tr class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 text-xs">
                     <th class="px-4 py-3">Sheet / No</th><th class="px-4 py-3">Nama Barang</th>
                     <th class="px-4 py-3">Kode</th><th class="px-3 py-3 text-right">Qty</th><th class="px-3 py-3">Satuan</th>
                 </tr>
@@ -377,9 +377,9 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
             <tbody class="divide-y divide-slate-100">
                 @foreach($rejectedRows as $row)
                 <tr class="opacity-60">
-                    <td class="px-4 py-3 font-mono text-[11px] text-slate-500">{{ $row->sheet_name }} • {{ $row->no_urut }}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ $row->sheet_name }} • {{ $row->no_urut }}</td>
                     <td class="px-4 py-3 text-slate-600 line-through">{{ $row->nama_barang }}</td>
-                    <td class="px-4 py-3 font-mono text-[11px] text-slate-400">{{ $row->kode_persediaan_excel ?? '—' }}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-400">{{ $row->kode_persediaan_excel ?? '—' }}</td>
                     <td class="px-3 py-3 text-right text-slate-500">{{ $row->qty }}</td>
                     <td class="px-3 py-3 text-slate-400">{{ $row->unit }}</td>
                 </tr>

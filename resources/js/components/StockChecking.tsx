@@ -174,8 +174,8 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
           <Package size={18} />
         </div>
         <div>
-          <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Pengecekan Stok & Pemenuhan</h2>
-          <p className="text-[11px] text-slate-500">
+          <h2 className="text-lg font-semibold leading-7 text-slate-900">Pengecekan Stok & Pemenuhan</h2>
+          <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
             Periksa ketersediaan barang persediaan, alokasikan barang, atau teruskan ke pengadaan
           </p>
         </div>
@@ -208,21 +208,21 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                 <div className="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
                   <div>
                     <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                      <span className="text-[11px] font-mono font-bold text-slate-500 uppercase tracking-wider">
+                      <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">
                         {req.bonNo}
                       </span>
                       <span className="text-slate-300">•</span>
-                      <span className="text-[11px] font-mono font-bold text-slate-500">
+                      <span className="text-xs font-mono font-bold text-slate-500">
                         {req.date}
                       </span>
                       <span className="text-slate-300">•</span>
-                      <span className="text-[11px] font-bold text-slate-700">
+                      <span className="text-xs font-bold text-slate-700">
                         {req.section}
                       </span>
                     </div>
 
                     <div className="flex items-center">
-                      <h3 className="text-[16px] font-extrabold text-slate-800">
+                      <h3 className="text-lg font-extrabold text-slate-800">
                         {req.itemName}
                       </h3>
                       <span className="ml-3 px-2 py-0.5 rounded border border-slate-200 text-slate-600 text-xs font-semibold bg-slate-50">
@@ -246,7 +246,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                           setRejectAlasan("");
                           setRejectError(null);
                         }}
-                        className="border border-rose-300 text-rose-600 hover:bg-rose-50 text-[12px] font-bold px-4 py-2 rounded-md transition-all flex items-center gap-1.5 shadow-sm"
+                        className="border border-rose-300 text-rose-600 hover:bg-rose-50 text-sm font-bold px-4 py-2 rounded-md transition-all flex items-center gap-1.5 shadow-sm"
                       >
                         <Trash2 size={14} />
                         Batalkan
@@ -256,7 +256,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                     {isPendingCheck ? (
                       <button
                         onClick={() => openChecker(req)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-bold px-4 py-2 rounded-md transition-all flex items-center gap-1.5 shadow-sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-md transition-all flex items-center gap-1.5 shadow-sm"
                       >
                         <Play size={14} />
                         Proses Cek Stok
@@ -270,7 +270,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                           req.status === RequestStatus.DALAM_PENGADAAN) && (
                           <button
                             onClick={() => setSelectedForAction(req)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-bold px-4 py-2 rounded-md transition-all flex items-center gap-1.5 shadow-sm"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2 rounded-md transition-all flex items-center gap-1.5 shadow-sm"
                           >
                             {req.qtyFulfilled > 0 ? <Truck size={14} /> : <ShoppingCart size={14} />}
                             Proses Pemenuhan
@@ -285,37 +285,37 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
 
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 items-start">
                   <div>
-                    <span className="block text-[10px] text-slate-400 font-bold mb-1">Jumlah Diminta</span>
+                    <span className="block text-xs text-slate-400 font-bold mb-1">Jumlah Diminta</span>
                     <span className="text-xs font-semibold text-slate-800">{req.qtyRequested} {req.unit}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-slate-400 font-bold mb-1">Diajukan oleh</span>
+                    <span className="block text-xs text-slate-400 font-bold mb-1">Diajukan oleh</span>
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
                       <User size={12} className="text-slate-500" />
                       {req.requester}
                     </div>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-slate-400 font-bold mb-1">Stok di Gudang</span>
+                    <span className="block text-xs text-slate-400 font-bold mb-1">Stok di Gudang</span>
                     {stockItem ? (
-                      <span className="inline-block text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      <span className="inline-block text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                         Stok di gudang: {stockQty} {req.unit}
                       </span>
                     ) : (
-                      <span className="inline-block text-[10px] text-rose-700 font-bold bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                      <span className="inline-block text-xs text-rose-700 font-bold bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
                         Baru (0 {req.unit})
                       </span>
                     )}
                   </div>
                   <div>
-                    <span className="block text-[10px] text-slate-400 font-bold mb-1">Status Permintaan</span>
-                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getStatusColor(req.status)}`}>
+                    <span className="block text-xs text-slate-400 font-bold mb-1">Status Permintaan</span>
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold border ${getStatusColor(req.status)}`}>
                       {req.status}
                     </span>
                   </div>
                   {!isPendingCheck && (
                     <div>
-                      <span className="block text-[10px] text-slate-400 font-bold mb-1">Pemenuhan</span>
+                      <span className="block text-xs text-slate-400 font-bold mb-1">Pemenuhan</span>
                       <span className="text-xs font-bold text-slate-800">
                         {req.qtyFulfilled} / {req.qtyRequested} {req.unit}
                       </span>
@@ -358,14 +358,14 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
 
               {/* ── Pilih Barang dari Stok Gudang ── */}
               <div>
-                <label className="block text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1.5">
                   Cocokkan dengan Barang di Stok Gudang
                 </label>
                 {selectedStockItem && (
                   <div className="mb-2 flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
                     <CheckCircle size={13} className="text-emerald-500 shrink-0" />
                     <span className="text-xs font-bold text-emerald-700 truncate">{selectedStockItem.name}</span>
-                    <span className="text-[10px] text-emerald-500 font-semibold ml-auto shrink-0">Stok: {selectedStockItem.qty} {selectedStockItem.unit}</span>
+                    <span className="text-xs text-emerald-500 font-semibold ml-auto shrink-0">Stok: {selectedStockItem.qty} {selectedStockItem.unit}</span>
                   </div>
                 )}
                 <div className="relative">
@@ -405,7 +405,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                             className="w-full text-left px-3 py-2 text-xs hover:bg-indigo-50 flex justify-between items-center gap-3 border-b border-slate-100 last:border-0"
                           >
                             <span className="font-medium text-slate-800 truncate">{s.name}</span>
-                            <span className="text-[10px] text-slate-400 shrink-0 font-semibold">Stok: {s.qty} {s.unit}</span>
+                            <span className="text-xs text-slate-400 shrink-0 font-semibold">Stok: {s.qty} {s.unit}</span>
                           </button>
                         ))}
                       {stockList.filter((s) =>
@@ -418,7 +418,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                   )}
                 </div>
                 {!selectedStockItem && (
-                  <p className="mt-1.5 text-[10px] text-amber-600 font-semibold">
+                  <p className="mt-1.5 text-xs text-amber-600 font-semibold">
                     ⚠ Nama pengajuan tidak cocok otomatis — pilih barang dari dropdown di atas.
                   </p>
                 )}
@@ -427,7 +427,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
               {/* Stock Input fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                     Stok Gudang Terbaca
                   </label>
                   <input
@@ -439,7 +439,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-amber-600 uppercase tracking-wider mb-1.5">
                     Jumlah Terpenuhi
                   </label>
                   <input
@@ -458,7 +458,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
 
               {/* Status Preview Card */}
               <div className="bg-amber-50/30 border border-amber-200/50 rounded p-3">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Status Akhir Pengajuan:</span>
+                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">Status Akhir Pengajuan:</span>
                 <div className="flex items-center gap-2">
                   <ArrowRight size={14} className="text-amber-500" />
                   <span className="text-xs font-extrabold text-slate-800">
@@ -544,7 +544,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Status saat ini:</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getStatusColor(rejectTarget.status)}`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-bold border ${getStatusColor(rejectTarget.status)}`}>
                   {rejectTarget.status}
                 </span>
               </div>
@@ -552,7 +552,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
 
             {/* Input alasan */}
             <div className="mb-4">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                 Alasan Pembatalan <span className="text-rose-500">*</span>
               </label>
               <textarea
@@ -568,11 +568,11 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                   ${rejectError ? "border-rose-400 bg-rose-50" : "border-slate-200 bg-slate-50"}`}
               />
               {rejectError && (
-                <p className="mt-1 text-[11px] text-rose-600 font-semibold flex items-center gap-1">
+                <p className="mt-1 text-xs text-rose-600 font-semibold flex items-center gap-1">
                   <XCircle size={11} /> {rejectError}
                 </p>
               )}
-              <p className="mt-1 text-[10px] text-slate-400">Minimal 3 karakter. Alasan ini akan dicatat.</p>
+              <p className="mt-1 text-xs text-slate-400">Minimal 3 karakter. Alasan ini akan dicatat.</p>
             </div>
 
             {/* Actions */}

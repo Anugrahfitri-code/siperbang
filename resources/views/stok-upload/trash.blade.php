@@ -19,7 +19,7 @@
     <div class="overflow-x-auto">
         <table class="w-full text-left text-xs border-collapse">
             <thead>
-                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-xs">
                     <th class="px-5 py-3">Tanggal Upload</th>
                     <th class="px-5 py-3">File</th>
                     <th class="px-5 py-3">Diupload Oleh</th>
@@ -40,13 +40,13 @@
                 <tr class="hover:bg-slate-50/50 transition-colors opacity-80">
                     <td class="px-5 py-4 whitespace-nowrap">
                         <span class="font-semibold text-slate-700">{{ $batch->upload_date->format('d M Y') }}</span>
-                        <span class="block text-[10px] text-slate-400 mt-0.5">{{ $batch->upload_date->format('H:i') }}</span>
+                        <span class="block text-xs text-slate-400 mt-0.5">{{ $batch->upload_date->format('H:i') }}</span>
                     </td>
                     <td class="px-5 py-4">
                         <span class="font-semibold text-slate-600 block max-w-[200px] truncate line-through" title="{{ $batch->file_name_original }}">
                             {{ $batch->file_name_original }}
                         </span>
-                        <span class="text-[10px] text-slate-400 mt-0.5 block">
+                        <span class="text-xs text-slate-400 mt-0.5 block">
                             {{ $batch->sheets_count }} sheet &bull; {{ $batch->rows_count }} baris
                         </span>
                     </td>
@@ -54,7 +54,7 @@
                         {{ $batch->user?->name ?? '—' }}
                     </td>
                     <td class="px-5 py-4 text-center whitespace-nowrap">
-                        <span class="px-2.5 py-1 inline-flex text-[10px] font-bold rounded-full bg-slate-100 text-slate-600 uppercase tracking-wider">
+                        <span class="px-2.5 py-1 inline-flex text-xs font-bold rounded-full bg-slate-100 text-slate-600 uppercase tracking-wider">
                             {{ $batch->status }}
                         </span>
                     </td>
@@ -63,25 +63,25 @@
                     </td>
                     <td class="px-5 py-4 text-center whitespace-nowrap">
                         @if($isExpired)
-                            <span class="text-[10px] font-bold text-rose-600">Kedaluwarsa</span>
+                            <span class="text-xs font-bold text-rose-600">Kedaluwarsa</span>
                         @elseif($isExpiringSoon)
-                            <span class="text-[10px] font-bold text-amber-600">{{ $daysLeft }} hari lagi</span>
+                            <span class="text-xs font-bold text-amber-600">{{ $daysLeft }} hari lagi</span>
                         @else
-                            <span class="text-[10px] text-slate-400">{{ $daysLeft }} hari lagi</span>
+                            <span class="text-xs text-slate-400">{{ $daysLeft }} hari lagi</span>
                         @endif
-                        <span class="block text-[9px] text-slate-300 mt-0.5">{{ $expiresAt->format('d M Y') }}</span>
+                        <span class="block text-2xs text-slate-300 mt-0.5">{{ $expiresAt->format('d M Y') }}</span>
                     </td>
                     <td class="px-5 py-4 whitespace-nowrap text-right">
                         <div class="flex items-center justify-end gap-2">
                             {{-- Restore --}}
                             <button type="button" onclick="openConfirmModal('restoreTrash{{ $batch->id }}')"
-                                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-bold border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors">
+                                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors">
                                 Pulihkan
                             </button>
 
                             {{-- Force delete --}}
                             <button type="button" onclick="openConfirmModal('forceDelTrash{{ $batch->id }}')"
-                                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-bold border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors">
+                                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors">
                                 Hapus Permanen
                             </button>
                         </div>

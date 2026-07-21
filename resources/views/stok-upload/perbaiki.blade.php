@@ -7,7 +7,7 @@
     <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
             <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-[10px] font-mono font-bold text-slate-400 uppercase bg-slate-100 px-2 py-0.5 rounded">BATCH #{{ $batch->id }}</span>
+                <span class="text-xs font-mono font-bold text-slate-400 uppercase bg-slate-100 px-2 py-0.5 rounded">BATCH #{{ $batch->id }}</span>
                 <span class="text-slate-300">•</span>
                 <span class="text-xs text-slate-500 font-semibold">{{ $batch->file_name_original }}</span>
                 <span class="text-slate-300">•</span>
@@ -39,19 +39,19 @@
     {{-- ── Stats Bar ── --}}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-xs text-center">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Baris</span>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Baris</span>
             <span class="text-2xl font-extrabold text-slate-800 block mt-1">{{ $batch->rows_count }}</span>
         </div>
         <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 shadow-xs text-center">
-            <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Sudah Valid</span>
+            <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider block">Sudah Valid</span>
             <span class="text-2xl font-extrabold text-emerald-700 block mt-1">{{ $validRows->count() }}</span>
         </div>
         <div class="bg-rose-50 border border-rose-100 rounded-xl p-4 shadow-xs text-center">
-            <span class="text-[10px] font-bold text-rose-600 uppercase tracking-wider block">Perlu Diperbaiki</span>
+            <span class="text-xs font-bold text-rose-600 uppercase tracking-wider block">Perlu Diperbaiki</span>
             <span class="text-2xl font-extrabold text-rose-700 block mt-1">{{ $errorRows->count() }}</span>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-xs text-center">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Status Batch</span>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Status Batch</span>
             <span class="text-sm font-extrabold mt-1 block
                 @if($batch->status === 'Perlu Perbaikan') text-rose-700
                 @elseif($batch->status === 'Sebagian Valid') text-amber-700
@@ -98,16 +98,16 @@
                     <div class="flex flex-col sm:flex-row sm:items-start gap-3 mb-4">
                         <div class="flex-1">
                             <div class="flex items-center gap-2 flex-wrap">
-                                <span class="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                                <span class="text-xs font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
                                     {{ $row->sheet_name }} • No. {{ $row->no_urut }}
                                 </span>
                                 @if($row->is_duplicate)
-                                    <span class="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded">DUPLIKAT</span>
+                                    <span class="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded">DUPLIKAT</span>
                                 @endif
                             </div>
                             <p class="text-sm font-extrabold text-slate-900 mt-1">{{ $row->nama_barang }}</p>
                             @if($row->supplier)
-                                <p class="text-[11px] text-slate-400 mt-0.5">Supplier: {{ $row->supplier }}</p>
+                                <p class="text-xs text-slate-400 mt-0.5">Supplier: {{ $row->supplier }}</p>
                             @endif
                         </div>
 
@@ -137,7 +137,7 @@
                             </div>
                             <button type="button"
                                     onclick="useSuggestedCode({{ $i }}, '{{ $row->suggested_kode_persediaan }}')"
-                                    class="ml-2 px-2.5 py-1 rounded bg-indigo-600 text-white text-[10px] font-bold hover:bg-indigo-700 transition-colors">
+                                    class="ml-2 px-2.5 py-1 rounded bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-colors">
                                 Gunakan Kode Saran
                             </button>
                         </div>
@@ -153,7 +153,7 @@
 
                         {{-- Kode Persediaan --}}
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                                 Kode Persediaan
                             </label>
                             <select name="rows[{{ $i }}][kode_persediaan]"
@@ -172,7 +172,7 @@
 
                         {{-- Nama Barang --}}
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                                 Nama Barang
                             </label>
                             <input type="text"
@@ -184,7 +184,7 @@
 
                         {{-- Jumlah --}}
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                                 Jumlah
                             </label>
                             <input type="number"
@@ -199,7 +199,7 @@
 
                         {{-- Satuan --}}
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                                 Satuan
                             </label>
                             <input type="text"
@@ -211,7 +211,7 @@
 
                         {{-- Harga Unit --}}
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                                 Harga Unit (Rp)
                             </label>
                             <input type="number"
@@ -226,7 +226,7 @@
 
                         {{-- Jenis Pajak --}}
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                                 Jenis Pajak
                             </label>
                             <select name="rows[{{ $i }}][is_taxed]"
@@ -242,25 +242,25 @@
                     {{-- Calculated (read-only) preview --}}
                     <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Harga Setelah Pajak</span>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Harga Setelah Pajak</span>
                             <span id="display_taxed_{{ $i }}" class="font-mono font-bold text-slate-700 text-sm">
                                 Rp{{ number_format((int) $row->price_unit_taxed, 0, ',', '.') }}
                             </span>
-                            <span class="text-[9px] text-slate-400 block mt-0.5">Dihitung otomatis</span>
+                            <span class="text-2xs text-slate-400 block mt-0.5">Dihitung otomatis</span>
                         </div>
                         <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Excel (Asli)</span>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Excel (Asli)</span>
                             <span class="font-mono font-bold text-slate-500 text-sm">
                                 Rp{{ number_format((int) $row->total_excel, 0, ',', '.') }}
                             </span>
-                            <span class="text-[9px] text-slate-400 block mt-0.5">Tidak dapat diubah</span>
+                            <span class="text-2xs text-slate-400 block mt-0.5">Tidak dapat diubah</span>
                         </div>
                         <div class="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
-                            <span class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider block">Hitungan Sistem</span>
+                            <span class="text-xs font-bold text-indigo-500 uppercase tracking-wider block">Hitungan Sistem</span>
                             <span id="display_total_{{ $i }}" class="font-mono font-bold text-indigo-700 text-sm">
                                 Rp{{ number_format((int) $row->total_calculated, 0, ',', '.') }}
                             </span>
-                            <span class="text-[9px] text-indigo-400 block mt-0.5">Dihitung otomatis</span>
+                            <span class="text-2xs text-indigo-400 block mt-0.5">Dihitung otomatis</span>
                         </div>
                     </div>
 
@@ -325,18 +325,18 @@
                 <tbody class="divide-y divide-slate-100">
                     @foreach($validRows as $row)
                     <tr class="hover:bg-slate-50/50 transition-colors">
-                        <td class="px-4 py-3 font-mono text-[11px] text-slate-500">
+                        <td class="px-4 py-3 font-mono text-xs text-slate-500">
                             {{ $row->sheet_name }} • {{ $row->no_urut }}
                         </td>
                         <td class="px-4 py-3 font-semibold text-slate-800">{{ $row->nama_barang }}</td>
-                        <td class="px-4 py-3 font-mono text-[11px] text-indigo-700 font-bold">
+                        <td class="px-4 py-3 font-mono text-xs text-indigo-700 font-bold">
                             {{ $row->verified_kode_persediaan ?? $row->kode_persediaan_excel ?? '-' }}
                         </td>
                         <td class="px-3 py-3 text-right font-bold text-slate-700">{{ number_format($row->qty) }}</td>
                         <td class="px-3 py-3 text-slate-500">{{ $row->unit }}</td>
                         <td class="px-3 py-3 text-right font-mono text-slate-600">Rp{{ number_format((int) $row->price_unit, 0, ',', '.') }}</td>
                         <td class="px-3 py-3 text-center">
-                            <span class="px-2 py-0.5 rounded text-[9px] font-bold {{ $row->is_taxed ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600' }}">
+                            <span class="px-2 py-0.5 rounded text-2xs font-bold {{ $row->is_taxed ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600' }}">
                                 {{ $row->is_taxed ? 'PPN 11%' : 'Nett' }}
                             </span>
                         </td>

@@ -113,7 +113,7 @@ function SidebarItem({
     <button
       type="button"
       onClick={onClick}
-      className={`group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-[14px] font-bold transition-all duration-200 ${
+      className={`group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 ${
         active
           ? activeClass[color]
           : `border-transparent border-l-4 bg-transparent text-slate-500 ${hoverClass[color]}`
@@ -129,7 +129,7 @@ function SidebarItem({
 
       {typeof badge === "number" && badge > 0 && (
         <span
-          className={`ml-2 min-w-6 shrink-0 rounded-full px-2 py-0.5 text-center text-[10px] font-extrabold ${
+          className={`ml-2 min-w-6 shrink-0 rounded-full px-2 py-0.5 text-center text-xs font-extrabold ${
             active
               ? activeBadgeClass[color]
               : inactiveBadgeClass
@@ -148,7 +148,7 @@ function SectionTitle({
   children: ReactNode;
 }) {
   return (
-    <p className="px-7 pb-2 pt-5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">
+    <p className="px-7 pb-2 pt-5 text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">
       {children}
     </p>
   );
@@ -669,11 +669,11 @@ export function Sidebar({
                 SIPERBANG
               </p>
 
-              <p className="mt-0.5 text-[10px] font-semibold text-slate-400">
+              <p className="mt-0.5 text-xs font-semibold text-slate-400">
                 v1.1.0
               </p>
 
-              <p className="mt-1 text-[10px] font-semibold text-slate-400">
+              <p className="mt-1 text-xs font-semibold text-slate-400">
                 © 2026 KOMDIGI
               </p>
             </div>
