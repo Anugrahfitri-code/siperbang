@@ -84,8 +84,8 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
       <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded border border-emerald-100">
-              <Users size={18} />
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-emerald-50 text-emerald-600 border-emerald-100">
+              <Users size={24} />
             </div>
             <div>
               <h2 className="text-lg font-semibold leading-7 text-slate-900 uppercase">Kelola Akun Pengguna</h2>

@@ -57,8 +57,8 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ logs: incomingLogs }) =>
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
       <div className="flex items-center gap-4 mb-8">
-        <div className="bg-blue-50 text-blue-600 p-3 rounded-xl border border-blue-100 shadow-xs">
-          <History size={22} strokeWidth={2} />
+        <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-blue-50 text-blue-600 border-blue-100">
+          <History size={24} />
         </div>
         <div className="flex-1">
           <h2 className="text-lg font-semibold leading-7 text-slate-900">Histori Perubahan & Audit Log</h2>

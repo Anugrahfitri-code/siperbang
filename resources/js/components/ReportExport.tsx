@@ -152,8 +152,8 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-slate-100 pb-6">
         <div className="flex items-center gap-4">
-          <div className="bg-emerald-50 text-emerald-600 p-3 rounded-lg border border-emerald-100 shadow-xs">
-            <FileSpreadsheet size={22} strokeWidth={2} />
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-emerald-50 text-emerald-600 border-emerald-100">
+            <FileSpreadsheet size={24} />
           </div>
           <div>
             <h2 className="text-lg font-semibold leading-7 text-slate-900">Rekap Laporan & Export Excel</h2>
@@ -277,7 +277,9 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
       {/* Spreadsheet Preview */}
       <div className="mt-4">
         <div className="flex items-center gap-3 mb-4">
-          <FileSpreadsheet size={18} className="text-emerald-600" />
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-emerald-50 text-emerald-600 border-emerald-100">
+            <FileSpreadsheet size={24} />
+          </div>
           <h3 className="text-sm font-extrabold text-slate-800 tracking-wide">
             Pratinjau Spreadsheet Excel
           </h3>

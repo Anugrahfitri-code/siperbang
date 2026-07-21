@@ -168,8 +168,8 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="bg-amber-50 text-amber-600 p-2 rounded border border-amber-100 shrink-0">
-              <ClipboardList size={18} />
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
+              <ClipboardList size={24} />
             </div>
             <div>
               <h2 className="text-lg font-semibold leading-7 text-slate-900">Monitoring Pengajuan BON</h2>

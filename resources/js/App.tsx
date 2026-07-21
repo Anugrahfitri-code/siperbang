@@ -863,10 +863,14 @@ useEffect(() => {
               <div className="space-y-6">
                 {/* Task list quick peek */}
                 <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                    <h3 className="text-sm font-extrabold text-slate-800 tracking-wide mb-5 flex items-center gap-2 uppercase">
-                      <Bell className="text-amber-500" size={18} strokeWidth={2.5} />
-                      Antrian Pengajuan BON Masuk Baru
-                    </h3>
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
+                        <Bell size={24} />
+                      </div>
+                      <h3 className="text-sm font-extrabold text-slate-800 tracking-wide uppercase">
+                        Antrian Pengajuan BON Masuk Baru
+                      </h3>
+                    </div>
                     <div className="space-y-4">
                       {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => (
                         <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-md p-5 shadow-xs gap-4">
@@ -996,8 +1000,8 @@ useEffect(() => {
               {requesterTab === "monitoring" && (
                 <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="bg-amber-50 text-amber-600 p-2.5 rounded border border-amber-100">
-                      <CheckSquare size={18} />
+                    <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
+                      <CheckSquare size={24} />
                     </div>
                     <div>
                       <h2 className="text-lg font-semibold leading-7 text-slate-900">Daftar Pengajuan Kebutuhan Barang</h2>
@@ -1083,10 +1087,14 @@ useEffect(() => {
               <div className="space-y-6">
                 {/* Task list quick peek */}
                 <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                    <h3 className="text-sm font-extrabold text-slate-800 tracking-wide mb-5 flex items-center gap-2 uppercase">
-                      <Bell className="text-amber-500" size={18} strokeWidth={2.5} />
-                      Antrian Pengajuan BON Masuk Baru
-                    </h3>
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
+                        <Bell size={24} />
+                      </div>
+                      <h3 className="text-sm font-extrabold text-slate-800 tracking-wide uppercase">
+                        Antrian Pengajuan BON Masuk Baru
+                      </h3>
+                    </div>
                     <div className="space-y-4">
                       {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => (
                         <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-md p-5 shadow-xs gap-4">
@@ -1180,8 +1188,8 @@ useEffect(() => {
             {superadminTab === "monitoring" && (
               <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="bg-amber-50 text-amber-600 p-2.5 rounded border border-amber-100">
-                    <CheckSquare size={18} />
+                  <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
+                    <CheckSquare size={24} />
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold leading-7 text-slate-900">Daftar Pengajuan Kebutuhan Barang</h2>

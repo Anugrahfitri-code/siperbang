@@ -170,8 +170,8 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-6">
-        <div className="bg-amber-50 text-amber-600 p-2 rounded border border-amber-100">
-          <Package size={18} />
+        <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
+          <Package size={24} />
         </div>
         <div>
           <h2 className="text-lg font-semibold leading-7 text-slate-900">Pengecekan Stok & Pemenuhan</h2>
@@ -514,8 +514,8 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
 
             {/* Header */}
             <div className="flex items-start gap-3 mb-5">
-              <div className="bg-rose-100 rounded-full p-2 shrink-0">
-                <XCircle size={20} className="text-rose-600" />
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-rose-50 text-rose-600 border-rose-100">
+                <XCircle size={24} />
               </div>
               <div>
                 <h3 className="text-sm font-extrabold text-slate-900">Batalkan Pengajuan</h3>

@@ -77,7 +77,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
           <div className="relative z-10 mt-12 bg-white/10 rounded-xl p-5 backdrop-blur-sm border border-white/20">
             <div className="flex items-start gap-3">
-              <ShieldCheck className="text-emerald-300 mt-1 flex-shrink-0" size={20} />
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-emerald-900/20 text-emerald-300 border-emerald-800/30">
+                <ShieldCheck size={24} />
+              </div>
               <div>
                 <h3 className="text-xs font-bold text-white mb-1 uppercase tracking-wider">Akses Aman</h3>
                 <p className="text-xs text-indigo-100 leading-relaxed">
