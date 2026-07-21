@@ -5,44 +5,156 @@ $RootDir = Split-Path -Parent $PSScriptRoot
 Set-Location $RootDir
 
 
-$HealthUrl = (
-    "http://127.0.0.1:8001/health"
-)
+function Get-EnvValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Path,
 
-$MaximumWaitSeconds = 300
+        [Parameter(Mandatory = $true)]
+        [string] $Name
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return $null
+    }
+
+    $escapedName = [regex]::Escape($Name)
+
+    $line = Get-Content -LiteralPath $Path |
+        Where-Object {
+            $_ -match ("^\s*" + $escapedName + "\s*=")
+        } |
+        Select-Object -Last 1
+
+    if (-not $line) {
+        return $null
+    }
+
+    $parts = $line -split "=", 2
+
+    if ($parts.Count -lt 2) {
+        return $null
+    }
+
+    $value = $parts[1].Trim()
+
+    if (
+        ($value.Length -ge 2) -and
+        (
+            ($value.StartsWith('"') -and $value.EndsWith('"')) -or
+            ($value.StartsWith("'") -and $value.EndsWith("'"))
+        )
+    ) {
+        $value = $value.Substring(
+            1,
+            $value.Length - 2
+        )
+    }
+
+    return $value
+}
+
+
+$RootEnvPath = Join-Path $RootDir ".env"
+
+$OcrServiceUrl = Get-EnvValue `
+    -Path $RootEnvPath `
+    -Name "OCR_SERVICE_URL"
+
+if (
+    [string]::IsNullOrWhiteSpace(
+        $OcrServiceUrl
+    )
+) {
+    throw (
+        "OCR_SERVICE_URL tidak ditemukan " +
+        "di file .env utama."
+    )
+}
+
+$OcrServiceUrl = $OcrServiceUrl.TrimEnd("/")
+
+try {
+    $OcrUri = [Uri] $OcrServiceUrl
+}
+catch {
+    throw (
+        "OCR_SERVICE_URL bukan URL yang valid: " +
+        $OcrServiceUrl
+    )
+}
+
+if (
+    $OcrUri.Scheme -notin @(
+        "http",
+        "https"
+    ) -or
+    [string]::IsNullOrWhiteSpace(
+        $OcrUri.Host
+    )
+) {
+    throw (
+        "OCR_SERVICE_URL harus menggunakan " +
+        "HTTP atau HTTPS."
+    )
+}
+
+
+$HealthUrl = $OcrServiceUrl + "/health"
+
+$MaximumWaitSeconds = 600
 $WaitedSeconds = 0
 $OcrReady = $false
 
 
+$PhpCommand = (
+    Get-Command `
+        php `
+        -ErrorAction Stop
+).Source
+
+
 Write-Host (
-    "Menunggu model PaddleOCR siap..."
+    "Menunggu service OCR siap di " +
+    $HealthUrl +
+    " ..."
 ) -ForegroundColor Yellow
 
 
-while ($WaitedSeconds -lt $MaximumWaitSeconds) {
+while (
+    $WaitedSeconds -lt
+    $MaximumWaitSeconds
+) {
     try {
         $response = Invoke-RestMethod `
             -Uri $HealthUrl `
             -Method Get `
-            -TimeoutSec 3
+            -TimeoutSec 5
 
-        if ($response.status -eq "healthy" -and $response.engine_loaded -eq $true) {
+        if (
+            $response.status -eq "healthy" -and
+            $response.engine_loaded -eq $true
+        ) {
             $OcrReady = $true
 
             break
         }
     }
     catch {
-        # Status 503 normal selama model dimuat.
+        # HTTP 503 normal selama model dimuat.
+        # Connection error juga dicoba kembali
+        # sampai batas waktu habis.
     }
 
     Start-Sleep -Seconds 2
 
     $WaitedSeconds += 2
 
-    if (($WaitedSeconds % 10) -eq 0) {
+    if (
+        ($WaitedSeconds % 10) -eq 0
+    ) {
         Write-Host (
-            "Model OCR masih dipersiapkan... " +
+            "Service OCR masih dipersiapkan... " +
             $WaitedSeconds +
             " detik"
         ) -ForegroundColor DarkYellow
@@ -52,25 +164,32 @@ while ($WaitedSeconds -lt $MaximumWaitSeconds) {
 
 if (-not $OcrReady) {
     throw (
-        "PaddleOCR tidak siap setelah " +
+        "Service OCR tidak siap setelah " +
         $MaximumWaitSeconds +
-        " detik. Periksa terminal OCR."
+        " detik. Periksa URL, jaringan, " +
+        "Docker, dan log OCR."
     )
 }
 
 
 Write-Host (
-    "PaddleOCR sehat. Menjalankan queue OCR..."
+    "Service OCR sehat. " +
+    "Menjalankan queue OCR..."
 ) -ForegroundColor Green
 
 
-# "database" adalah nama connection.
-# "ocr,default" adalah nama queue.
-& php artisan queue:work database `
+# Urutan timeout:
+#
+# FastAPI hard timeout : 95 detik
+# Laravel HTTP client  : 110 detik
+# Laravel job/worker   : 130 detik
+# Database retry_after : 180 detik
+& $PhpCommand artisan queue:work database `
     --queue=ocr,default `
-    --tries=1 `
-    --timeout=115 `
-    --sleep=1 `
+    --tries=3 `
+    --timeout=130 `
+    --sleep=2 `
+    --memory=512 `
     --verbose
 
 

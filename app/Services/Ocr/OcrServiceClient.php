@@ -38,12 +38,12 @@ final class OcrServiceClient
 
         $this->timeout = (int) config(
             'services.ocr.timeout',
-            180,
+            110,
         );
 
         $this->connectTimeout = (int) config(
             'services.ocr.connect_timeout',
-            10,
+            5,
         );
     }
 
@@ -146,9 +146,9 @@ final class OcrServiceClient
                         . ' detik.'
                     )
                     : (
-                        'Layanan OCR tidak aktif di '
+                        'Layanan OCR tidak dapat dihubungi di '
                         . $this->url
-                        . '. Jalankan composer dev.'
+                        . '. Pastikan container atau server OCR aktif.'
                     ),
                 httpStatus: 503,
                 retryable: true,

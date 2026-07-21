@@ -24,9 +24,9 @@ final class ProcessReceiptOcr implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    public int $tries = 1;
+    public int $tries = 3;
 
-    public int $timeout = 115;
+    public int $timeout = 130;
 
     public bool $failOnTimeout = true;
 
@@ -39,9 +39,8 @@ final class ProcessReceiptOcr implements ShouldQueue
     public function backoff(): array
     {
         return [
-            15,
+            20,
             60,
-            180,
         ];
     }
 

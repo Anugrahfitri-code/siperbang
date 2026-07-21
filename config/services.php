@@ -47,12 +47,12 @@ return [
 
         'timeout' => (int) env(
             'OCR_SERVICE_TIMEOUT',
-            180,
+            110,
         ),
 
         'connect_timeout' => (int) env(
             'OCR_SERVICE_CONNECT_TIMEOUT',
-            10,
+            5,
         ),
 
         /*

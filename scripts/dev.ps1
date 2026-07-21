@@ -18,12 +18,9 @@ function Get-EnvValue {
         return $null
     }
 
-    $escapedName = [regex]::Escape(
-        $Name
-    )
+    $escapedName = [regex]::Escape($Name)
 
-    $line = Get-Content `
-        -LiteralPath $Path |
+    $line = Get-Content -LiteralPath $Path |
         Where-Object {
             $_ -match (
                 "^\s*" +
@@ -70,14 +67,42 @@ $OcrEnvPath = Join-Path `
     $RootDir `
     "ocr-service\.env"
 
+$ComposePath = Join-Path `
+    $RootDir `
+    "docker-compose.yml"
+
+
+if (
+    -not (
+        Test-Path `
+            -LiteralPath $RootEnvPath
+    )
+) {
+    throw (
+        "File .env utama tidak ditemukan."
+    )
+}
+
+
+$OcrServiceUrl = Get-EnvValue `
+    -Path $RootEnvPath `
+    -Name "OCR_SERVICE_URL"
+
 $RootToken = Get-EnvValue `
     -Path $RootEnvPath `
     -Name "OCR_SERVICE_TOKEN"
 
-$OcrToken = Get-EnvValue `
-    -Path $OcrEnvPath `
-    -Name "OCR_SERVICE_TOKEN"
 
+if (
+    [string]::IsNullOrWhiteSpace(
+        $OcrServiceUrl
+    )
+) {
+    throw (
+        "OCR_SERVICE_URL tidak ditemukan " +
+        "di file .env utama."
+    )
+}
 
 if (
     [string]::IsNullOrWhiteSpace(
@@ -90,23 +115,44 @@ if (
     )
 }
 
-if (
-    [string]::IsNullOrWhiteSpace(
-        $OcrToken
-    )
-) {
+
+$OcrServiceUrl = $OcrServiceUrl.TrimEnd("/")
+
+
+try {
+    $OcrUri = [Uri] $OcrServiceUrl
+}
+catch {
     throw (
-        "OCR_SERVICE_TOKEN tidak ditemukan " +
-        "di file ocr-service\.env."
+        "OCR_SERVICE_URL bukan URL yang valid: " +
+        $OcrServiceUrl
     )
 }
 
-if ($RootToken -ne $OcrToken) {
+
+if (
+    $OcrUri.Scheme -notin @(
+        "http",
+        "https"
+    ) -or
+    [string]::IsNullOrWhiteSpace(
+        $OcrUri.Host
+    )
+) {
     throw (
-        "OCR_SERVICE_TOKEN pada .env utama " +
-        "dan ocr-service\.env tidak sama."
+        "OCR_SERVICE_URL harus menggunakan " +
+        "HTTP atau HTTPS."
     )
 }
+
+
+$LocalOcrHosts = @(
+    "127.0.0.1",
+    "localhost",
+    "::1"
+)
+
+$UsesLocalOcr = ($OcrUri.Host.ToLowerInvariant() -in $LocalOcrHosts)
 
 
 $PhpCommand = (
@@ -128,9 +174,89 @@ $PowerShellCommand = (
 ).Source
 
 
+if ($UsesLocalOcr) {
+    if (
+        -not (
+            Test-Path `
+                -LiteralPath $ComposePath
+        )
+    ) {
+        throw (
+            "docker-compose.yml tidak ditemukan " +
+            "pada root proyek."
+        )
+    }
+
+
+    $OcrToken = Get-EnvValue `
+        -Path $OcrEnvPath `
+        -Name "OCR_SERVICE_TOKEN"
+
+
+    if (
+        [string]::IsNullOrWhiteSpace(
+            $OcrToken
+        )
+    ) {
+        throw (
+            "OCR_SERVICE_TOKEN tidak ditemukan " +
+            "di ocr-service\.env."
+        )
+    }
+
+
+    if ($RootToken -ne $OcrToken) {
+        throw (
+            "OCR_SERVICE_TOKEN pada .env utama " +
+            "dan ocr-service\.env tidak sama."
+        )
+    }
+
+
+    $DockerCommand = (
+        Get-Command `
+            docker `
+            -ErrorAction Stop
+    ).Source
+
+
+    Write-Host (
+        "Memastikan Docker Compose tersedia..."
+    ) -ForegroundColor Yellow
+
+
+    & $DockerCommand compose version
+
+    if ($LASTEXITCODE -ne 0) {
+        throw (
+            "Docker Compose tidak tersedia atau " +
+            "Docker Desktop belum aktif."
+        )
+    }
+
+
+    Write-Host (
+        "Menjalankan OCR Docker..."
+    ) -ForegroundColor Yellow
+
+
+    & $DockerCommand compose up `
+        -d `
+        --build `
+        ocr
+
+    if ($LASTEXITCODE -ne 0) {
+        throw (
+            "Container OCR gagal dijalankan."
+        )
+    }
+}
+
+
 Write-Host (
     "Membersihkan cache konfigurasi Laravel..."
 ) -ForegroundColor Yellow
+
 
 & $PhpCommand artisan optimize:clear
 
@@ -180,10 +306,6 @@ function Start-TrackedProcess {
 }
 
 
-$OcrScript = Join-Path `
-    $RootDir `
-    "ocr-service\run-server.ps1"
-
 $QueueScript = Join-Path `
     $RootDir `
     "scripts\run-queue.ps1"
@@ -191,6 +313,7 @@ $QueueScript = Join-Path `
 
 try {
     Write-Host ""
+
     Write-Host (
         "=============================================="
     ) -ForegroundColor Cyan
@@ -204,25 +327,9 @@ try {
     ) -ForegroundColor Cyan
 
 
-    # OCR harus menggunakan run-server.ps1.
-    # Jangan menggunakan uvicorn --reload.
-    Start-TrackedProcess `
-        -Name "OCR Service" `
-        -FilePath $PowerShellCommand `
-        -Arguments @(
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            "`"$OcrScript`""
-        ) `
-        -WorkingDirectory (
-            Join-Path $RootDir "ocr-service"
-        )
-
-
-    # Script queue akan menunggu health OCR
-    # sampai model benar-benar siap.
+    # Queue membaca OCR_SERVICE_URL dari .env.
+    # Queue akan menunggu endpoint /health
+    # sampai model OCR benar-benar siap.
     Start-TrackedProcess `
         -Name "Laravel Queue" `
         -FilePath $PowerShellCommand `
@@ -258,28 +365,56 @@ try {
         -WorkingDirectory $RootDir
 
 
+    $OcrMode = if ($UsesLocalOcr) {
+        "Docker lokal"
+    }
+    else {
+        "Server OCR jaringan"
+    }
+
+
     Write-Host ""
+
     Write-Host (
         "Laravel : http://127.0.0.1:8000"
     ) -ForegroundColor White
 
     Write-Host (
-        "OCR API : http://127.0.0.1:8001"
+        "OCR API : " +
+        $OcrServiceUrl
     ) -ForegroundColor White
 
     Write-Host (
-        "Health  : http://127.0.0.1:8001/health"
+        "Health  : " +
+        $OcrServiceUrl +
+        "/health"
     ) -ForegroundColor White
+
+    Write-Host (
+        "Mode OCR: " +
+        $OcrMode
+    ) -ForegroundColor White
+
 
     Write-Host ""
+
     Write-Host (
-        "Tunggu pesan bahwa PaddleOCR dan queue " +
+        "Tunggu pesan bahwa OCR dan queue " +
         "sudah siap sebelum mengunggah dokumen."
     ) -ForegroundColor Yellow
 
     Write-Host (
-        "Tekan Ctrl+C untuk menghentikan semuanya."
+        "Tekan Ctrl+C untuk menghentikan " +
+        "Laravel, queue, dan Vite."
     ) -ForegroundColor Yellow
+
+
+    if ($UsesLocalOcr) {
+        Write-Host (
+            "Container OCR tetap berjalan. " +
+            "Hentikan dengan: docker compose stop ocr"
+        ) -ForegroundColor DarkYellow
+    }
 
 
     while ($true) {
@@ -301,9 +436,11 @@ try {
 }
 finally {
     Write-Host ""
+
     Write-Host (
-        "Menghentikan seluruh service SIPERBANG..."
+        "Menghentikan Laravel, queue, dan Vite..."
     ) -ForegroundColor Yellow
+
 
     foreach ($service in $Services) {
         try {
@@ -325,7 +462,8 @@ finally {
         }
     }
 
+
     Write-Host (
-        "Seluruh service telah dihentikan."
+        "Service development telah dihentikan."
     ) -ForegroundColor Cyan
 }
