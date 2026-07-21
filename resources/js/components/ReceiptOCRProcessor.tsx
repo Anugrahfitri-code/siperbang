@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ReceiptData, ReceiptItem, ProcurementMethod, RequestStatus, ItemRequest, ParsedReceiptResult, OcrWarning, OcrField, ReceiptDocument, ReceiptManualDraft, InventoryCodeOption } from "../types";
 import { apiFetch } from "../api";
-import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Cpu, Save, FolderOpen, X } from "lucide-react";
+import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Cpu, Save, FolderOpen, X, Download, TableProperties } from "lucide-react";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 interface ReceiptOCRProcessorProps {
@@ -1249,6 +1249,191 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       }
     ).format(safeNumber);
   };
+  // ── Ekspor Excel ──────────────────────────────────────────────────────────
+  const exportToExcel = (data: ReceiptData[]) => {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+    const timeStr = now.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const esc = (v: string | number | null | undefined): string => {
+      if (v === null || v === undefined) return "";
+      const s = String(v);
+      return s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    };
+
+    // Build rows
+    const headerCols = [
+      "No",
+      "No Nota / Invoice",
+      "Nama Toko",
+      "Tanggal Belanja",
+      "Metode Pengadaan",
+      "Tarif Pajak PPN (%)",
+      "Subtotal (Rp)",
+      "Pajak (Rp)",
+      "Total Nilai (Rp)",
+      "Nama Barang",
+      "Satuan",
+      "Kode Persediaan",
+      "Qty",
+      "Harga Satuan (Rp)",
+      "Subtotal Barang (Rp)",
+    ];
+
+    let rows = "";
+
+    // Title row
+    rows += `<Row ss:Height="22"><Cell ss:MergeAcross="14"><Data ss:Type="String">DAFTAR KUITANSI VALID SIPERBANG — Diekspor ${dateStr} pukul ${timeStr}</Data></Cell></Row>`;
+    rows += `<Row ss:Height="4"/>`;
+
+    // Header row
+    rows += `<Row ss:Height="18">${headerCols
+      .map(
+        (h) =>
+          `<Cell ss:StyleID="header"><Data ss:Type="String">${esc(h)}</Data></Cell>`,
+      )
+      .join("")}</Row>`;
+
+    let rowNum = 0;
+    data.forEach((rc, idx) => {
+      const itemCount = rc.items.length;
+
+      if (itemCount === 0) {
+        rowNum++;
+        rows += `<Row>
+          <Cell><Data ss:Type="Number">${idx + 1}</Data></Cell>
+          <Cell><Data ss:Type="String">${esc(rc.invoiceNo)}</Data></Cell>
+          <Cell><Data ss:Type="String">${esc(rc.storeName)}</Data></Cell>
+          <Cell><Data ss:Type="String">${esc(rc.date)}</Data></Cell>
+          <Cell><Data ss:Type="String">${esc(rc.method)}</Data></Cell>
+          <Cell ss:StyleID="num"><Data ss:Type="Number">${rc.isTaxed ? rc.taxRate : 0}</Data></Cell>
+          <Cell ss:StyleID="idr"><Data ss:Type="Number">${rc.subtotal}</Data></Cell>
+          <Cell ss:StyleID="idr"><Data ss:Type="Number">${rc.taxAmount}</Data></Cell>
+          <Cell ss:StyleID="idr"><Data ss:Type="Number">${rc.total}</Data></Cell>
+          <Cell><Data ss:Type="String">-</Data></Cell>
+          <Cell><Data ss:Type="String">-</Data></Cell>
+          <Cell><Data ss:Type="String">-</Data></Cell>
+          <Cell><Data ss:Type="String">-</Data></Cell>
+          <Cell><Data ss:Type="String">-</Data></Cell>
+          <Cell><Data ss:Type="String">-</Data></Cell>
+        </Row>`;
+      } else {
+        rc.items.forEach((it, iIdx) => {
+          rowNum++;
+          const isFirst = iIdx === 0;
+          rows += `<Row>
+            <Cell><Data ss:Type="Number">${isFirst ? idx + 1 : ""}</Data></Cell>
+            <Cell><Data ss:Type="String">${esc(isFirst ? rc.invoiceNo : "")}</Data></Cell>
+            <Cell><Data ss:Type="String">${esc(isFirst ? rc.storeName : "")}</Data></Cell>
+            <Cell><Data ss:Type="String">${esc(isFirst ? rc.date : "")}</Data></Cell>
+            <Cell><Data ss:Type="String">${esc(isFirst ? rc.method : "")}</Data></Cell>
+            <Cell ss:StyleID="num"><Data ss:Type="Number">${isFirst ? (rc.isTaxed ? rc.taxRate : 0) : ""}</Data></Cell>
+            <Cell ss:StyleID="idr"><Data ss:Type="Number">${isFirst ? rc.subtotal : ""}</Data></Cell>
+            <Cell ss:StyleID="idr"><Data ss:Type="Number">${isFirst ? rc.taxAmount : ""}</Data></Cell>
+            <Cell ss:StyleID="idr"><Data ss:Type="Number">${isFirst ? rc.total : ""}</Data></Cell>
+            <Cell><Data ss:Type="String">${esc(it.name)}</Data></Cell>
+            <Cell><Data ss:Type="String">${esc(it.unit)}</Data></Cell>
+            <Cell><Data ss:Type="String">${esc(it.inventoryCode)}</Data></Cell>
+            <Cell ss:StyleID="num"><Data ss:Type="Number">${it.qty}</Data></Cell>
+            <Cell ss:StyleID="idr"><Data ss:Type="Number">${it.price}</Data></Cell>
+            <Cell ss:StyleID="idr"><Data ss:Type="Number">${it.qty * it.price}</Data></Cell>
+          </Row>`;
+        });
+      }
+    });
+
+    // Grand total row
+    const grandTotal = data.reduce((s, r) => s + r.total, 0);
+    rows += `<Row ss:Height="18">
+      <Cell ss:MergeAcross="7" ss:StyleID="totalLabel"><Data ss:Type="String">TOTAL KESELURUHAN</Data></Cell>
+      <Cell ss:StyleID="totalVal"><Data ss:Type="Number">${grandTotal}</Data></Cell>
+      <Cell ss:MergeAcross="5"/>
+    </Row>`;
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Styles>
+  <Style ss:ID="header">
+   <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#4F46E5" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center"/>
+   <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders>
+  </Style>
+  <Style ss:ID="idr">
+   <NumberFormat ss:Format="#,##0"/>
+   <Alignment ss:Horizontal="Right"/>
+  </Style>
+  <Style ss:ID="num">
+   <Alignment ss:Horizontal="Center"/>
+  </Style>
+  <Style ss:ID="totalLabel">
+   <Font ss:Bold="1"/>
+   <Interior ss:Color="#EEF2FF" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Right"/>
+  </Style>
+  <Style ss:ID="totalVal">
+   <Font ss:Bold="1"/>
+   <Interior ss:Color="#EEF2FF" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="#,##0"/>
+   <Alignment ss:Horizontal="Right"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Kuitansi Valid">
+  <Table ss:DefaultColumnWidth="100">
+   <Column ss:Width="30"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="80"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="160"/>
+   <Column ss:Width="60"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="50"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="120"/>
+   ${rows}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    const blob = new Blob([xml], {
+      type: "application/vnd.ms-excel;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const exportDateStr = `${now.getFullYear()}${String(
+      now.getMonth() + 1,
+    ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+
+    const fileName =
+      data.length === 1 && data[0].storeName
+        ? `${data[0].storeName.replace(/[\\/:*?"<>|]/g, "_")}_${exportDateStr}.xls`
+        : `Kuitansi_Valid_SIPERBANG_${exportDateStr}.xls`;
+
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
@@ -1754,17 +1939,24 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       )}
 
       {/* Verified / Historical Receipts Table List */}
-      <div className="mb-2">
-        <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-3">
-          {activeTab === "pending" ? "DAFTAR DOKUMEN MASUK MENUNGGU VERIFIKASI" : "DAFTAR KUITANSI VALID (TERVERIFIKASI)"}
+      <div className="mt-4 mb-1 flex items-center justify-between gap-3">
+        <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+          {activeTab === "pending"
+            ? "DAFTAR DOKUMEN MASUK MENUNGGU VERIFIKASI"
+            : "DAFTAR KUITANSI VALID (TERVERIFIKASI)"}
         </h3>
+        {activeTab === "verified" && receipts.filter((r) => r.isVerified).length > 0 && (
+          <button
+            onClick={() => exportToExcel(receipts.filter((r) => r.isVerified))}
+            className="group flex-shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow hover:shadow-md transition-all duration-200 active:scale-95"
+            title="Ekspor seluruh kuitansi valid ke Excel (.xlsx)"
+          >
+            <TableProperties size={13} className="group-hover:scale-110 transition-transform duration-150" />
+            Ekspor Excel
+            <Download size={12} className="opacity-80" />
+          </button>
+        )}
       </div>
-      <div className="mt-2">
-        <div className="flex justify-between items-center mb-3">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            {activeTab === "pending" ? "Daftar Dokumen Masuk Menunggu Verifikasi" : "Daftar Kuitansi Valid Terverifikasi"}
-          </span>
-        </div>
 
         <div className="overflow-x-auto border border-slate-200 rounded">
           <table className="w-full text-left border-collapse">
@@ -1887,6 +2079,14 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                           >
                             Batalkan
                           </button>
+                          <button
+                            onClick={() => exportToExcel([rc])}
+                            className="group inline-flex items-center gap-1 text-2xs font-bold text-emerald-700 hover:text-white bg-emerald-50 hover:bg-gradient-to-r hover:from-emerald-500 hover:to-teal-600 border border-emerald-200 hover:border-emerald-500 px-2 py-0.5 rounded transition-all duration-200 active:scale-95"
+                            title="Ekspor kuitansi ini ke Excel"
+                          >
+                            <Download size={10} className="flex-shrink-0" />
+                            Ekspor Excel
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1903,10 +2103,9 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   </tr>
                 )
               )}
-</tbody>
+            </tbody>
           </table>
         </div>
-      </div>
       {dialogConfirm && (
         <ConfirmDialog
           open
