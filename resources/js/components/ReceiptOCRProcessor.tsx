@@ -1251,39 +1251,39 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 border-b border-slate-100 pb-5">
-        <div className="flex items-center gap-3">
-          <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded border border-indigo-150">
-            <Receipt size={18} />
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+        <div className="flex items-center gap-4">
+          <div className="bg-indigo-50 text-indigo-600 p-3 rounded-lg border border-indigo-100 shadow-xs">
+            <FileText size={22} strokeWidth={2} />
           </div>
           <div>
-            <h2 className="text-base font-extrabold text-slate-800 tracking-tight">Pembacaan Kuitansi Otomatis (OCR)</h2>
-            <p className="text-[11px] text-slate-500">
+            <h2 className="text-[16px] font-extrabold text-slate-800 tracking-tight">Pembacaan Kuitansi Otomatis (OCR)</h2>
+            <p className="text-xs text-slate-500 mt-1">
               Unggah struk belanja, baca otomatis dengan AI, verifikasi manual, sesuaikan pajak toko
             </p>
           </div>
         </div>
 
         {/* View Tabs */}
-        <div className="flex bg-slate-100 border border-slate-200 rounded p-0.5 self-start sm:self-auto">
+        <div className="flex bg-slate-50 border border-slate-200 rounded-md overflow-hidden self-start md:self-auto">
           <button
             onClick={() => setActiveTab("pending")}
-            className={`px-3 py-1 rounded text-xs font-bold transition-all ${
+            className={`px-6 py-2.5 text-xs font-bold transition-all border-b-2 ${
               activeTab === "pending"
-                ? "bg-white text-slate-800 shadow-xs"
-                : "text-slate-500 hover:text-slate-800"
+                ? "bg-white text-blue-600 border-blue-600 shadow-sm"
+                : "text-slate-500 hover:text-slate-700 border-transparent hover:bg-slate-100"
             }`}
           >
             Menunggu Verifikasi ({receipts.filter((r) => !r.isVerified).length})
           </button>
           <button
             onClick={() => setActiveTab("valid")}
-            className={`px-3 py-1 rounded text-xs font-bold transition-all ${
+            className={`px-6 py-2.5 text-xs font-bold transition-all border-b-2 ${
               activeTab === "valid"
-                ? "bg-white text-slate-800 shadow-xs"
-                : "text-slate-500 hover:text-slate-800"
+                ? "bg-white text-blue-600 border-blue-600 shadow-sm"
+                : "text-slate-500 hover:text-slate-700 border-transparent hover:bg-slate-100"
             }`}
           >
             Kuitansi Valid ({receipts.filter((r) => r.isVerified).length})
@@ -1292,7 +1292,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       </div>
 
       {/* File Drag Drop fallback */}
-      <label className="block border border-dashed border-slate-200 rounded p-6 text-center hover:bg-slate-50/50 cursor-pointer mb-6 transition-all">
+      <label className="block border-2 border-dashed border-indigo-200 bg-indigo-50/20 rounded-xl py-12 px-6 text-center hover:bg-indigo-50/50 cursor-pointer mb-8 transition-all">
         <input 
           type="file" 
           accept="image/*,application/pdf" 
@@ -1303,9 +1303,16 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             }
           }}
         />
-        <UploadCloud size={24} className="text-indigo-600 mx-auto mb-2" />
-        <h4 className="text-xs font-bold text-slate-700">Atau Unggah File Kuitansi / Foto Struk Baru</h4>
-        <p className="text-[10px] text-slate-400 mt-1">Dukung format JPG, PNG, PDF. Sistem akan membaca detail kuitansi secara otomatis.</p>
+        <div className="mx-auto w-12 h-12 bg-white rounded-full border border-indigo-100 flex items-center justify-center shadow-xs mb-3">
+          <UploadCloud size={24} className="text-blue-500" strokeWidth={2} />
+        </div>
+        <h4 className="text-[15px] font-extrabold text-slate-800 mb-1">Unggah kuitansi atau foto struk</h4>
+        <p className="text-[11px] text-slate-500 mb-5">Dukung format JPG, PNG, PDF. Sistem akan membaca data kuitansi secara otomatis.</p>
+        <div className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold text-xs hover:bg-blue-700 shadow-sm transition-colors">
+          <UploadCloud size={14} />
+          <span>Pilih File</span>
+        </div>
+        <p className="text-[11px] text-slate-400 mt-3 font-medium">atau seret dan lepas file di sini</p>
       </label>
 
       {/* OCR Scanner Loading Animation */}
@@ -1744,8 +1751,13 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         </div>
       )}
 
-      {/* Verified / Historical Receipts List */}
-      <div className="mt-6">
+      {/* Verified / Historical Receipts Table List */}
+      <div className="mb-2">
+        <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">
+          {activeTab === "pending" ? "DAFTAR DOKUMEN MASUK MENUNGGU VERIFIKASI" : "DAFTAR KUITANSI VALID (TERVERIFIKASI)"}
+        </h3>
+      </div>
+      <div className="mt-2">
         <div className="flex justify-between items-center mb-3">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             {activeTab === "pending" ? "Daftar Dokumen Masuk Menunggu Verifikasi" : "Daftar Kuitansi Valid Terverifikasi"}
@@ -1831,8 +1843,12 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-slate-400 text-xs font-medium font-sans">
-                      Tidak ada dokumen menunggu verifikasi.
+                    <td colSpan={7} className="py-12">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <FolderOpen size={40} className="text-slate-300 mb-3" strokeWidth={1} />
+                        <h4 className="text-sm font-extrabold text-slate-800 mb-1">Belum ada dokumen menunggu verifikasi</h4>
+                        <p className="text-[11px] text-slate-500">Unggah kuitansi atau foto struk untuk memulai proses OCR dan verifikasi.</p>
+                      </div>
                     </td>
                   </tr>
                 )
@@ -1875,8 +1891,12 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-slate-400 text-xs font-medium font-sans">
-                      Tidak ada kuitansi valid.
+                    <td colSpan={7} className="py-12">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <CheckCircle size={40} className="text-slate-300 mb-3" strokeWidth={1} />
+                        <h4 className="text-sm font-extrabold text-slate-800 mb-1">Belum ada kuitansi valid</h4>
+                        <p className="text-[11px] text-slate-500">Verifikasi dokumen yang masuk untuk menyimpannya di sini.</p>
+                      </div>
                     </td>
                   </tr>
                 )
