@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Receipt;
 use App\Services\InventoryCodeSuggestionService;
+use App\Services\ReceiptExcelExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReceiptController extends Controller
 {
@@ -112,7 +115,153 @@ class ReceiptController extends Controller
         );
     }
 
+    public function exportExcel(
+        Request $request,
+        ReceiptExcelExportService $exportService,
+    ): BinaryFileResponse {
+        $validated = $request->validate([
+            'receipt_ids' => [
+                'required',
+                'array',
+                'min:1',
+                'max:100',
+            ],
+
+            'receipt_ids.*' => [
+                'required',
+                'integer',
+                'distinct',
+                Rule::exists('receipts', 'id'),
+            ],
+        ]);
+
+        $requestedIds = collect(
+            $validated['receipt_ids']
+        )
+            ->map(
+                fn (mixed $id): int =>
+                    (int) $id
+            )
+            ->values();
+
+        /*
+         * Ambil kuitansi dan barang dalam satu proses query.
+         */
+        $receiptsById = Receipt::query()
+            ->with('items')
+            ->whereIn(
+                'id',
+                $requestedIds
+            )
+            ->get()
+            ->keyBy(
+                fn (Receipt $receipt): int =>
+                    (int) $receipt->id
+            );
+
+        /*
+         * Susunan kuitansi pada workbook mengikuti urutan ID
+         * yang dikirim oleh frontend.
+         */
+        $receipts = $requestedIds
+            ->map(
+                fn (int $id): ?Receipt =>
+                    $receiptsById->get($id)
+            );
+
+        /*
+         * Antisipasi apabila kuitansi terhapus setelah proses
+         * validasi tetapi sebelum query selesai.
+         */
+        if ($receipts->contains(null)) {
+            throw ValidationException::withMessages([
+                'receipt_ids' => [
+                    'Salah satu kuitansi sudah tidak tersedia.',
+                ],
+            ]);
+        }
+
+        /*
+         * Kuitansi draft atau belum diverifikasi tidak boleh
+         * masuk ke file pembukuan.
+         */
+        if (
+            $receipts->contains(
+                fn (Receipt $receipt): bool =>
+                    ! $receipt->is_verified
+            )
+        ) {
+            throw ValidationException::withMessages([
+                'receipt_ids' => [
+                    'Hanya kuitansi yang sudah valid '
+                    . 'yang dapat diekspor.',
+                ],
+            ]);
+        }
+
+        /**
+         * @var \Illuminate\Support\Collection<int, Receipt>
+         *     $receipts
+         */
+        $export = $exportService->create(
+            $receipts
+        );
+
+        return response()
+            ->download(
+                $export['path'],
+                $export['filename'],
+                [
+                    'Content-Type' =>
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+
+                    'Cache-Control' =>
+                        'private, no-store, no-cache, '
+                        . 'must-revalidate, max-age=0',
+                ],
+            )
+            ->deleteFileAfterSend(true);
+    }
+
+    public function updateItems(
+        Request $request,
+        Receipt $receipt,
+    ) {
+        $validated = $request->validate([
+            'items'                    => 'required|array|min:1',
+            'items.*.id'               => 'required|integer',
+            'items.*.inventory_code'   => [
+                'required',
+                'string',
+                'regex:/^10103\d{5}$/',
+                Rule::exists('kode_persediaan', 'kode')
+                    ->where(
+                        fn ($query) => $query
+                            ->where('kode', 'like', '10103%')
+                    ),
+            ],
+            'items.*.unit' => 'required|string|max:30',
+        ]);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($receipt, $validated) {
+            foreach ($validated['items'] as $itemData) {
+                $receipt->items()
+                    ->where('id', $itemData['id'])
+                    ->update([
+                        'inventory_code' => preg_replace('/\D/', '', $itemData['inventory_code']),
+                        'unit'           => trim($itemData['unit']),
+                    ]);
+            }
+        });
+
+        return response()->json([
+            'message' => 'Kode persediaan berhasil diperbarui.',
+            'data'    => $receipt->load('items.inventoryCodeMaster'),
+        ]);
+    }
+
     public function unverify(\App\Models\Receipt $receipt)
+
     {
         try {
             \Illuminate\Support\Facades\DB::transaction(function () use ($receipt) {

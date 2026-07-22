@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ReceiptData, ReceiptItem, ProcurementMethod, RequestStatus, ItemRequest, ParsedReceiptResult, OcrWarning, OcrField, ReceiptDocument, ReceiptManualDraft, InventoryCodeOption } from "../types";
 import { apiFetch } from "../api";
-import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Cpu, Save, FolderOpen, X, Download, TableProperties } from "lucide-react";
+import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Cpu, Save, FolderOpen, X, Download, TableProperties, Pencil } from "lucide-react";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 interface ReceiptOCRProcessorProps {
@@ -158,6 +158,11 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   ] = useState(false);
   const [bastName, setBastName] = useState("");
   const [bastDate, setBastDate] = useState("");
+
+  // State for editing inventory codes on already-verified receipts
+  const [editingReceipt, setEditingReceipt] = useState<ReceiptData | null>(null);
+  const [editItemCodes, setEditItemCodes] = useState<Record<string, { inventory_code: string; unit: string }>>({}); // keyed by item.id
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -1191,6 +1196,81 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     }
   };
 
+  const openEditInventoryCodes = (rc: ReceiptData) => {
+    setEditingReceipt(rc);
+    const initial: Record<string, { inventory_code: string; unit: string }> = {};
+    rc.items.forEach((it) => {
+      initial[it.id] = {
+        inventory_code: it.inventoryCode || "",
+        unit: it.unit || "",
+      };
+    });
+    setEditItemCodes(initial);
+  };
+
+  const handleSaveInventoryCodes = async () => {
+    if (!editingReceipt) return;
+
+    // validate all items have a code
+    const allFilled = editingReceipt.items.every((it) => {
+      const code = normalizeInventoryCode(editItemCodes[it.id]?.inventory_code ?? "");
+      return /^10103\d{5}$/.test(code);
+    });
+    if (!allFilled) {
+      setDialogAlert({
+        title: "Validasi Gagal",
+        message: "Semua barang harus memiliki kode persediaan kategori 1.01.03 yang valid.",
+        variant: "warning",
+      });
+      return;
+    }
+
+    setIsSavingEdit(true);
+    try {
+      const payload = {
+        items: editingReceipt.items.map((it) => ({
+          id: Number(it.id),
+          inventory_code: normalizeInventoryCode(editItemCodes[it.id]?.inventory_code ?? ""),
+          unit: (editItemCodes[it.id]?.unit ?? it.unit ?? "").trim(),
+        })),
+      };
+
+      const response = await apiFetch(`/api/receipts/${editingReceipt.id}/items`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error(await readApiError(response));
+
+      const json = await response.json();
+      // update receipts in parent
+      const updatedReceipt: ReceiptData = {
+        ...editingReceipt,
+        items: (json.data?.items ?? editingReceipt.items).map((it: any) => ({
+          id: String(it.id),
+          name: String(it.name ?? ""),
+          qty: Number(it.qty ?? 0),
+          unit: String(it.unit ?? ""),
+          inventoryCode: String(it.inventory_code ?? "").replace(/\D/g, ""),
+          inventoryCodeDescription: it.inventory_code_master?.nama_barang ?? null,
+          stockItemId: null,
+          codeConfidence: null,
+          price: Number(it.price ?? 0),
+          subtotal: Number(it.subtotal ?? 0),
+        })),
+      };
+      if (onVerifyReceipt) {
+        onVerifyReceipt(editingReceipt.id, updatedReceipt, `Kode persediaan kuitansi ${editingReceipt.invoiceNo} dari ${editingReceipt.storeName} diperbarui.`);
+      }
+      setEditingReceipt(null);
+      setDialogAlert({ title: "Berhasil", message: "Kode persediaan berhasil diperbarui.", variant: "success" });
+    } catch (error: any) {
+      setDialogAlert({ title: "Gagal", message: "Gagal memperbarui: " + (error?.message ?? "Kesalahan tidak diketahui"), variant: "danger" });
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
   const handleUnverify = async (id: string, invoiceNo: string, storeName: string) => {
     setDialogConfirm({
       title: "Batalkan Validasi",
@@ -1250,189 +1330,138 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     ).format(safeNumber);
   };
   // ── Ekspor Excel ──────────────────────────────────────────────────────────
-  const exportToExcel = (data: ReceiptData[]) => {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-    const timeStr = now.toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    const esc = (v: string | number | null | undefined): string => {
-      if (v === null || v === undefined) return "";
-      const s = String(v);
-      return s
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    };
-
-    // Build rows
-    const headerCols = [
-      "No",
-      "No Nota / Invoice",
-      "Nama Toko",
-      "Tanggal Belanja",
-      "Metode Pengadaan",
-      "Tarif Pajak PPN (%)",
-      "Subtotal (Rp)",
-      "Pajak (Rp)",
-      "Total Nilai (Rp)",
-      "Nama Barang",
-      "Satuan",
-      "Kode Persediaan",
-      "Qty",
-      "Harga Satuan (Rp)",
-      "Subtotal Barang (Rp)",
-    ];
-
-    let rows = "";
-
-    // Title row
-    rows += `<Row ss:Height="22"><Cell ss:MergeAcross="14"><Data ss:Type="String">DAFTAR KUITANSI VALID SIPERBANG — Diekspor ${dateStr} pukul ${timeStr}</Data></Cell></Row>`;
-    rows += `<Row ss:Height="4"/>`;
-
-    // Header row
-    rows += `<Row ss:Height="18">${headerCols
+  const exportToExcel = async (
+    data: ReceiptData[]
+  ) => {
+    const receiptIds = data
       .map(
-        (h) =>
-          `<Cell ss:StyleID="header"><Data ss:Type="String">${esc(h)}</Data></Cell>`,
+        (receipt) =>
+          Number(receipt.id)
       )
-      .join("")}</Row>`;
+      .filter(
+        (id) =>
+          Number.isInteger(id)
+          && id > 0
+      );
 
-    let rowNum = 0;
-    data.forEach((rc, idx) => {
-      const itemCount = rc.items.length;
+    if (receiptIds.length === 0) {
+      setDialogAlert({
+        title: "Tidak Dapat Mengekspor",
+        message:
+          "Tidak ada kuitansi valid "
+          + "yang dapat diekspor.",
+        variant: "warning",
+      });
 
-      if (itemCount === 0) {
-        rowNum++;
-        rows += `<Row>
-          <Cell><Data ss:Type="Number">${idx + 1}</Data></Cell>
-          <Cell><Data ss:Type="String">${esc(rc.invoiceNo)}</Data></Cell>
-          <Cell><Data ss:Type="String">${esc(rc.storeName)}</Data></Cell>
-          <Cell><Data ss:Type="String">${esc(rc.date)}</Data></Cell>
-          <Cell><Data ss:Type="String">${esc(rc.method)}</Data></Cell>
-          <Cell ss:StyleID="num"><Data ss:Type="Number">${rc.isTaxed ? rc.taxRate : 0}</Data></Cell>
-          <Cell ss:StyleID="idr"><Data ss:Type="Number">${rc.subtotal}</Data></Cell>
-          <Cell ss:StyleID="idr"><Data ss:Type="Number">${rc.taxAmount}</Data></Cell>
-          <Cell ss:StyleID="idr"><Data ss:Type="Number">${rc.total}</Data></Cell>
-          <Cell><Data ss:Type="String">-</Data></Cell>
-          <Cell><Data ss:Type="String">-</Data></Cell>
-          <Cell><Data ss:Type="String">-</Data></Cell>
-          <Cell><Data ss:Type="String">-</Data></Cell>
-          <Cell><Data ss:Type="String">-</Data></Cell>
-          <Cell><Data ss:Type="String">-</Data></Cell>
-        </Row>`;
-      } else {
-        rc.items.forEach((it, iIdx) => {
-          rowNum++;
-          const isFirst = iIdx === 0;
-          rows += `<Row>
-            <Cell><Data ss:Type="Number">${isFirst ? idx + 1 : ""}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(isFirst ? rc.invoiceNo : "")}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(isFirst ? rc.storeName : "")}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(isFirst ? rc.date : "")}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(isFirst ? rc.method : "")}</Data></Cell>
-            <Cell ss:StyleID="num"><Data ss:Type="Number">${isFirst ? (rc.isTaxed ? rc.taxRate : 0) : ""}</Data></Cell>
-            <Cell ss:StyleID="idr"><Data ss:Type="Number">${isFirst ? rc.subtotal : ""}</Data></Cell>
-            <Cell ss:StyleID="idr"><Data ss:Type="Number">${isFirst ? rc.taxAmount : ""}</Data></Cell>
-            <Cell ss:StyleID="idr"><Data ss:Type="Number">${isFirst ? rc.total : ""}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(it.name)}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(it.unit)}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(it.inventoryCode)}</Data></Cell>
-            <Cell ss:StyleID="num"><Data ss:Type="Number">${it.qty}</Data></Cell>
-            <Cell ss:StyleID="idr"><Data ss:Type="Number">${it.price}</Data></Cell>
-            <Cell ss:StyleID="idr"><Data ss:Type="Number">${it.qty * it.price}</Data></Cell>
-          </Row>`;
-        });
+      return;
+    }
+
+    try {
+      const response = await apiFetch(
+        "/api/receipts/export-excel",
+        {
+          method: "POST",
+
+          headers: {
+            Accept:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          },
+
+          body: JSON.stringify({
+            receipt_ids: receiptIds,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          await readApiError(response)
+        );
       }
-    });
 
-    // Grand total row
-    const grandTotal = data.reduce((s, r) => s + r.total, 0);
-    rows += `<Row ss:Height="18">
-      <Cell ss:MergeAcross="7" ss:StyleID="totalLabel"><Data ss:Type="String">TOTAL KESELURUHAN</Data></Cell>
-      <Cell ss:StyleID="totalVal"><Data ss:Type="Number">${grandTotal}</Data></Cell>
-      <Cell ss:MergeAcross="5"/>
-    </Row>`;
+      const blob =
+        await response.blob();
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
- <Styles>
-  <Style ss:ID="header">
-   <Font ss:Bold="1" ss:Color="#FFFFFF"/>
-   <Interior ss:Color="#4F46E5" ss:Pattern="Solid"/>
-   <Alignment ss:Horizontal="Center"/>
-   <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders>
-  </Style>
-  <Style ss:ID="idr">
-   <NumberFormat ss:Format="#,##0"/>
-   <Alignment ss:Horizontal="Right"/>
-  </Style>
-  <Style ss:ID="num">
-   <Alignment ss:Horizontal="Center"/>
-  </Style>
-  <Style ss:ID="totalLabel">
-   <Font ss:Bold="1"/>
-   <Interior ss:Color="#EEF2FF" ss:Pattern="Solid"/>
-   <Alignment ss:Horizontal="Right"/>
-  </Style>
-  <Style ss:ID="totalVal">
-   <Font ss:Bold="1"/>
-   <Interior ss:Color="#EEF2FF" ss:Pattern="Solid"/>
-   <NumberFormat ss:Format="#,##0"/>
-   <Alignment ss:Horizontal="Right"/>
-  </Style>
- </Styles>
- <Worksheet ss:Name="Kuitansi Valid">
-  <Table ss:DefaultColumnWidth="100">
-   <Column ss:Width="30"/>
-   <Column ss:Width="120"/>
-   <Column ss:Width="140"/>
-   <Column ss:Width="120"/>
-   <Column ss:Width="130"/>
-   <Column ss:Width="80"/>
-   <Column ss:Width="110"/>
-   <Column ss:Width="110"/>
-   <Column ss:Width="120"/>
-   <Column ss:Width="160"/>
-   <Column ss:Width="60"/>
-   <Column ss:Width="100"/>
-   <Column ss:Width="50"/>
-   <Column ss:Width="110"/>
-   <Column ss:Width="120"/>
-   ${rows}
-  </Table>
- </Worksheet>
-</Workbook>`;
+      const disposition =
+        response.headers.get(
+          "Content-Disposition"
+        ) ?? "";
 
-    const blob = new Blob([xml], {
-      type: "application/vnd.ms-excel;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const exportDateStr = `${now.getFullYear()}${String(
-      now.getMonth() + 1,
-    ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+      /*
+       * Laravel dapat mengirim filename biasa
+       * atau format UTF-8 filename*.
+       */
+      const utf8FileName =
+        disposition.match(
+          /filename\*=UTF-8''([^;]+)/i
+        );
 
-    const fileName =
-      data.length === 1 && data[0].storeName
-        ? `${data[0].storeName.replace(/[\\/:*?"<>|]/g, "_")}_${exportDateStr}.xls`
-        : `Kuitansi_Valid_SIPERBANG_${exportDateStr}.xls`;
+      const normalFileName =
+        disposition.match(
+          /filename="?([^";]+)"?/i
+        );
 
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      let fileName =
+        data.length === 1
+          ? `${
+              data[0].storeName
+              || "Kuitansi"
+            }.xlsx`
+          : "Belanja Persediaan.xlsx";
+
+      if (utf8FileName?.[1]) {
+        fileName = decodeURIComponent(
+          utf8FileName[1]
+            .trim()
+            .replace(
+              /^['"]|['"]$/g,
+              ""
+            )
+        );
+      } else if (
+        normalFileName?.[1]
+      ) {
+        fileName =
+          normalFileName[1].trim();
+      }
+
+      const url =
+        URL.createObjectURL(blob);
+
+      const anchor =
+        document.createElement("a");
+
+      anchor.href = url;
+      anchor.download = fileName;
+
+      document.body.appendChild(
+        anchor
+      );
+
+      anchor.click();
+
+      document.body.removeChild(
+        anchor
+      );
+
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      console.error(
+        "Gagal mengekspor kuitansi ke Excel:",
+        error
+      );
+
+      setDialogAlert({
+        title: "Gagal Ekspor Excel",
+
+        message:
+          error?.message
+          || "Terjadi kesalahan saat "
+          + "membuat file Excel.",
+
+        variant: "danger",
+      });
+    }
   };
 
   return (
@@ -2084,6 +2113,14 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                       <td className="px-5 py-3 text-center font-sans align-middle">
                         <div className="flex items-center justify-center gap-2 whitespace-nowrap">
                           <button
+                            onClick={() => openEditInventoryCodes(rc)}
+                            className="inline-flex items-center gap-1 text-2xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded border border-indigo-100 transition-colors"
+                            title="Edit Kode Persediaan"
+                          >
+                            <Pencil size={9} />
+                            Edit Kode
+                          </button>
+                          <button
                             onClick={() => handleUnverify(rc.id, rc.invoiceNo, rc.storeName)}
                             className="text-2xs font-semibold text-rose-600 bg-white hover:bg-rose-50 px-2.5 py-1 rounded-md border border-rose-300 transition-colors cursor-pointer"
                           >
@@ -2116,6 +2153,104 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             </tbody>
           </table>
         </div>
+      {/* Modal Edit Kode Persediaan */}
+      {editingReceipt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div>
+                <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                  <Pencil size={15} className="text-indigo-500" />
+                  Edit Kode Persediaan
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">{editingReceipt.storeName} — {editingReceipt.invoiceNo}</p>
+              </div>
+              <button onClick={() => setEditingReceipt(null)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            {/* Body */}
+            <div className="overflow-y-auto flex-1 px-6 py-4 space-y-3">
+              {editingReceipt.items.map((it, idx) => {
+                const currentCode = editItemCodes[it.id]?.inventory_code ?? it.inventoryCode ?? "";
+                const currentUnit = editItemCodes[it.id]?.unit ?? it.unit ?? "";
+                const normalCode = normalizeInventoryCode(currentCode);
+                const isValid = /^10103\d{5}$/.test(normalCode);
+                const selectedOption = inventoryCodes.find(o => o.code === normalCode);
+                return (
+                  <div key={it.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50">
+                    <div className="text-xs font-bold text-slate-700 mb-2">{idx + 1}. {it.name}</div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="text-2xs text-slate-500 font-semibold mb-1 block">Kode Persediaan</label>
+                        <select
+                          value={normalCode}
+                          onChange={(e) => {
+                            const code = e.target.value;
+                            setEditItemCodes(prev => ({
+                              ...prev,
+                              [it.id]: { ...prev[it.id], inventory_code: code },
+                            }));
+                          }}
+                          className={`w-full border rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
+                            isValid ? "border-slate-300 bg-white" : "border-rose-400 bg-rose-50"
+                          }`}
+                        >
+                          <option value="">-- Pilih Kode --</option>
+                          {inventoryCodesLoading && <option disabled>Memuat...</option>}
+                          {inventoryCodes.map(opt => (
+                            <option key={opt.code} value={opt.code}>{opt.code} — {opt.description}</option>
+                          ))}
+                        </select>
+                        {selectedOption && (
+                          <p className="text-2xs text-emerald-700 font-semibold mt-0.5">{selectedOption.description}</p>
+                        )}
+                      </div>
+                      <div className="w-28">
+                        <label className="text-2xs text-slate-500 font-semibold mb-1 block">Satuan</label>
+                        <select
+                          value={currentUnit}
+                          onChange={(e) => {
+                            setEditItemCodes(prev => ({
+                              ...prev,
+                              [it.id]: { ...prev[it.id], unit: e.target.value },
+                            }));
+                          }}
+                          className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        >
+                          <option value="">Pilih...</option>
+                          {RECEIPT_UNIT_OPTIONS.map(u => (
+                            <option key={u} value={u}>{u}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Footer */}
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100">
+              <button
+                onClick={() => setEditingReceipt(null)}
+                disabled={isSavingEdit}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSaveInventoryCodes}
+                disabled={isSavingEdit}
+                className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-60 active:scale-95"
+              >
+                {isSavingEdit ? <RefreshCw size={12} className="animate-spin" /> : <Save size={12} />}
+                {isSavingEdit ? "Menyimpan..." : "Simpan Kode Persediaan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {dialogConfirm && (
         <ConfirmDialog
           open
