@@ -1616,7 +1616,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                 : "text-slate-500 hover:text-slate-700 border-transparent hover:bg-slate-100"
             }`}
           >
-            Menunggu Verifikasi ({receipts.filter((r) => !r.isVerified).length})
+            Menunggu Verifikasi ({pendingDocuments.length})
           </button>
           <button
             onClick={() => setActiveTab("valid")}
@@ -2265,10 +2265,10 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                           <button
                             onClick={() => openEditInventoryCodes(rc)}
                             className="inline-flex items-center gap-1 text-2xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded border border-indigo-100 transition-colors"
-                            title="Edit Kode Persediaan"
+                            title="Lihat Detail Kode Persediaan"
                           >
                             <Pencil size={9} />
-                            Edit Kode
+                            Lihat Detail
                           </button>
                           <button
                             onClick={() => handleUnverify(rc.id, rc.invoiceNo, rc.storeName)}
