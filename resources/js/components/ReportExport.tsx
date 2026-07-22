@@ -18,6 +18,29 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
 
+  // 1. DEKLARASIKAN HELPER DI PALING ATAS AGAR SIAP DIPAKAI
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr || dateStr === "-") return "-";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const formatIDR = (num: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(num);
+  };
+
   const months = [
     { value: "All", label: "Semua Bulan" },
     { value: "01", label: "Januari" },
@@ -33,6 +56,64 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
     { value: "11", label: "November" },
     { value: "12", label: "Desember" },
   ];
+
+  // 2. BARU PANGGIL DATA & REPORT ROWS DI SINI
+  const verifiedReceipts = receipts.filter((r) => r.isVerified || (r as any).is_verified);
+
+  const filteredReceipts = verifiedReceipts.filter((r) => {
+    if (filterYear !== "All") {
+      const year = r.date.split("-")[0];
+      if (year !== filterYear) return false;
+    }
+
+    if (!isAnnualRecap && filterMonth !== "All") {
+      const month = r.date.split("-")[1];
+      if (month !== filterMonth) return false;
+    }
+
+    if (searchQuery.trim() !== "") {
+      const query = searchQuery.toLowerCase();
+      const matchesStore = r.storeName.toLowerCase().includes(query);
+      const matchesInvoice = r.invoiceNo.toLowerCase().includes(query);
+      const matchesItem = r.items.some(
+        (it) =>
+          it.name.toLowerCase().includes(query) ||
+          (it.inventoryCode && it.inventoryCode.toLowerCase().includes(query)) ||
+          (it.unit && it.unit.toLowerCase().includes(query))
+      );
+      return matchesStore || matchesInvoice || matchesItem;
+    }
+
+    return true;
+  });
+
+  const reportRows = filteredReceipts.flatMap((rc) =>
+    rc.items.map((it) => {
+      const qty = Number(it.qty) || 0;
+      const price = Number(it.price) || 0;
+      const subtotal = qty * price;
+      const taxAmount = rc.isTaxed ? Math.round(subtotal * (rc.taxRate / 100)) : 0;
+      const total = subtotal + taxAmount;
+
+      return {
+        invoiceNo: rc.invoiceNo,
+        date: formatDate(rc.date), // Sekarang aman karena formatDate sudah ada!
+        storeName: rc.storeName,
+        inventoryCode: it.inventoryCode,
+        itemName: it.name,
+        qty: qty,
+        unit: it.unit,
+        price: price,
+        subtotal: subtotal,
+        taxAmount: taxAmount,
+        total: total,
+        method: rc.method,
+        bastName: isAnnualRecap ? "" : rc.bastName || "-",
+        bastDate: isAnnualRecap ? "" : formatDate(rc.bastDate) || "-",
+        bookDate: isAnnualRecap ? "" : formatDate(rc.date),
+      };
+    })
+  );
 
   const handleRealExport = async () => {
     try {
@@ -65,7 +146,6 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
       };
 
       if (exportMode === "per_kuitansi") {
-        // Mode Per-Kuitansi
         verifiedData.forEach((rc: any, idx: number) => {
           const storeName = rc.storeName || rc.store_name || "SUPPLIER";
           const sheetName = `${idx + 1}_${storeName.substring(0, 20).replace(/[/\\?*:[\]]/g, "")}`;
@@ -94,7 +174,6 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
             const rowNum = 5 + itemIdx;
             const row = sheet.getRow(rowNum);
 
-            // KONVERSI MUTLAK KE ANGKA (NUMBER)
             const qty = Number(it.qty) || 0;
             const price = Number(it.price) || 0;
             const subtotal = qty * price;
@@ -137,7 +216,6 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
         });
 
       } else {
-        // Mode Rekap Gabungan (Template TA 2026)
         const sheet = workbook.addWorksheet("REKAP");
 
         sheet.getCell("A1").value = "REKAP BELANJA PERSEDIAAN BARANG HABIS PAKAI";
@@ -192,7 +270,6 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
           const startRow = currentRow;
           const endRow = startRow + items.length - 1;
 
-          // Hitung total kuitansi secara mutlak
           const totalReceiptValue = items.reduce((acc: number, it: any) => {
             return acc + ((Number(it.qty) || 0) * (Number(it.price) || 0));
           }, 0);
@@ -211,13 +288,13 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
             if (idx === 0) {
               row.getCell(1).value = no;
               row.getCell(2).value = rc.storeName || rc.store_name;
-              row.getCell(3).value = ""; // BAST Dikosongkan
-              row.getCell(4).value = ""; // Tanggal Buku Dikosongkan
+              row.getCell(3).value = ""; // BAST Dikosongkan untuk SAKTI
+              row.getCell(4).value = ""; // Tanggal Buku Dikosongkan untuk SAKTI
               row.getCell(5).value = items.length === 1 
                 ? { formula: `L${startRow}`, result: totalReceiptValue } 
                 : { formula: `SUM(L${startRow}:L${endRow})`, result: totalReceiptValue };
               row.getCell(6).value = rc.invoiceNo || rc.invoice_no;
-              row.getCell(7).value = rc.date;
+              row.getCell(7).value = formatDate(rc.date);
             }
 
             row.getCell(8).value = it.name || it.itemName;
@@ -255,16 +332,13 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
           currentRow = endRow + 1;
         });
 
-        // BARIS TOTAL PALING BAWAH
         const totalRow = sheet.getRow(currentRow);
         totalRow.getCell(1).value = "TOTAL";
         sheet.mergeCells(`A${currentRow}:H${currentRow}`);
 
-        // Merge Total Jumlah (I:J)
         sheet.mergeCells(`I${currentRow}:J${currentRow}`);
         totalRow.getCell(9).value = { formula: `SUM(I7:I${currentRow - 1})`, result: grandTotalQty };
 
-        // Merge Total Nilai Akhir (K:L)
         sheet.mergeCells(`K${currentRow}:L${currentRow}`);
         totalRow.getCell(11).value = { formula: `SUM(L7:L${currentRow - 1})`, result: grandTotalAmount };
 
@@ -315,6 +389,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
   return (
     <>
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        {/* Header Modul */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-slate-100 pb-6">
           <div className="flex items-center gap-4">
             <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-emerald-50 text-emerald-600 border-emerald-100">
@@ -354,6 +429,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
           </div>
         )}
 
+        {/* Filter Bar */}
         <div className="bg-white rounded-lg border border-slate-200 p-4 mb-8 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
@@ -407,6 +483,102 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+
+        <div className="mt-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-emerald-50 text-emerald-600 border-emerald-100">
+              <FileSpreadsheet size={20} />
+            </div>
+            <h3 className="text-sm font-extrabold text-slate-800 tracking-wide">
+              Pratinjau Spreadsheet Excel
+            </h3>
+            <span className="text-slate-300">|</span>
+            <span className="text-sm font-medium text-slate-500">
+              {reportRows.length} baris data terpilih
+            </span>
+          </div>
+
+          <div className="overflow-x-auto border border-slate-200 rounded-lg shadow-xs">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+                  <th className="px-4 py-3">No Nota</th>
+                  <th className="px-4 py-3">Tanggal</th>
+                  <th className="px-4 py-3">Nama Toko</th>
+                  <th className="px-4 py-3">Kode Persediaan</th>
+                  <th className="px-4 py-3">Nama Barang</th>
+                  <th className="px-4 py-3 text-center">Jumlah</th>
+                  <th className="px-4 py-3">Satuan</th>
+                  <th className="px-4 py-3 text-right">Harga Satuan</th>
+                  <th className="px-4 py-3 text-right">Subtotal</th>
+                  <th className="px-4 py-3 text-right">PPN (Pajak)</th>
+                  <th className="px-4 py-3 text-right">Total</th>
+                  <th className="px-4 py-3">Metode</th>
+                  <th className="px-4 py-3">BAST (Nama)</th>
+                  <th className="px-4 py-3">BAST (Tgl)</th>
+                  <th className="px-4 py-3">Tgl Buku</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {reportRows.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors text-xs font-mono">
+                    <td className="px-4 py-3 text-slate-600 font-bold">{row.invoiceNo}</td>
+                    <td className="px-4 py-3 text-slate-500 font-sans">{row.date}</td>
+                    <td className="px-4 py-3 font-sans font-bold text-slate-800">{row.storeName}</td>
+                    <td className="px-4 py-3 font-mono font-bold text-indigo-700">{row.inventoryCode || "-"}</td>
+                    <td className="px-4 py-3 font-sans font-medium text-slate-700">{row.itemName}</td>
+                    <td className="px-4 py-3 text-center font-sans font-bold text-slate-800">{row.qty}</td>
+                    <td className="px-4 py-3 font-sans font-semibold text-slate-700">{row.unit || "-"}</td>
+                    <td className="px-4 py-3 text-right text-slate-600">{formatIDR(row.price)}</td>
+                    <td className="px-4 py-3 text-right text-slate-700 font-semibold">{formatIDR(row.subtotal)}</td>
+                    <td className="px-4 py-3 text-right text-indigo-700 font-semibold">
+                      {row.taxAmount > 0 ? formatIDR(row.taxAmount) : "-"}
+                    </td>
+                    <td className="px-4 py-3 text-right text-slate-900 font-extrabold">{formatIDR(row.total)}</td>
+                    <td className="px-4 py-3 font-sans font-semibold text-slate-600">{row.method || "-"}</td>
+                    <td className="px-4 py-3 font-sans text-slate-400">
+                      {row.bastName ? (
+                        <span className="text-slate-600 font-semibold">{row.bastName}</span>
+                      ) : (
+                        <span className="text-slate-300 italic">NIL (Kosong)</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 font-sans text-slate-400">
+                      {row.bastDate ? (
+                        <span className="text-slate-600 font-semibold">{row.bastDate}</span>
+                      ) : (
+                        <span className="text-slate-300 italic">NIL (Kosong)</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 font-sans text-slate-400">
+                      {row.bookDate ? (
+                        <span className="text-slate-600 font-semibold">{row.bookDate}</span>
+                      ) : (
+                        <span className="text-slate-300 italic">NIL (Kosong)</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {reportRows.length === 0 && (
+                  <tr>
+                    <td colSpan={15} className="py-16">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <div className="relative mb-4">
+                          <FileSpreadsheet size={48} className="text-slate-300" strokeWidth={1} />
+                          <Search size={24} className="text-slate-400 absolute -bottom-2 -right-2 bg-white rounded-full p-0.5" strokeWidth={2} />
+                        </div>
+                        <p className="text-sm font-medium text-slate-500">
+                          Belum ada data kuitansi tervalidasi yang cocok dengan kriteria saringan Anda.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
