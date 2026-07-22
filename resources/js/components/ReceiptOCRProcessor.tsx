@@ -8,8 +8,24 @@ interface ReceiptOCRProcessorProps {
   receipts: ReceiptData[];
   requests: ItemRequest[];
   onAddReceipt: (newReceipt: ReceiptData) => void;
-  onVerifyReceipt: (id: string, updatedReceipt: ReceiptData, logMsg: string) => void;
-  onUnverifyReceipt?: (id: string, logMsg: string) => void;
+  onVerifyReceipt: (
+    id: string,
+    updatedReceipt: ReceiptData,
+    logMsg: string
+  ) => void | Promise<void>;
+  onUnverifyReceipt?: (
+    id: string,
+    logMsg: string
+  ) => void | Promise<void>;
+}
+
+interface StockMasterOption {
+  id: number;
+  code: string;
+  name: string;
+  category: string;
+  qty: number;
+  unit: string;
 }
 
 const RECEIPT_UNIT_OPTIONS = [
@@ -42,6 +58,20 @@ const normalizeInventoryCode = (
     .replace(/\D/g, "")
     .slice(0, 10)
 );
+
+const normalizeStockItemId = (
+  value: unknown
+): number | null => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const id = Number(value);
+
+  return Number.isInteger(id) && id > 0
+    ? id
+    : null;
+};
 
 
 export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
@@ -159,6 +189,18 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     inventoryCodesLoading,
     setInventoryCodesLoading,
   ] = useState(false);
+  const [
+    stockMasterItems,
+    setStockMasterItems,
+  ] = useState<StockMasterOption[]>([]);
+  const [
+    stockMasterLoading,
+    setStockMasterLoading,
+  ] = useState(false);
+  const [
+    openStockDropdownId,
+    setOpenStockDropdownId,
+  ] = useState<string | null>(null);
   const [bastName, setBastName] = useState("");
   const [bastDate, setBastDate] = useState("");
 
@@ -240,6 +282,80 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     return () => {
       active = false;
     };
+  }, []);
+
+  const loadStockMasterItems = async () => {
+    setStockMasterLoading(true);
+
+    try {
+      const response = await apiFetch(
+        "/api/stocks"
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP ${response.status} ${response.statusText}`
+        );
+      }
+
+      const payload = await response.json();
+      const rows = Array.isArray(payload)
+        ? payload
+        : [];
+
+      setStockMasterItems(
+        rows
+          .filter(
+            (row: any) =>
+              row?.is_active !== false
+          )
+          .map(
+            (row: any): StockMasterOption => ({
+              id: Number(row.id),
+              code: normalizeInventoryCode(
+                row.code
+              ),
+              name: String(row.name ?? ""),
+              category: String(
+                row.category ?? ""
+              ),
+              qty: Number(row.qty ?? 0),
+              unit: String(row.unit ?? "")
+                .trim()
+                .toUpperCase(),
+            })
+          )
+          .filter(
+            (row: StockMasterOption) =>
+              Number.isInteger(row.id)
+              && row.id > 0
+              && row.name.length > 0
+              && row.code.startsWith("10103")
+          )
+          .sort(
+            (
+              left: StockMasterOption,
+              right: StockMasterOption
+            ) => left.name.localeCompare(
+              right.name,
+              "id"
+            )
+          )
+      );
+    } catch (error) {
+      console.error(
+        "Gagal memuat master barang:",
+        error
+      );
+
+      setStockMasterItems([]);
+    } finally {
+      setStockMasterLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadStockMasterItems();
   }, []);
 
   const readApiError = async (
@@ -526,11 +642,9 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                       ? it.inventory_code_description
                       : null,
                 stockItemId:
-                  Number.isFinite(
-                    Number(it.stock_item_id)
-                  )
-                    ? Number(it.stock_item_id)
-                    : null,
+                  normalizeStockItemId(
+                    it.stock_item_id
+                  ),
                 codeConfidence:
                   Number.isFinite(
                     Number(
@@ -603,11 +717,9 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                       ? it.inventory_code_description
                       : null,
                 stockItemId:
-                  Number.isFinite(
-                    Number(it.stock_item_id)
-                  )
-                    ? Number(it.stock_item_id)
-                    : null,
+                  normalizeStockItemId(
+                    it.stock_item_id
+                  ),
                 codeConfidence:
                   Number.isFinite(
                     Number(
@@ -653,11 +765,9 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                     ? it.inventory_code_description
                     : null,
               stockItemId:
-                Number.isFinite(
-                  Number(it.stock_item_id)
-                )
-                  ? Number(it.stock_item_id)
-                  : null,
+                normalizeStockItemId(
+                  it.stock_item_id
+                ),
               codeConfidence:
                 Number.isFinite(
                   Number(
@@ -710,7 +820,11 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   ?.inventoryCodeDescription
                 ?? null,
               stockItemId:
-                suggestedItem?.stockItemId
+                normalizeStockItemId(
+                  item.stockItemId
+                  ?? item.stock_item_id
+                )
+                ?? suggestedItem?.stockItemId
                 ?? null,
               codeConfidence:
                 suggestedItem?.codeConfidence
@@ -962,6 +1076,143 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     );
   };
 
+  const normaliseMasterSearch = (
+    value: string
+  ): string => (
+    value
+      .trim()
+      .toLocaleLowerCase("id-ID")
+  );
+
+  const getStockMasterMatches = (
+    query: string
+  ): StockMasterOption[] => {
+    const needle = normaliseMasterSearch(
+      query
+    );
+
+    const matches = needle === ""
+      ? stockMasterItems
+      : stockMasterItems.filter(
+          (stockItem) => {
+            const searchable = [
+              stockItem.name,
+              stockItem.code,
+              stockItem.category,
+              stockItem.unit,
+            ]
+              .join(" " )
+              .toLocaleLowerCase("id-ID");
+
+            return searchable.includes(
+              needle
+            );
+          }
+        );
+
+    return matches.slice(0, 8);
+  };
+
+  const getSelectedStockMaster = (
+    item: ReceiptItem
+  ): StockMasterOption | null => (
+    item.stockItemId
+      ? (
+          stockMasterItems.find(
+            (stockItem) =>
+              stockItem.id
+              === item.stockItemId
+          ) ?? null
+        )
+      : null
+  );
+
+  const handleItemNameChange = (
+    id: string,
+    value: string
+  ) => {
+    setItems(
+      (previous) => previous.map(
+        (item) =>
+          item.id === id
+            ? {
+                ...item,
+                name: value,
+                /*
+                 * Begitu nama diketik manual, hubungan ke barang
+                 * master lama dilepas. Pengguna dapat memilih lagi
+                 * dari dropdown atau membiarkannya sebagai barang baru.
+                 */
+                stockItemId: null,
+              }
+            : item
+      )
+    );
+
+    setOpenStockDropdownId(id);
+  };
+
+  const handleSelectStockMaster = (
+    id: string,
+    stockItem: StockMasterOption
+  ) => {
+    const inventoryCode =
+      inventoryCodes.find(
+        (option) =>
+          option.code === stockItem.code
+      );
+
+    setItems(
+      (previous) => previous.map(
+        (item) =>
+          item.id === id
+            ? {
+                ...item,
+                name: stockItem.name,
+                unit: stockItem.unit,
+                inventoryCode:
+                  stockItem.code,
+                inventoryCodeDescription:
+                  inventoryCode?.description
+                  ?? stockItem.name,
+                stockItemId:
+                  stockItem.id,
+              }
+            : item
+      )
+    );
+
+    setOpenStockDropdownId(null);
+  };
+
+  const handleUnitChange = (
+    id: string,
+    unit: string
+  ) => {
+    setItems(
+      (previous) => previous.map(
+        (item) => {
+          if (item.id !== id) {
+            return item;
+          }
+
+          const selectedMaster =
+            getSelectedStockMaster(item);
+
+          return {
+            ...item,
+            unit,
+            stockItemId:
+              selectedMaster
+              && selectedMaster.unit === unit
+                ? item.stockItemId
+                : null,
+          };
+        }
+      )
+    );
+  };
+
   const handleInventoryCodeChange = (
     id: string,
     codeValue: string
@@ -975,16 +1226,28 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     );
 
     setItems(
-      items.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              inventoryCode: code,
-              inventoryCodeDescription:
-                selected?.description
-                ?? null,
-            }
-          : item
+      (previous) => previous.map(
+        (item) => {
+          if (item.id !== id) {
+            return item;
+          }
+
+          const selectedMaster =
+            getSelectedStockMaster(item);
+
+          return {
+            ...item,
+            inventoryCode: code,
+            inventoryCodeDescription:
+              selected?.description
+              ?? null,
+            stockItemId:
+              selectedMaster
+              && selectedMaster.code === code
+                ? item.stockItemId
+                : null,
+          };
+        }
       )
     );
   };
@@ -1052,6 +1315,8 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         normalizeInventoryCode(
           item.inventoryCode
         ),
+      stockItemId:
+        item.stockItemId ?? null,
       price: Number(item.price),
     })),
     method,
@@ -1179,7 +1444,10 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
               item.inventory_code_master
                 ?.nama_barang
                 ?? null,
-            stockItemId: null,
+            stockItemId:
+              normalizeStockItemId(
+                item.stock_item_id
+              ),
             codeConfidence: null,
             price: Number(item.price),
             subtotal: Number(item.subtotal),
@@ -1218,11 +1486,15 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       const logMsg =
         `Verifikasi Kuitansi: Petugas memverifikasi kuitansi nomor ${displayInvoice} dari ${finalReceipt.storeName}. Total belanja ${formatIDR(finalReceipt.total)}.`;
 
-      onVerifyReceipt(
-        activeDraft.id,
-        finalReceipt,
-        logMsg
+      await Promise.resolve(
+        onVerifyReceipt(
+          activeDraft.id,
+          finalReceipt,
+          logMsg
+        )
       );
+
+      await loadStockMasterItems();
 
       setPendingDocuments(
         (previous) => previous.filter(
@@ -1238,7 +1510,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         message:
           (responsePayload.message
             || "Dokumen berhasil diverifikasi.")
-          + " Kode persediaan dan satuan telah tersimpan di database.",
+          + " Kode, satuan, dan jumlah stok master telah tersimpan di database.",
       };
     } catch (error: any) {
       console.error(error);
@@ -1366,15 +1638,26 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
           unit: String(it.unit ?? ""),
           inventoryCode: String(it.inventory_code ?? "").replace(/\D/g, ""),
           inventoryCodeDescription: it.inventory_code_master?.nama_barang ?? null,
-          stockItemId: null,
+          stockItemId:
+            normalizeStockItemId(
+              it.stock_item_id
+            ),
           codeConfidence: null,
           price: Number(it.price ?? 0),
           subtotal: Number(it.subtotal ?? 0),
         })),
       };
       if (onVerifyReceipt) {
-        onVerifyReceipt(editingReceipt.id, updatedReceipt, `Kode persediaan kuitansi ${editingReceipt.invoiceNo} dari ${editingReceipt.storeName} diperbarui.`);
+        await Promise.resolve(
+          onVerifyReceipt(
+            editingReceipt.id,
+            updatedReceipt,
+            `Kode persediaan kuitansi ${editingReceipt.invoiceNo} dari ${editingReceipt.storeName} diperbarui.`
+          )
+        );
       }
+
+      await loadStockMasterItems();
       setEditingReceipt(null);
       setDialogAlert({ title: "Berhasil", message: "Kode persediaan berhasil diperbarui.", variant: "success" });
     } catch (error: any) {
@@ -1399,8 +1682,16 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
           if (!response.ok) throw new Error(await readApiError(response));
           
           const logMsg = `Pembatalan Verifikasi: Petugas membatalkan kuitansi nomor ${invoiceNo || "tanpa nomor"} dari ${storeName}.`;
-          if (onUnverifyReceipt) onUnverifyReceipt(id, logMsg);
-          
+          if (onUnverifyReceipt) {
+            await Promise.resolve(
+              onUnverifyReceipt(
+                id,
+                logMsg
+              )
+            );
+          }
+
+          await loadStockMasterItems();
           await loadPendingDocuments();
           setDialogConfirm(null);
           setDialogLoading(false);
@@ -1907,7 +2198,9 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   1.01.03 - Alat/Bahan untuk Kegiatan Kantor
                 </strong>
                 dan tetap wajib dikonfirmasi petugas.
-                Satuan berasal dari OCR atau master stok Excel.
+                Pilih nama dari master barang untuk menambah stok barang
+                yang sudah ada, atau ketik nama sendiri untuk membuat
+                barang master baru saat kuitansi diverifikasi.
               </p>
 
               <div className="overflow-auto border border-slate-200 rounded max-h-[290px]">
@@ -1926,14 +2219,125 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   <tbody className="divide-y divide-slate-100">
                     {items.map((it) => (
                       <tr key={it.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-3 py-1.5">
-                          <input
-                            type="text"
-                            value={it.name}
-                            onChange={(e) => handleUpdateItem(it.id, "name", e.target.value)}
-                            placeholder="Nama item barang..."
-                            className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                          />
+                        <td className="px-3 py-1.5 align-top">
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={it.name}
+                              onFocus={() =>
+                                setOpenStockDropdownId(
+                                  it.id
+                                )
+                              }
+                              onBlur={() => {
+                                window.setTimeout(
+                                  () => {
+                                    setOpenStockDropdownId(
+                                      (current) =>
+                                        current === it.id
+                                          ? null
+                                          : current
+                                    );
+                                  },
+                                  150
+                                );
+                              }}
+                              onChange={(event) =>
+                                handleItemNameChange(
+                                  it.id,
+                                  event.target.value
+                                )
+                              }
+                              placeholder={
+                                stockMasterLoading
+                                  ? "Memuat master barang..."
+                                  : "Pilih atau ketik nama barang..."
+                              }
+                              autoComplete="off"
+                              className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            />
+
+                            {openStockDropdownId === it.id && (
+                              <div className="absolute left-0 right-0 top-full z-40 mt-1 max-h-56 overflow-y-auto rounded-md border border-slate-200 bg-white shadow-xl">
+                                {stockMasterLoading ? (
+                                  <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500">
+                                    <RefreshCw
+                                      size={12}
+                                      className="animate-spin"
+                                    />
+                                    Memuat master barang...
+                                  </div>
+                                ) : getStockMasterMatches(
+                                    it.name
+                                  ).length > 0 ? (
+                                  getStockMasterMatches(
+                                    it.name
+                                  ).map(
+                                    (stockItem) => (
+                                      <button
+                                        key={stockItem.id}
+                                        type="button"
+                                        onMouseDown={(
+                                          event
+                                        ) =>
+                                          event.preventDefault()
+                                        }
+                                        onClick={() =>
+                                          handleSelectStockMaster(
+                                            it.id,
+                                            stockItem
+                                          )
+                                        }
+                                        className="block w-full border-b border-slate-100 px-3 py-2 text-left last:border-b-0 hover:bg-indigo-50"
+                                      >
+                                        <span className="block text-xs font-bold text-slate-800">
+                                          {stockItem.name}
+                                        </span>
+                                        <span className="mt-0.5 block text-2xs text-slate-500">
+                                          {stockItem.code}
+                                          {" • "}
+                                          {stockItem.unit}
+                                          {" • Stok "}
+                                          {stockItem.qty}
+                                          {stockItem.category
+                                            ? ` • ${stockItem.category}`
+                                            : ""}
+                                        </span>
+                                      </button>
+                                    )
+                                  )
+                                ) : (
+                                  <div className="px-3 py-2 text-xs text-amber-700">
+                                    Tidak ada kecocokan. Nama ini akan
+                                    dibuat sebagai barang baru setelah
+                                    verifikasi.
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {(() => {
+                            const selectedMaster =
+                              getSelectedStockMaster(
+                                it
+                              );
+
+                            return selectedMaster ? (
+                              <p className="mt-1 text-2xs font-semibold text-emerald-700">
+                                Terhubung ke master: {selectedMaster.code}
+                                {" • Stok "}
+                                {selectedMaster.qty}
+                                {" "}
+                                {selectedMaster.unit}
+                              </p>
+                            ) : it.name.trim() ? (
+                              <p className="mt-1 text-2xs font-semibold text-amber-700">
+                                Barang baru — akan dibuat di master
+                                saat verifikasi.
+                              </p>
+                            ) : null;
+                          })()}
                         </td>
                         <td className="px-3 py-1.5">
                           <select
@@ -1991,9 +2395,8 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                           <select
                             value={it.unit}
                             onChange={(e) =>
-                              handleUpdateItem(
+                              handleUnitChange(
                                 it.id,
-                                "unit",
                                 e.target.value
                               )
                             }
