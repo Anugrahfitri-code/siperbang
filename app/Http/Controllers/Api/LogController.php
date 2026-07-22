@@ -11,7 +11,7 @@ class LogController extends Controller
 {
     public function index()
     {
-        return response()->json(HistoryLog::orderBy('created_at', 'desc')->get());
+        return response()->json(HistoryLog::where('action', 'not like', '%Login%')->orderBy('created_at', 'desc')->get());
     }
 
     public function store(Request $request)
