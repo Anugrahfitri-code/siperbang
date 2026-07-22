@@ -79,6 +79,8 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     title: string;
     message: string;
     variant?: "danger" | "warning" | "info" | "success";
+    confirmText?: string;
+    cancelText?: string;
     onConfirm?: () => void | Promise<void>;
   } | null>(null);
   const [dialogAlert, setDialogAlert] = useState<{
@@ -87,6 +89,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     variant?: "danger" | "warning" | "info" | "success";
   } | null>(null);
   const [dialogLoading, setDialogLoading] = useState(false);
+  const [exportingExcelKey, setExportingExcelKey] = useState<string | null>(null);
   const pollTimerRef = useRef<number | NodeJS.Timeout | null>(null);
   const documentRequestTokenRef = useRef(0);
 
@@ -1087,58 +1090,78 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     }
   };
 
-  const handleVerifySave = async () => {
-    if (!activeDraft || !activeDocumentId || isSavingDraft || isVerifying) return;
-
+  const getVerificationValidationMessage = (): string | null => {
     if (!storeName.trim()) {
-      setDialogAlert({ title: "Validasi Gagal", message: "Nama toko/penyedia wajib diisi sebelum verifikasi.", variant: "warning" });
-      return;
+      return "Nama toko/penyedia wajib diisi sebelum verifikasi.";
     }
+
     if (!date) {
-      setDialogAlert({ title: "Validasi Gagal", message: "Tanggal kuitansi wajib diisi sebelum verifikasi.", variant: "warning" });
-      return;
+      return "Tanggal kuitansi wajib diisi sebelum verifikasi.";
     }
 
     const invalidItemIndex = items.findIndex(
       (item) =>
-        !item.name.trim() ||
-        !item.unit.trim() ||
-        !/^10103\d{5}$/.test(
+        !item.name.trim()
+        || !item.unit.trim()
+        || !/^10103\d{5}$/.test(
           normalizeInventoryCode(
             item.inventoryCode
           )
-        ) ||
-        !Number.isInteger(Number(item.qty)) ||
-        Number(item.qty) < 1 ||
-        !Number.isFinite(Number(item.price)) ||
-        Number(item.price) <= 0
+        )
+        || !Number.isInteger(Number(item.qty))
+        || Number(item.qty) < 1
+        || !Number.isFinite(Number(item.price))
+        || Number(item.price) <= 0
     );
 
-    if (items.length === 0 || invalidItemIndex >= 0) {
-      setDialogAlert({
-        title: "Validasi Gagal",
-        message: invalidItemIndex >= 0
-          ? `Periksa barang ke-${invalidItemIndex + 1}. Nama, kode persediaan kategori 1.01.03, satuan, jumlah, dan harga wajib valid.`
-          : "Minimal satu barang wajib diisi.",
-        variant: "warning",
-      });
-      return;
+    if (items.length === 0) {
+      return "Minimal satu barang wajib diisi.";
+    }
+
+    if (invalidItemIndex >= 0) {
+      return `Periksa barang ke-${invalidItemIndex + 1}. Nama, kode persediaan kategori 1.01.03, satuan, jumlah, dan harga wajib valid.`;
+    }
+
+    return null;
+  };
+
+  const performVerification = async () => {
+    if (
+      !activeDraft
+      || !activeDocumentId
+      || isSavingDraft
+      || isVerifying
+    ) {
+      return {
+        success: false as const,
+        message: "Dokumen tidak siap untuk diverifikasi.",
+      };
     }
 
     setIsVerifying(true);
-    try {
-      const response = await apiFetch(`/api/receipt-documents/${activeDocumentId}/verify`, {
-        method: "PUT",
-        body: JSON.stringify(buildManualPayload()),
-      });
 
-      if (!response.ok) throw new Error(await readApiError(response));
+    try {
+      const response = await apiFetch(
+        `/api/receipt-documents/${activeDocumentId}/verify`,
+        {
+          method: "PUT",
+          body: JSON.stringify(buildManualPayload()),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          await readApiError(response)
+        );
+      }
 
       const responsePayload = await response.json();
       const receipt = responsePayload?.data?.receipt;
 
       if (!receipt) {
-        throw new Error("Server tidak mengembalikan data kuitansi yang sudah diverifikasi.");
+        throw new Error(
+          "Server tidak mengembalikan data kuitansi yang sudah diverifikasi."
+        );
       }
 
       const serverItems = Array.isArray(receipt.items)
@@ -1176,24 +1199,114 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         isVerified: true,
         status: "Dokumen Valid",
         items: serverItems,
-        method: (receipt.method as ProcurementMethod) || method,
-        bastName: receipt.bast_name || bastName,
-        bastDate: receipt.bast_date ? String(receipt.bast_date).slice(0, 10) : bastDate,
+        method:
+          (receipt.method as ProcurementMethod)
+          || method,
+        bastName:
+          receipt.bast_name
+          || bastName,
+        bastDate:
+          receipt.bast_date
+            ? String(receipt.bast_date).slice(0, 10)
+            : bastDate,
       };
 
-      const displayInvoice = finalReceipt.invoiceNo || "tanpa nomor";
-      const logMsg = `Verifikasi Kuitansi: Petugas memverifikasi kuitansi nomor ${displayInvoice} dari ${finalReceipt.storeName}. Total belanja ${formatIDR(finalReceipt.total)}.`;
+      const displayInvoice =
+        finalReceipt.invoiceNo
+        || "tanpa nomor";
 
-      onVerifyReceipt(activeDraft.id, finalReceipt, logMsg);
-      setPendingDocuments((prev) => prev.filter((d) => d.id !== activeDocumentId));
+      const logMsg =
+        `Verifikasi Kuitansi: Petugas memverifikasi kuitansi nomor ${displayInvoice} dari ${finalReceipt.storeName}. Total belanja ${formatIDR(finalReceipt.total)}.`;
+
+      onVerifyReceipt(
+        activeDraft.id,
+        finalReceipt,
+        logMsg
+      );
+
+      setPendingDocuments(
+        (previous) => previous.filter(
+          (document) =>
+            document.id !== activeDocumentId
+        )
+      );
+
       closeWorkspace();
-      setDialogAlert({ title: "Berhasil", message: responsePayload.message || "Dokumen berhasil diverifikasi.", variant: "success" });
+
+      return {
+        success: true as const,
+        message:
+          (responsePayload.message
+            || "Dokumen berhasil diverifikasi.")
+          + " Kode persediaan dan satuan telah tersimpan di database.",
+      };
     } catch (error: any) {
       console.error(error);
-      setDialogAlert({ title: "Gagal", message: "Gagal menyimpan verifikasi:\n" + (error?.message || "Kesalahan tidak diketahui"), variant: "danger" });
+
+      return {
+        success: false as const,
+        message:
+          "Gagal menyimpan verifikasi:\n"
+          + (
+            error?.message
+            || "Kesalahan tidak diketahui"
+          ),
+      };
     } finally {
       setIsVerifying(false);
     }
+  };
+
+  const handleVerifySave = () => {
+    if (
+      !activeDraft
+      || !activeDocumentId
+      || isSavingDraft
+      || isVerifying
+    ) {
+      return;
+    }
+
+    const validationMessage =
+      getVerificationValidationMessage();
+
+    if (validationMessage) {
+      setDialogAlert({
+        title: "Validasi Gagal",
+        message: validationMessage,
+        variant: "warning",
+      });
+
+      return;
+    }
+
+    setDialogConfirm({
+      title: "Konfirmasi Verifikasi Kuitansi",
+      message:
+        "Apakah Anda yakin seluruh data sudah benar? Setelah diverifikasi, data kuitansi, kode persediaan, dan satuan akan disimpan ke database dan digunakan pada ekspor Excel.",
+      variant: "warning",
+      confirmText: "Ya, Verifikasi",
+      cancelText: "Periksa Kembali",
+      onConfirm: async () => {
+        setDialogLoading(true);
+
+        const result =
+          await performVerification();
+
+        setDialogLoading(false);
+        setDialogConfirm(null);
+
+        setDialogAlert({
+          title: result.success
+            ? "Berhasil"
+            : "Gagal",
+          message: result.message,
+          variant: result.success
+            ? "success"
+            : "danger",
+        });
+      },
+    });
   };
 
   const openEditInventoryCodes = (rc: ReceiptData) => {
@@ -1333,6 +1446,10 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
   const exportToExcel = async (
     data: ReceiptData[]
   ) => {
+    if (exportingExcelKey !== null) {
+      return;
+    }
+
     const receiptIds = data
       .map(
         (receipt) =>
@@ -1356,8 +1473,15 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
       return;
     }
 
+    const exportKey = data.length === 1
+      ? `receipt:${data[0].id}`
+      : "all";
+
+    setExportingExcelKey(exportKey);
+
     try {
       const response = await apiFetch(
+
         "/api/receipts/export-excel",
         {
           method: "POST",
@@ -1461,6 +1585,8 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
 
         variant: "danger",
       });
+    } finally {
+      setExportingExcelKey(null);
     }
   };
 
@@ -1974,15 +2100,39 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             ? "DAFTAR DOKUMEN MASUK MENUNGGU VERIFIKASI"
             : "DAFTAR KUITANSI VALID (TERVERIFIKASI)"}
         </h3>
-        {activeTab === "verified" && receipts.filter((r) => r.isVerified).length > 0 && (
+        {activeTab === "valid" && receipts.filter((r) => r.isVerified).length > 0 && (
           <button
-            onClick={() => exportToExcel(receipts.filter((r) => r.isVerified))}
-            className="group flex-shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow hover:shadow-md transition-all duration-200 active:scale-95"
+            onClick={() =>
+              exportToExcel(
+                receipts.filter(
+                  (receipt) => receipt.isVerified
+                )
+              )
+            }
+            disabled={exportingExcelKey !== null}
+            className="group flex-shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow hover:shadow-md transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
             title="Ekspor seluruh kuitansi valid ke Excel (.xlsx)"
           >
-            <TableProperties size={13} className="group-hover:scale-110 transition-transform duration-150" />
-            Ekspor Excel
-            <Download size={12} className="opacity-80" />
+            {exportingExcelKey === "all" ? (
+              <RefreshCw
+                size={13}
+                className="animate-spin"
+              />
+            ) : (
+              <TableProperties
+                size={13}
+                className="group-hover:scale-110 transition-transform duration-150"
+              />
+            )}
+            {exportingExcelKey === "all"
+              ? "Menyiapkan Excel..."
+              : "Ekspor Excel"}
+            {exportingExcelKey !== "all" && (
+              <Download
+                size={12}
+                className="opacity-80"
+              />
+            )}
           </button>
         )}
       </div>
@@ -2128,11 +2278,24 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                           </button>
                           <button
                             onClick={() => exportToExcel([rc])}
-                            className="group inline-flex items-center gap-1 text-2xs font-bold text-emerald-700 hover:text-white bg-emerald-50 hover:bg-gradient-to-r hover:from-emerald-500 hover:to-teal-600 border border-emerald-200 hover:border-emerald-500 px-2 py-0.5 rounded transition-all duration-200 active:scale-95"
+                            disabled={exportingExcelKey !== null}
+                            className="group inline-flex items-center gap-1 text-2xs font-bold text-emerald-700 hover:text-white bg-emerald-50 hover:bg-gradient-to-r hover:from-emerald-500 hover:to-teal-600 border border-emerald-200 hover:border-emerald-500 px-2 py-0.5 rounded transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                             title="Ekspor kuitansi ini ke Excel"
                           >
-                            <Download size={10} className="flex-shrink-0" />
-                            Ekspor Excel
+                            {exportingExcelKey === `receipt:${rc.id}` ? (
+                              <RefreshCw
+                                size={10}
+                                className="animate-spin flex-shrink-0"
+                              />
+                            ) : (
+                              <Download
+                                size={10}
+                                className="flex-shrink-0"
+                              />
+                            )}
+                            {exportingExcelKey === `receipt:${rc.id}`
+                              ? "Menyiapkan..."
+                              : "Ekspor Excel"}
                           </button>
                         </div>
                       </td>
@@ -2251,13 +2414,47 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
           </div>
         </div>
       )}
+      {exportingExcelKey && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+          <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-slate-200 bg-white px-7 py-8 text-center shadow-2xl">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+              <RefreshCw
+                size={25}
+                className="animate-spin"
+              />
+            </div>
+            <h3 className="text-base font-extrabold text-slate-900">
+              Menyiapkan File Excel
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">
+              {exportingExcelKey === "all"
+                ? "Sistem sedang menggabungkan seluruh kuitansi valid ke dalam workbook Belanja Persediaan."
+                : "Sistem sedang menyusun data kuitansi ke dalam format Belanja Persediaan."}
+            </p>
+            <p className="mt-3 text-xs font-semibold text-emerald-700">
+              Mohon tunggu dan jangan menutup halaman.
+            </p>
+          </div>
+        </div>
+      )}
       {dialogConfirm && (
         <ConfirmDialog
           open
           title={dialogConfirm.title}
           message={dialogConfirm.message}
           variant={dialogConfirm.variant || "warning"}
-          confirmText={dialogLoading ? "Memproses..." : "Konfirmasi"}
+          confirmText={
+            dialogLoading
+              ? "Memproses..."
+              : (
+                  dialogConfirm.confirmText
+                  ?? "Konfirmasi"
+                )
+          }
+          cancelText={
+            dialogConfirm.cancelText
+            ?? "Batal"
+          }
           loading={dialogLoading}
           onConfirm={async () => {
             if (dialogConfirm.onConfirm) await dialogConfirm.onConfirm();

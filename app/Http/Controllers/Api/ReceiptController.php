@@ -199,6 +199,40 @@ class ReceiptController extends Controller
             ]);
         }
 
+        /*
+         * Jangan pernah menghasilkan file Excel dengan kolom
+         * kode persediaan atau satuan yang kosong. Jika masih
+         * ada data lama yang belum lengkap, pengguna diarahkan
+         * untuk memperbaruinya terlebih dahulu.
+         */
+        $incompleteReceipt = $receipts->first(
+            function (Receipt $receipt): bool {
+                return $receipt->items->contains(
+                    fn ($item): bool =>
+                        blank($item->inventory_code)
+                        || blank($item->unit)
+                );
+            }
+        );
+
+        if ($incompleteReceipt instanceof Receipt) {
+            $receiptLabel = trim(
+                (string) $incompleteReceipt->invoice_no
+            );
+
+            throw ValidationException::withMessages([
+                'receipt_ids' => [
+                    'Kuitansi '
+                    . ($receiptLabel !== ''
+                        ? $receiptLabel
+                        : '#' . $incompleteReceipt->id)
+                    . ' masih memiliki kode persediaan atau '
+                    . 'satuan yang kosong. Buka Edit Kode, '
+                    . 'lengkapi datanya, lalu ekspor kembali.',
+                ],
+            ]);
+        }
+
         /**
          * @var \Illuminate\Support\Collection<int, Receipt>
          *     $receipts
