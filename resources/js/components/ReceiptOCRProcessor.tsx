@@ -2316,65 +2316,134 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             </tbody>
           </table>
         </div>
-      {/* Modal Edit Kode Persediaan */}
+      {/* Modal Edit Kode Persediaan -> Detail Kuitansi */}
       {editingReceipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 md:p-6 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col my-auto border border-slate-200 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <div>
-                <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                  <TableProperties size={15} className="text-indigo-500" />
-                  Detail Item & Kode Persediaan
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">{editingReceipt.storeName} — {editingReceipt.invoiceNo}</p>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                  <Receipt size={20} />
+                </div>
+                <div>
+                  <h2 className="text-base font-extrabold text-slate-800">
+                    Detail Dokumen Valid
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5 font-medium">Rincian lengkap dari dokumen yang telah diverifikasi</p>
+                </div>
               </div>
-              <button onClick={() => setEditingReceipt(null)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
-                <X size={16} />
+              <button 
+                onClick={() => setEditingReceipt(null)} 
+                className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+              >
+                <X size={18} />
               </button>
             </div>
+            
             {/* Body */}
-            <div className="overflow-y-auto flex-1 px-6 py-4 space-y-3">
-              {editingReceipt.items.map((it, idx) => {
-                const currentCode = it.inventoryCode ?? "";
-                const currentUnit = it.unit ?? "";
-                const normalCode = normalizeInventoryCode(currentCode);
-                const isValid = /^10103\d{5}$/.test(normalCode);
-                const selectedOption = inventoryCodes.find(o => o.code === normalCode);
-                return (
-                  <div key={it.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50">
-                    <div className="text-xs font-bold text-slate-700 mb-2">{idx + 1}. {it.name}</div>
-                    <div className="flex gap-2">
-                      <div className="flex-1">
-                        <label className="text-2xs text-slate-500 font-semibold mb-1 block">Kode Persediaan</label>
-                        <div className={`w-full border rounded-lg px-2 py-1.5 text-xs font-mono bg-white ${
-                            isValid ? "border-slate-300" : "border-rose-400 text-rose-500"
-                          }`}
-                        >
-                          {normalCode || <span className="text-slate-400 italic">Belum diatur</span>}
-                        </div>
-                        {selectedOption && (
-                          <p className="text-2xs text-emerald-700 font-semibold mt-0.5">{selectedOption.description}</p>
-                        )}
-                      </div>
-                      <div className="w-28">
-                        <label className="text-2xs text-slate-500 font-semibold mb-1 block">Satuan</label>
-                        <div className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white text-slate-700">
-                          {currentUnit || <span className="text-slate-400 italic">-</span>}
-                        </div>
-                      </div>
+            <div className="overflow-y-auto max-h-[70vh] p-6 bg-slate-50/50">
+              
+              {/* Receipt Summary Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">No Nota / Invoice</div>
+                  <div className="text-sm font-semibold text-slate-800 break-all">{editingReceipt.invoiceNo || "-"}</div>
+                </div>
+                <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">Nama Toko</div>
+                  <div className="text-sm font-semibold text-slate-800 break-words">{editingReceipt.storeName || "-"}</div>
+                </div>
+                <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tanggal Belanja</div>
+                  <div className="text-sm font-semibold text-slate-800">{editingReceipt.date || "-"}</div>
+                </div>
+                <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">Metode Pengadaan</div>
+                  <div className="text-sm font-semibold text-slate-800">{editingReceipt.method || "-"}</div>
+                </div>
+              </div>
+              
+              {/* Items Table */}
+              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-6">
+                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/80 flex items-center gap-2">
+                  <TableProperties size={14} className="text-slate-500" />
+                  <h3 className="text-xs font-bold text-slate-700">Daftar Item & Kode Persediaan</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/50 text-slate-500 text-2xs font-bold uppercase tracking-wider border-b border-slate-100">
+                        <th className="px-4 py-3 w-10 text-center">No</th>
+                        <th className="px-4 py-3">Nama Item</th>
+                        <th className="px-4 py-3 text-center">Satuan</th>
+                        <th className="px-4 py-3 min-w-[200px]">Kode Persediaan</th>
+                        <th className="px-4 py-3 text-right">Harga Satuan</th>
+                        <th className="px-4 py-3 text-right">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {editingReceipt.items.map((it, idx) => {
+                        const normalCode = normalizeInventoryCode(it.inventoryCode ?? "");
+                        const isValid = /^10103\d{5}$/.test(normalCode);
+                        const selectedOption = inventoryCodes.find(o => o.code === normalCode);
+                        
+                        return (
+                          <tr key={it.id} className="hover:bg-slate-50/30 transition-colors">
+                            <td className="px-4 py-3 text-xs font-medium text-slate-400 text-center">{idx + 1}</td>
+                            <td className="px-4 py-3 text-xs font-bold text-slate-700">{it.name}</td>
+                            <td className="px-4 py-3 text-xs text-slate-600 text-center font-medium">{it.unit || "-"}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-col gap-0.5">
+                                <span className={`text-xs font-mono font-bold ${isValid ? 'text-indigo-600' : 'text-rose-500'}`}>
+                                  {normalCode || "Belum diatur"}
+                                </span>
+                                {selectedOption && (
+                                  <span className="text-2xs text-emerald-600 font-medium line-clamp-1">{selectedOption.description}</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-xs font-medium text-slate-600 text-right">{formatIDR(it.price)}</td>
+                            <td className="px-4 py-3 text-xs font-bold text-slate-800 text-right">{formatIDR(it.qty * it.price)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              {/* Totals Section */}
+              <div className="flex justify-end">
+                <div className="w-full md:w-1/3 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  <div className="p-4 space-y-3">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-slate-500">Subtotal</span>
+                      <span className="font-bold text-slate-700">{formatIDR(editingReceipt.subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-slate-500">
+                        Pajak PPN {editingReceipt.isTaxed ? `(${editingReceipt.taxRate}%)` : "(0%)"}
+                      </span>
+                      <span className="font-bold text-slate-700">{formatIDR(editingReceipt.taxAmount)}</span>
+                    </div>
+                    <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
+                      <span className="text-sm font-extrabold text-slate-800">Total Akhir</span>
+                      <span className="text-sm font-extrabold text-indigo-700">{formatIDR(editingReceipt.total)}</span>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              </div>
+              
             </div>
+            
             {/* Footer */}
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100">
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-white">
               <button
                 onClick={() => setEditingReceipt(null)}
-                className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors flex items-center gap-2 active:scale-95"
+                className="px-6 py-2.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all active:scale-95 flex items-center gap-2"
               >
-                Tutup
+                Tutup Detail
               </button>
             </div>
           </div>
