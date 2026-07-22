@@ -1969,6 +1969,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                 <th className="px-5 py-3 text-center">Tarif Pajak PPN</th>
                 <th className="px-5 py-3 text-right">Total Nilai</th>
                 <th className="px-5 py-3 text-center">Status Verifikasi</th>
+                <th className="px-5 py-3 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -1995,7 +1996,13 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                         {formatIDR(doc.summary?.total || 0)}
                       </td>
                       <td className="px-5 py-3 text-center font-sans">
-                        <div className="flex items-center justify-center gap-1.5">
+                        <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md border font-semibold bg-amber-50 text-amber-700 border-amber-200 cursor-default select-none">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block flex-shrink-0"></span>
+                          Menunggu Verifikasi
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-center font-sans">
+                        <div className="flex items-center justify-center gap-2 whitespace-nowrap">
                           <button
                             onClick={() => {
                               if (
@@ -2037,7 +2044,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="py-12">
+                    <td colSpan={8} className="py-12">
                       <div className="flex flex-col items-center justify-center text-center">
                         <FolderOpen size={40} className="text-slate-300 mb-3" strokeWidth={1} />
                         <h4 className="text-sm font-extrabold text-slate-800 mb-1">Belum ada dokumen menunggu verifikasi</h4>
@@ -2068,14 +2075,17 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                       <td className="px-5 py-3 text-right font-bold text-slate-800 font-sans">
                         {formatIDR(rc.total)}
                       </td>
-                      <td className="px-5 py-3 text-center font-sans">
-                        <div className="flex flex-col items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded border font-bold bg-emerald-50 text-emerald-800 border-emerald-100">
-                            Dokumen Valid
-                          </span>
+                      <td className="px-5 py-3 text-center font-sans align-middle">
+                        <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-md border font-semibold bg-emerald-50 text-emerald-700 border-emerald-200 cursor-default select-none">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block flex-shrink-0"></span>
+                          Dokumen Valid
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-center font-sans align-middle">
+                        <div className="flex items-center justify-center gap-2 whitespace-nowrap">
                           <button
                             onClick={() => handleUnverify(rc.id, rc.invoiceNo, rc.storeName)}
-                            className="text-2xs font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded border border-rose-100 transition-colors"
+                            className="text-2xs font-semibold text-rose-600 bg-white hover:bg-rose-50 px-2.5 py-1 rounded-md border border-rose-300 transition-colors cursor-pointer"
                           >
                             Batalkan
                           </button>
@@ -2093,7 +2103,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="py-12">
+                    <td colSpan={8} className="py-12">
                       <div className="flex flex-col items-center justify-center text-center">
                         <CheckCircle size={40} className="text-slate-300 mb-3" strokeWidth={1} />
                         <h4 className="text-sm font-extrabold text-slate-800 mb-1">Belum ada kuitansi valid</h4>
