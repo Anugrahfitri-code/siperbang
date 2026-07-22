@@ -851,7 +851,9 @@ useEffect(() => {
             <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-7 sm:px-6 lg:px-8">
 
         {/* Stats Section */}
-        <DashboardStats requests={requests} receipts={receipts} />
+        {currentRole !== UserRole.KETUA_TIM && (
+          <DashboardStats requests={requests} receipts={receipts} />
+        )}
 
         {/* Role-Specific Workspaces */}
         {currentRole === UserRole.PETUGAS_PERSERDIAN ? (
