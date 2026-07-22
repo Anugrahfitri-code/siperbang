@@ -1012,18 +1012,31 @@ class ReceiptDocumentController extends Controller
             );
         }
 
+        $receiptData = [
+            'invoice_no' => $invoiceNo,
+            'store_name' => $storeName,
+            'date' => $validated['date'],
+            'is_taxed' => (bool) $validated['isTaxed'],
+            'tax_rate' => $taxRate,
+            'subtotal' => $subtotal,
+            'tax_amount' => $taxAmount,
+            'total' => $total,
+            'is_verified' => true,
+            'status' => 'Dokumen Valid',
+            'method' => $validated['method'] ?? null,
+            'bast_name' => $validated['bastName'] ?? null,
+            'bast_date' => $validated['bastDate'] ?? null,
+        ];
+
         try {
             $result = DB::transaction(
                 function () use (
                     $receiptDocument,
-                    $validated,
                     $normalisedItems,
-                    $subtotal,
-                    $taxRate,
-                    $taxAmount,
                     $total,
                     $storeName,
                     $invoiceNo,
+                    $receiptData,
                 ) {
                     $lockedDocument = (
                         ReceiptDocument::query()
@@ -1080,7 +1093,7 @@ class ReceiptDocumentController extends Controller
                             $duplicate
                                 ->date
                                 ?->format('Y-m-d')
-                            === $validated['date']
+                            === $receiptData['date']
                         );
 
                         $sameTotal = (
@@ -1107,6 +1120,22 @@ class ReceiptDocumentController extends Controller
                                 ]);
                         }
 
+                        /*
+                         * Data pada form verifikasi adalah sumber
+                         * data terbaru. Jika invoice yang sama sudah
+                         * ada, perbarui header dan seluruh itemnya.
+                         *
+                         * Ini mencegah kode persediaan dan satuan
+                         * tetap kosong pada kuitansi lama yang dibuat
+                         * sebelum kolom tersebut tersedia.
+                         */
+                        $duplicate->update($receiptData);
+
+                        $this->syncReceiptItems(
+                            $duplicate,
+                            $normalisedItems,
+                        );
+
                         $lockedDocument->update([
                             'receipt_id' =>
                                 $duplicate->id,
@@ -1121,7 +1150,9 @@ class ReceiptDocumentController extends Controller
 
                         return [
                             'receipt' =>
-                                $duplicate,
+                                $duplicate
+                                    ->fresh()
+                                    ->load('items.inventoryCodeMaster'),
 
                             'document' =>
                                 $lockedDocument
@@ -1132,80 +1163,14 @@ class ReceiptDocumentController extends Controller
                         ];
                     }
 
-                    $receipt = Receipt::create([
-                        'invoice_no' =>
-                            $invoiceNo,
+                    $receipt = Receipt::create(
+                        $receiptData
+                    );
 
-                        'store_name' =>
-                            $storeName,
-
-                        'date' =>
-                            $validated['date'],
-
-                        'is_taxed' =>
-                            $validated['isTaxed'],
-
-                        'tax_rate' =>
-                            $taxRate,
-
-                        'subtotal' =>
-                            $subtotal,
-
-                        'tax_amount' =>
-                            $taxAmount,
-
-                        'total' =>
-                            $total,
-
-                        'is_verified' =>
-                            true,
-
-                        'status' =>
-                            'Dokumen Valid',
-
-                        'method' =>
-                            $validated['method']
-                            ?? null,
-
-                        'bast_name' =>
-                            $validated['bastName']
-                            ?? null,
-
-                        'bast_date' =>
-                            $validated['bastDate']
-                            ?? null,
-                    ]);
-
-                    foreach (
-                        $normalisedItems
-                        as $item
-                    ) {
-                        $receipt
-                            ->items()
-                            ->create([
-                                'name' =>
-                                    $item['name'],
-
-                                'qty' =>
-                                    $item['qty'],
-
-                                'unit' =>
-                                    $item['unit'],
-
-                                'inventory_code' =>
-                                    $item['inventory_code'],
-
-                                'price' =>
-                                    $item['price'],
-
-                                'subtotal' =>
-                                    round(
-                                        $item['qty']
-                                        * $item['price'],
-                                        2,
-                                    ),
-                            ]);
-                    }
+                    $this->syncReceiptItems(
+                        $receipt,
+                        $normalisedItems,
+                    );
 
                     $lockedDocument->update([
                         'receipt_id' =>
@@ -1240,9 +1205,9 @@ class ReceiptDocumentController extends Controller
                     $result['reused']
                         ? (
                             'Invoice sudah pernah '
-                            . 'diverifikasi. Dokumen '
-                            . 'dihubungkan ke data '
-                            . 'yang sudah ada.'
+                            . 'diverifikasi. Data kuitansi, '
+                            . 'kode persediaan, dan satuan '
+                            . 'telah diperbarui.'
                         )
                         : (
                             'Dokumen berhasil '
@@ -1333,6 +1298,46 @@ class ReceiptDocumentController extends Controller
                         : null,
             ], 500);
         }
+    }
+
+
+    /**
+     * @param array<int, array{
+     *     name: string,
+     *     qty: int,
+     *     unit: string|null,
+     *     inventory_code: string,
+     *     price: float
+     * }> $items
+     */
+    private function syncReceiptItems(
+        Receipt $receipt,
+        array $items,
+    ): void {
+        /*
+         * Verifikasi terakhir menjadi sumber kebenaran.
+         * Item lama diganti dalam transaksi yang sama agar
+         * database tidak menyimpan campuran data lama dan baru.
+         */
+        $receipt->items()->delete();
+
+        $rows = array_map(
+            static fn (array $item): array => [
+                'name' => $item['name'],
+                'qty' => $item['qty'],
+                'unit' => $item['unit'],
+                'inventory_code' =>
+                    $item['inventory_code'],
+                'price' => $item['price'],
+                'subtotal' => round(
+                    $item['qty'] * $item['price'],
+                    2,
+                ),
+            ],
+            $items,
+        );
+
+        $receipt->items()->createMany($rows);
     }
 
     public function unverify(
