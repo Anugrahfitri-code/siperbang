@@ -2324,8 +2324,8 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div>
                 <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                  <Pencil size={15} className="text-indigo-500" />
-                  Edit Kode Persediaan
+                  <TableProperties size={15} className="text-indigo-500" />
+                  Detail Item & Kode Persediaan
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">{editingReceipt.storeName} — {editingReceipt.invoiceNo}</p>
               </div>
@@ -2336,8 +2336,8 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             {/* Body */}
             <div className="overflow-y-auto flex-1 px-6 py-4 space-y-3">
               {editingReceipt.items.map((it, idx) => {
-                const currentCode = editItemCodes[it.id]?.inventory_code ?? it.inventoryCode ?? "";
-                const currentUnit = editItemCodes[it.id]?.unit ?? it.unit ?? "";
+                const currentCode = it.inventoryCode ?? "";
+                const currentUnit = it.unit ?? "";
                 const normalCode = normalizeInventoryCode(currentCode);
                 const isValid = /^10103\d{5}$/.test(normalCode);
                 const selectedOption = inventoryCodes.find(o => o.code === normalCode);
@@ -2347,46 +2347,21 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                     <div className="flex gap-2">
                       <div className="flex-1">
                         <label className="text-2xs text-slate-500 font-semibold mb-1 block">Kode Persediaan</label>
-                        <select
-                          value={normalCode}
-                          onChange={(e) => {
-                            const code = e.target.value;
-                            setEditItemCodes(prev => ({
-                              ...prev,
-                              [it.id]: { ...prev[it.id], inventory_code: code },
-                            }));
-                          }}
-                          className={`w-full border rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
-                            isValid ? "border-slate-300 bg-white" : "border-rose-400 bg-rose-50"
+                        <div className={`w-full border rounded-lg px-2 py-1.5 text-xs font-mono bg-white ${
+                            isValid ? "border-slate-300" : "border-rose-400 text-rose-500"
                           }`}
                         >
-                          <option value="">-- Pilih Kode --</option>
-                          {inventoryCodesLoading && <option disabled>Memuat...</option>}
-                          {inventoryCodes.map(opt => (
-                            <option key={opt.code} value={opt.code}>{opt.code} — {opt.description}</option>
-                          ))}
-                        </select>
+                          {normalCode || <span className="text-slate-400 italic">Belum diatur</span>}
+                        </div>
                         {selectedOption && (
                           <p className="text-2xs text-emerald-700 font-semibold mt-0.5">{selectedOption.description}</p>
                         )}
                       </div>
                       <div className="w-28">
                         <label className="text-2xs text-slate-500 font-semibold mb-1 block">Satuan</label>
-                        <select
-                          value={currentUnit}
-                          onChange={(e) => {
-                            setEditItemCodes(prev => ({
-                              ...prev,
-                              [it.id]: { ...prev[it.id], unit: e.target.value },
-                            }));
-                          }}
-                          className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                        >
-                          <option value="">Pilih...</option>
-                          {RECEIPT_UNIT_OPTIONS.map(u => (
-                            <option key={u} value={u}>{u}</option>
-                          ))}
-                        </select>
+                        <div className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white text-slate-700">
+                          {currentUnit || <span className="text-slate-400 italic">-</span>}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2397,18 +2372,9 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100">
               <button
                 onClick={() => setEditingReceipt(null)}
-                disabled={isSavingEdit}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+                className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors flex items-center gap-2 active:scale-95"
               >
-                Batal
-              </button>
-              <button
-                onClick={handleSaveInventoryCodes}
-                disabled={isSavingEdit}
-                className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-60 active:scale-95"
-              >
-                {isSavingEdit ? <RefreshCw size={12} className="animate-spin" /> : <Save size={12} />}
-                {isSavingEdit ? "Menyimpan..." : "Simpan Kode Persediaan"}
+                Tutup
               </button>
             </div>
           </div>
