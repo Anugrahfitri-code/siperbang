@@ -2566,7 +2566,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                         {doc.summary?.storeName || doc.original_filename}
                       </td>
                       <td className="px-5 py-3 text-slate-500 font-sans">
-                        {doc.summary?.date || "-"}
+                        {doc.summary?.date ? doc.summary.date.substring(0, 10) : "-"}
                       </td>
                       <td className="px-5 py-3 font-semibold text-slate-600 font-sans">
                         {doc.summary?.method || "-"}
@@ -2646,7 +2646,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                         {rc.storeName}
                       </td>
                       <td className="px-5 py-3 text-slate-500 font-sans">
-                        {rc.date}
+                        {rc.date ? rc.date.substring(0, 10) : "-"}
                       </td>
                       <td className="px-5 py-3 font-semibold text-slate-600 font-sans">
                         {rc.method}
@@ -2759,7 +2759,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                 </div>
                 <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
                   <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tanggal Belanja</div>
-                  <div className="text-sm font-semibold text-slate-800">{editingReceipt.date || "-"}</div>
+                  <div className="text-sm font-semibold text-slate-800">{editingReceipt.date ? editingReceipt.date.substring(0, 10) : "-"}</div>
                 </div>
                 <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
                   <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">Metode Pengadaan</div>
