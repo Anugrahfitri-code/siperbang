@@ -1476,7 +1476,7 @@ class ReceiptDocumentController extends Controller
     }
     public function destroy(ReceiptDocument $receiptDocument)
     {
-        if ($receiptDocument->status === ReceiptDocumentStatus::VERIFIED) {
+        if ($receiptDocument->status === ReceiptDocumentStatus::VERIFIED && $receiptDocument->receipt_id !== null) {
             return response()->json([
                 'message' => 'Dokumen yang sudah diverifikasi tidak dapat dihapus.',
             ], 403);
