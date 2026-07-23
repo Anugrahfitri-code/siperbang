@@ -6,6 +6,7 @@ import { DistributionProcurement } from "./DistributionProcurement";
 interface StockCheckingProps {
   requests: ItemRequest[];
   stockList: StockItem[];
+  bons?: any[];
   onUpdateStatus: (
     reqId: string,
     status: RequestStatus,
@@ -43,6 +44,7 @@ interface StockCheckingProps {
 export const StockChecking: React.FC<StockCheckingProps> = ({
   requests,
   stockList,
+  bons,
   onUpdateStatus,
   onDistribute,
   onProcure,
@@ -235,6 +237,23 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                         &ldquo;{req.notes}&rdquo;
                       </p>
                     )}
+
+                    {(() => {
+                      const relatedBon = bons?.find((b) => b.bonNo === req.bonNo);
+                      if (relatedBon && (relatedBon.keperluan || relatedBon.catatan)) {
+                        return (
+                          <div className="mt-3 text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200/60 leading-relaxed shadow-sm">
+                            {relatedBon.keperluan && (
+                              <div><span className="font-bold text-slate-700">Keperluan/Tujuan:</span> {relatedBon.keperluan}</div>
+                            )}
+                            {relatedBon.catatan && (
+                              <div className={relatedBon.keperluan ? "mt-2 pt-2 border-t border-slate-200/60" : ""}><span className="font-bold text-slate-700">Catatan Tambahan:</span> {relatedBon.catatan}</div>
+                            )}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
 
                   <div className="flex items-center gap-3 justify-end flex-wrap">
@@ -355,6 +374,30 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                   <span className="text-slate-900 font-extrabold">{selectedRequest.qtyRequested} {selectedRequest.unit}</span>
                 </div>
               </div>
+
+              {(() => {
+                const reqBonNo = selectedRequest.bonNo || (selectedRequest as any).bon_no;
+                const activeBon = bons?.find((b) => (b.bonNo || b.bon_no) === reqBonNo);
+                if (activeBon && (activeBon.keperluan || activeBon.catatan)) {
+                  return (
+                    <div className="bg-indigo-50/50 border border-indigo-100 rounded-lg p-4 text-xs shadow-sm mb-4">
+                      {activeBon.keperluan && (
+                        <div className="mb-2">
+                          <span className="block text-indigo-500 font-bold mb-0.5 uppercase tracking-wider text-[10px]">Keperluan / Tujuan</span>
+                          <span className="font-bold text-slate-800">{activeBon.keperluan}</span>
+                        </div>
+                      )}
+                      {activeBon.catatan && (
+                        <div className={activeBon.keperluan ? "pt-2 border-t border-indigo-100/60" : ""}>
+                          <span className="block text-indigo-500 font-bold mb-0.5 uppercase tracking-wider text-[10px]">Catatan Tambahan (Ketua Tim)</span>
+                          <span className="font-medium text-slate-700 italic">"{activeBon.catatan}"</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               {/* ── Pilih Barang dari Stok Gudang ── */}
               <div>

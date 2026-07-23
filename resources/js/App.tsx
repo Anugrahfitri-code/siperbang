@@ -200,14 +200,12 @@ useEffect(() => {
       const fetchRequests = apiFetch("/api/requests");
       const fetchLogs = apiFetch("/api/logs");
 
-      let fetchBons = Promise.resolve(null as any);
+      let fetchBons = apiFetch("/api/requests/bon?all=true");
       let fetchStocks = Promise.resolve(null as any);
       let fetchReceipts = Promise.resolve(null as any);
       let fetchUsers = Promise.resolve(null as any);
 
-      if (isKetuaTim) {
-        fetchBons = apiFetch("/api/requests/bon?all=true");
-      } else {
+      if (!isKetuaTim) {
         fetchStocks = apiFetch("/api/stocks");
         fetchReceipts = apiFetch("/api/receipts");
         fetchUsers = apiFetch("/api/users");
@@ -899,11 +897,25 @@ useEffect(() => {
                       </h3>
                     </div>
                     <div className="space-y-4">
-                      {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => (
+                      {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => {
+                        const relatedBon = bons.find(b => (b.bonNo || b.bon_no) === (r.bonNo || r.bon_no));
+                        return (
                         <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-md p-5 shadow-xs gap-4">
                           <div>
                             <span className="font-mono text-xs font-bold text-slate-400 block uppercase tracking-wider mb-1">{r.bonNo}</span>
                             <span className="font-extrabold text-slate-800 text-base block">{r.itemName}</span>
+                            
+                            {relatedBon && (relatedBon.keperluan || relatedBon.catatan) && (
+                              <div className="mt-2 mb-2 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-md border border-slate-200/60 leading-relaxed">
+                                {relatedBon.keperluan && (
+                                  <div><span className="font-bold text-slate-700">Keperluan:</span> {relatedBon.keperluan}</div>
+                                )}
+                                {relatedBon.catatan && (
+                                  <div className={relatedBon.keperluan ? "mt-1.5 pt-1.5 border-t border-slate-200/60" : ""}><span className="font-bold text-slate-700">Catatan BON:</span> {relatedBon.catatan}</div>
+                                )}
+                              </div>
+                            )}
+
                             <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mt-2">
                               <User size={12} className="text-slate-400" />
                               <span>Diminta oleh {r.requester}</span>
@@ -923,7 +935,7 @@ useEffect(() => {
                             <ChevronRight size={14} />
                           </button>
                         </div>
-                      ))}
+                      );})}
                       {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).length === 0 && (
                         <div className="text-center py-6 text-slate-400 text-xs font-semibold">
                           Semua antrean BON digital telah diproses. Bersih!
@@ -940,6 +952,7 @@ useEffect(() => {
                 <StockChecking
                   requests={requests}
                   stockList={stock}
+                  bons={bons}
                   onUpdateStatus={handleUpdateStatus}
                   onDistribute={handleDistribute}
                   onProcure={handleProcure}
@@ -1025,71 +1038,17 @@ useEffect(() => {
             )}
 
               {requesterTab === "monitoring" && (
-                <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
-                      <CheckSquare size={24} />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold leading-7 text-slate-900">Daftar Pengajuan Kebutuhan Barang</h2>
-                      <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
-                        Pantau status real-time, ketersediaan stok, hasil pengecekan, serta status pengadaan unit kerja Anda
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {requests.map((req) => (
-                      <div key={req.id} className="border border-slate-200 rounded p-4 hover:border-slate-300 transition-colors">
-                        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                          <div>
-                            <div className="flex items-center gap-2 flex-wrap text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
-                              <span>{req.bonNo}</span>
-                              <span className="text-slate-300">•</span>
-                              <span>{req.date}</span>
-                            </div>
-                            <h3 className="text-sm font-extrabold text-slate-800 mt-1">
-                              {req.itemName}
-                              <span className="text-xs font-normal text-slate-500 ml-1 font-mono">
-                                ({req.qtyRequested} {req.unit})
-                              </span>
-                            </h3>
-
-                            {/* Fulfillments display info */}
-                            <div className="flex items-center gap-4 mt-2.5 text-xs font-bold">
-                              <span className="text-slate-500">
-                                Jumlah Dipenuhi: <strong className="text-slate-800 font-extrabold">{req.qtyFulfilled} {req.unit}</strong>
-                              </span>
-                              <span className="text-slate-300">|</span>
-                              <span className="text-slate-500">
-                                Hasil Cek Stok: <strong className="text-indigo-600 font-extrabold">{req.qtyAvailable} {req.unit} tersedia di gudang</strong>
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2 self-start sm:self-auto">
-                            <span className={`px-2.5 py-0.5 rounded text-xs font-extrabold border ${
-                              req.status === RequestStatus.SELESAI || req.status === RequestStatus.TERPENUHI
-                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                : req.status === RequestStatus.DIAJUKAN
-                                ? "bg-amber-50 text-amber-800 border-amber-300"
-                                : req.status === RequestStatus.TERPENUHI_SEBAGIAN
-                                ? "bg-amber-50 text-amber-700 border-amber-200"
-                                : "bg-rose-50 text-rose-800 border-rose-200"
-                            }`}>
-                              {req.status}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {requests.length === 0 && (
-                      <div className="text-center py-10 text-slate-400 text-xs bg-slate-50 border border-slate-200 rounded">
-                        Anda belum mengajukan kebutuhan barang.
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <BonMonitoringList 
+                  bons={bons}
+                  loading={requestsLoading}
+                  error={requestsError}
+                  onRefresh={loadData}
+                  onEditDraft={(bon) => {
+                    setEditingDraft(bon);
+                    setRequesterTab("bon");
+                  }}
+                  onDeleteDraft={handleDeleteDraft}
+                />
               )}
 
               {requesterTab === "stock" && <RequesterStockList />}
@@ -1123,11 +1082,25 @@ useEffect(() => {
                       </h3>
                     </div>
                     <div className="space-y-4">
-                      {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => (
+                      {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => {
+                        const relatedBon = bons.find(b => (b.bonNo || b.bon_no) === (r.bonNo || r.bon_no));
+                        return (
                         <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-md p-5 shadow-xs gap-4">
                           <div>
                             <span className="font-mono text-xs font-bold text-slate-400 block uppercase tracking-wider mb-1">{r.bonNo}</span>
                             <span className="font-extrabold text-slate-800 text-base block">{r.itemName}</span>
+                            
+                            {relatedBon && (relatedBon.keperluan || relatedBon.catatan) && (
+                              <div className="mt-2 mb-2 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-md border border-slate-200/60 leading-relaxed">
+                                {relatedBon.keperluan && (
+                                  <div><span className="font-bold text-slate-700">Keperluan:</span> {relatedBon.keperluan}</div>
+                                )}
+                                {relatedBon.catatan && (
+                                  <div className={relatedBon.keperluan ? "mt-1.5 pt-1.5 border-t border-slate-200/60" : ""}><span className="font-bold text-slate-700">Catatan BON:</span> {relatedBon.catatan}</div>
+                                )}
+                              </div>
+                            )}
+
                             <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mt-2">
                               <User size={12} className="text-slate-400" />
                               <span>Diminta oleh {r.requester}</span>
@@ -1147,7 +1120,7 @@ useEffect(() => {
                             <ChevronRight size={14} />
                           </button>
                         </div>
-                      ))}
+                      );})}
                       {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).length === 0 && (
                         <div className="text-center py-6 text-slate-400 text-xs font-semibold">
                           Semua antrean BON digital telah diproses. Bersih!
@@ -1183,6 +1156,7 @@ useEffect(() => {
               <StockChecking
                 requests={requests}
                 stockList={stock}
+                bons={bons}
                 onUpdateStatus={handleUpdateStatus}
                 onDistribute={handleDistribute}
                 onProcure={handleProcure}
@@ -1213,71 +1187,17 @@ useEffect(() => {
             )}
 
             {superadminTab === "monitoring" && (
-              <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
-                    <CheckSquare size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold leading-7 text-slate-900">Daftar Pengajuan Kebutuhan Barang</h2>
-                    <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
-                      Pantau status real-time, ketersediaan stok, hasil pengecekan, serta status pengadaan unit kerja Anda
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {requests.map((req) => (
-                    <div key={req.id} className="border border-slate-200 rounded p-4 hover:border-slate-300 transition-colors">
-                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
-                            <span>{req.bonNo}</span>
-                            <span className="text-slate-300">•</span>
-                            <span>{req.date}</span>
-                          </div>
-                          <h3 className="text-sm font-extrabold text-slate-800 mt-1">
-                            {req.itemName}
-                            <span className="text-xs font-normal text-slate-500 ml-1 font-mono">
-                              ({req.qtyRequested} {req.unit})
-                            </span>
-                          </h3>
-
-                          {/* Fulfillments display info */}
-                          <div className="flex items-center gap-4 mt-2.5 text-xs font-bold">
-                            <span className="text-slate-500">
-                              Jumlah Dipenuhi: <strong className="text-slate-800 font-extrabold">{req.qtyFulfilled} {req.unit}</strong>
-                            </span>
-                            <span className="text-slate-300">|</span>
-                            <span className="text-slate-500">
-                              Hasil Cek Stok: <strong className="text-indigo-600 font-extrabold">{req.qtyAvailable} {req.unit} tersedia di gudang</strong>
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 self-start sm:self-auto">
-                          <span className={`px-2.5 py-0.5 rounded text-xs font-extrabold border ${
-                            req.status === RequestStatus.SELESAI || req.status === RequestStatus.TERPENUHI
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                              : req.status === RequestStatus.DIAJUKAN
-                              ? "bg-amber-50 text-amber-800 border-amber-300"
-                              : req.status === RequestStatus.TERPENUHI_SEBAGIAN
-                              ? "bg-amber-50 text-amber-700 border-amber-200"
-                              : "bg-rose-50 text-rose-800 border-rose-200"
-                          }`}>
-                            {req.status}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {requests.length === 0 && (
-                    <div className="text-center py-10 text-slate-400 text-xs bg-slate-50 border border-slate-200 rounded">
-                      Belum ada pengajuan kebutuhan barang.
-                    </div>
-                  )}
-                </div>
-              </div>
+              <BonMonitoringList 
+                bons={bons}
+                loading={requestsLoading}
+                error={requestsError}
+                onRefresh={loadData}
+                onEditDraft={(bon) => {
+                  setEditingDraft(bon);
+                  setSuperadminTab("bon");
+                }}
+                onDeleteDraft={handleDeleteDraft}
+              />
             )}
 
             {superadminTab === "stock_catalog" && <RequesterStockList stock={stock} />}

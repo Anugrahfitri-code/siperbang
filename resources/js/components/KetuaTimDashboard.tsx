@@ -284,7 +284,6 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
                   <th className="py-3.5 px-5">Jumlah Dipenuhi</th>
                   <th className="py-3.5 px-5">Status</th>
                   <th className="py-3.5 px-5">Catatan / Detail</th>
-                  <th className="py-3.5 px-5">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
@@ -320,19 +319,6 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
                         <span className="text-2xs text-indigo-600 font-bold block mt-1">
                           {req.procurementMethod} {req.vendorName ? `• ${req.vendorName}` : ""}
                         </span>
-                      )}
-                    </td>
-                    <td className="py-4 px-5 whitespace-nowrap">
-                      {(req.status as string) === "Draft" && onEditDraft ? (
-                        <button
-                          onClick={() => onEditDraft(req.bonNo)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors"
-                        >
-                          <Edit3 size={11} />
-                          Lanjutkan Draft
-                        </button>
-                      ) : (
-                        <span className="text-slate-300 text-sm">—</span>
                       )}
                     </td>
                   </tr>
