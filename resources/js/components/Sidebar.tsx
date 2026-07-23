@@ -1,15 +1,18 @@
 import React, { type ReactNode } from "react";
 import {
-  CheckSquare,
+  Boxes,
+  ClipboardCheck,
   ClipboardList,
+  FileBarChart2,
   FileSpreadsheet,
   History,
-  Home,
   LayoutDashboard,
   Package,
   Receipt,
+  ScanSearch,
   ShieldCheck,
   Users,
+  ReceiptText,
   X,
 } from "lucide-react";
 
@@ -302,7 +305,7 @@ export function Sidebar({
                 }
                 color="emerald"
                 icon={
-                  <Home
+                  <ClipboardList
                     size={19}
                     strokeWidth={1.9}
                   />
@@ -320,7 +323,7 @@ export function Sidebar({
                 }
                 color="emerald"
                 icon={
-                  <Package
+                  <Boxes
                     size={19}
                     strokeWidth={1.9}
                   />
@@ -373,7 +376,7 @@ export function Sidebar({
                 }
                 color="emerald"
                 icon={
-                  <FileSpreadsheet
+                  <FileBarChart2
                     size={19}
                     strokeWidth={1.9}
                   />
@@ -388,11 +391,10 @@ export function Sidebar({
                 active={false}
                 color="emerald"
                 icon={
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                    <line x1="12" y1="22.08" x2="12" y2="12"/>
-                  </svg>
+                  <Package
+                    size={19}
+                    strokeWidth={1.9}
+                  />
                 }
                 label="Master Barang"
                 onClick={() => { if (typeof window !== "undefined") { window.location.href = "/master-barang"; } }}
@@ -406,7 +408,7 @@ export function Sidebar({
                 active={superadminTab === "bon"}
                 color="emerald"
                 icon={
-                  <ClipboardList
+                  <ReceiptText
                     size={19}
                     strokeWidth={1.9}
                   />
@@ -423,7 +425,7 @@ export function Sidebar({
                 }
                 color="emerald"
                 icon={
-                  <CheckSquare
+                  <ClipboardCheck
                     size={19}
                     strokeWidth={1.9}
                   />
@@ -443,7 +445,7 @@ export function Sidebar({
                 }
                 color="emerald"
                 icon={
-                  <Package
+                  <ScanSearch
                     size={19}
                     strokeWidth={1.9}
                   />
@@ -487,7 +489,7 @@ export function Sidebar({
                 }
                 color="indigo"
                 icon={
-                  <Home
+                  <ClipboardList
                     size={20}
                     strokeWidth={1.9}
                   />
@@ -505,7 +507,7 @@ export function Sidebar({
                 }
                 color="indigo"
                 icon={
-                  <Package
+                  <Boxes
                     size={20}
                     strokeWidth={1.9}
                   />
@@ -552,7 +554,7 @@ export function Sidebar({
                 active={officerTab === "report"}
                 color="indigo"
                 icon={
-                  <FileSpreadsheet
+                  <FileBarChart2
                     size={20}
                     strokeWidth={1.9}
                   />
@@ -567,11 +569,10 @@ export function Sidebar({
                 active={false}
                 color="indigo"
                 icon={
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                    <line x1="12" y1="22.08" x2="12" y2="12"/>
-                  </svg>
+                  <Package
+                    size={20}
+                    strokeWidth={1.9}
+                  />
                 }
                 label="Master Barang"
                 onClick={() => { if (typeof window !== "undefined") { window.location.href = "/master-barang"; } }}
@@ -617,7 +618,7 @@ export function Sidebar({
                 active={requesterTab === "bon"}
                 color="amber"
                 icon={
-                  <ClipboardList
+                  <ReceiptText
                     size={20}
                     strokeWidth={1.9}
                   />
@@ -634,7 +635,7 @@ export function Sidebar({
                 }
                 color="amber"
                 icon={
-                  <CheckSquare
+                  <ClipboardCheck
                     size={20}
                     strokeWidth={1.9}
                   />
@@ -651,7 +652,7 @@ export function Sidebar({
                 }
                 color="amber"
                 icon={
-                  <Package
+                  <ScanSearch
                     size={20}
                     strokeWidth={1.9}
                   />

@@ -21,10 +21,7 @@
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                         </svg>
                     </span>
                     <span class="truncate">Kelola Pengguna</span>
@@ -39,8 +36,7 @@
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                            <polyline points="9 22 9 12 15 12 15 22"/>
+                            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
                         </svg>
                     </span>
                     <span class="truncate">Daftar Tindakan</span>
@@ -52,9 +48,7 @@
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16.5 9.4 7.55 4.24a1 1 0 0 0-1.1 0L3.5 6.1a1 1 0 0 0-.5.87v9.97a1 1 0 0 0 .5.86l3 1.87a1 1 0 0 0 1.1 0l4.9-3.08A1 1 0 0 0 13 15.5V8.4a1 1 0 0 0-.5-.86L9.5 5.5"/>
-                            <path d="m19 7-4.5-2.82A1 1 0 0 0 13.5 5v12a1 1 0 0 0 .5.86L18.5 21"/>
-                            <path d="M16.5 9.4V16"/>
+                            <path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z"/><path d="m7 16.5-4.74-2.85"/><path d="m7 16.5 5-3"/><path d="M7 16.5v5.17"/><path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z"/><path d="m17 16.5-5-3"/><path d="m17 16.5 4.74-2.85"/><path d="M17 16.5v5.17"/><path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z"/><path d="M12 8 7.26 5.15"/><path d="m12 8 4.74-2.85"/><path d="M12 13.5V8"/>
                         </svg>
                     </span>
                     <span class="truncate">Pengecekan & Pemenuhan</span>
@@ -67,11 +61,7 @@
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                            <polyline points="10 9 9 9 8 9"/>
+                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/>
                         </svg>
                     </span>
                     <span class="truncate">Excel & Kode Persediaan</span>
@@ -83,10 +73,7 @@
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/>
-                            <path d="M8 7h8"/>
-                            <path d="M8 11h8"/>
-                            <path d="M8 15h5"/>
+                            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/>
                         </svg>
                     </span>
                     <span class="truncate">OCR Kuitansi & Pajak</span>
@@ -98,11 +85,7 @@
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                            <polyline points="10 9 9 9 8 9"/>
+                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18v-1"/><path d="M12 18v-6"/><path d="M16 18v-3"/>
                         </svg>
                     </span>
                     <span class="truncate">Rekap Laporan Excel</span>
@@ -115,9 +98,7 @@
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                            <line x1="12" y1="22.08" x2="12" y2="12"/>
+                            <path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
                         </svg>
                     </span>
                     <span class="truncate">Master Barang</span>
@@ -131,8 +112,7 @@
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/>
                         </svg>
                     </span>
                     <span class="truncate">BON Digital / Ajukan Baru</span>
@@ -144,8 +124,7 @@
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 11 12 14 22 4"/>
-                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>
                         </svg>
                     </span>
                     <span class="truncate">Pantau Pengajuan</span>
@@ -157,9 +136,7 @@
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16.5 9.4 7.55 4.24a1 1 0 0 0-1.1 0L3.5 6.1a1 1 0 0 0-.5.87v9.97a1 1 0 0 0 .5.86l3 1.87a1 1 0 0 0 1.1 0l4.9-3.08A1 1 0 0 0 13 15.5V8.4a1 1 0 0 0-.5-.86L9.5 5.5"/>
-                            <path d="m19 7-4.5-2.82A1 1 0 0 0 13.5 5v12a1 1 0 0 0 .5.86L18.5 21"/>
-                            <path d="M16.5 9.4V16"/>
+                            <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>
                         </svg>
                     </span>
                     <span class="truncate">Katalog Stok Gudang</span>
@@ -173,8 +150,7 @@
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline points="12 6 12 12 16 14"/>
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>
                         </svg>
                     </span>
                     <span class="truncate">Audit Log Sistem</span>
@@ -188,9 +164,8 @@
                {{ $isTindakanActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
                         </svg>
                     </span>
                     <span class="truncate">Daftar Tindakan</span>
@@ -204,10 +179,8 @@
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                            <line x1="12" y1="22.08" x2="12" y2="12"/>
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z"/><path d="m7 16.5-4.74-2.85"/><path d="m7 16.5 5-3"/><path d="M7 16.5v5.17"/><path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z"/><path d="m17 16.5-5-3"/><path d="m17 16.5 4.74-2.85"/><path d="M17 16.5v5.17"/><path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z"/><path d="M12 8 7.26 5.15"/><path d="m12 8 4.74-2.85"/><path d="M12 13.5V8"/>
                         </svg>
                     </span>
                     <span class="truncate">Pengecekan & Pemenuhan</span>
@@ -219,12 +192,8 @@
                {{ $isExcelActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                            <polyline points="10 9 9 9 8 9"/>
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/>
                         </svg>
                     </span>
                     <span class="truncate">Excel & Kode Persediaan</span>
@@ -235,10 +204,8 @@
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1 2 1-2-1z"/>
-                            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
-                            <path d="M12 17.5v-11"/>
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/>
                         </svg>
                     </span>
                     <span class="truncate">OCR Kuitansi & Pajak</span>
@@ -249,12 +216,8 @@
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                            <polyline points="10 9 9 9 8 9"/>
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18v-1"/><path d="M12 18v-6"/><path d="M16 18v-3"/>
                         </svg>
                     </span>
                     <span class="truncate">Rekap Laporan Excel</span>
@@ -266,10 +229,8 @@
                {{ $isMasterActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                            <line x1="12" y1="22.08" x2="12" y2="12"/>
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
                         </svg>
                     </span>
                     <span class="truncate">Master Barang</span>
@@ -280,9 +241,8 @@
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline points="12 6 12 12 16 14"/>
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>
                         </svg>
                     </span>
                     <span class="truncate">Histori & Audit Log</span>
@@ -311,9 +271,8 @@
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/>
                         </svg>
                     </span>
                     <span class="truncate">BON Digital / Ajukan Baru</span>
@@ -324,9 +283,8 @@
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 11 12 14 22 4"/>
-                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>
                         </svg>
                     </span>
                     <span class="truncate">Pantau Pengajuan Saya</span>
@@ -337,10 +295,8 @@
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16.5 9.4 7.55 4.24a1 1 0 0 0-1.1 0L3.5 6.1a1 1 0 0 0-.5.87v9.97a1 1 0 0 0 .5.86l3 1.87a1 1 0 0 0 1.1 0l4.9-3.08A1 1 0 0 0 13 15.5V8.4a1 1 0 0 0-.5-.86L9.5 5.5"/>
-                            <path d="m19 7-4.5-2.82A1 1 0 0 0 13.5 5v12a1 1 0 0 0 .5.86L18.5 21"/>
-                            <path d="M16.5 9.4V16"/>
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>
                         </svg>
                     </span>
                     <span class="truncate">Katalog Stok Gudang</span>
@@ -351,9 +307,8 @@
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline points="12 6 12 12 16 14"/>
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>
                         </svg>
                     </span>
                     <span class="truncate">Histori Pengajuan</span>
@@ -362,7 +317,7 @@
 
             <a href="{{ route('stok-upload.index') }}"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
-               {{ $isExcelActive ? 'bg-amber-50 text-amber-700 border-amber-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700' }}">
+               {{ $isExcelActive ? 'bg-emerald-50 text-emerald-700 border-emerald-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-emerald-50/70 hover:text-emerald-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
