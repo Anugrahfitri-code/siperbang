@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { UserRole } from "../types";
 import { LogIn, Loader2, Eye, EyeOff } from "lucide-react";
-import { SiperbangLogo } from "./Logos";
+import { SiperbangLogo, KomdigiLogo } from "./Logos";
 import { apiFetch } from "../api";
 
 interface AuthenticatedUser {
@@ -67,8 +67,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center justify-center gap-8 mt-4">
             <SiperbangLogo />
-            <div className="w-px h-16 bg-slate-300"></div>
-            <img src="/images/komdigi-logo.png" alt="Logo KOMDIGI" className="h-16 w-auto object-contain" />
+            <div className="w-px h-12 bg-slate-300"></div>
+            <KomdigiLogo />
           </div>
 
           {/* Judul dan Deskripsi */}

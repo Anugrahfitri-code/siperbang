@@ -54,7 +54,7 @@ export const KomdigiLogo: React.FC<{
   iconOnly?: boolean;
 }> = ({ className = "", iconOnly = false }) => {
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-center gap-4 ${className}`}>
       <div className="relative w-9 h-9 flex-shrink-0">
         <img
           src="/images/komdigi-logo.png"
@@ -64,7 +64,7 @@ export const KomdigiLogo: React.FC<{
       </div>
 
       {!iconOnly && (
-        <div className="flex flex-col select-none">
+        <div className="flex flex-col select-none text-left">
           <span className="text-sm font-extrabold text-[#4A4A4A] tracking-wider leading-none">
             KOMDIGI
           </span>

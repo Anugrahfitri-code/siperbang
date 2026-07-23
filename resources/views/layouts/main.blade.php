@@ -51,7 +51,7 @@
                     </button>
 
                     {{-- SiperbangLogo --}}
-                    <a href="/" class="flex items-center gap-3">
+                    <a href="/" class="flex items-center gap-2">
                         <div class="relative w-12 h-12 flex-shrink-0">
                             <img
                                 src="{{ asset('images/siperbang-logo.png') }}"
@@ -76,11 +76,11 @@
                     <div class="hidden md:block h-8 w-px bg-slate-200"></div>
 
                     {{-- KomdigiLogo --}}
-                    <div class="items-center gap-2 hidden md:flex">
+                    <div class="items-center gap-4 hidden md:flex">
                         <div class="relative w-9 h-9 flex-shrink-0">
                             <img src="{{ asset('images/komdigi-logo.png') }}" alt="Logo KOMDIGI" class="w-full h-full object-contain select-none pointer-events-none">
                         </div>
-                        <div class="flex-col select-none hidden md:flex">
+                        <div class="flex-col select-none hidden md:flex text-left">
                             <span class="text-sm font-extrabold text-[#4A4A4A] tracking-wider leading-none">
                                 KOMDIGI
                             </span>
