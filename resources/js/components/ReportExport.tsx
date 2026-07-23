@@ -130,7 +130,32 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
       if (!response.ok) throw new Error("Gagal mengambil data dari server.");
 
       const receiptsData = await response.json();
-      const verifiedData = receiptsData.filter((r: any) => r.isVerified || r.is_verified);
+      let verifiedData = receiptsData.filter((r: any) => r.isVerified || r.is_verified);
+
+      verifiedData = verifiedData.filter((r: any) => {
+        const rDate = r.date || "";
+        if (filterYear !== "All") {
+          const year = rDate.split("-")[0];
+          if (year !== filterYear) return false;
+        }
+        if (!isAnnualRecap && filterMonth !== "All") {
+          const month = rDate.split("-")[1];
+          if (month !== filterMonth) return false;
+        }
+        if (searchQuery.trim() !== "") {
+          const query = searchQuery.toLowerCase();
+          const matchesStore = (r.storeName || r.store_name || "").toLowerCase().includes(query);
+          const matchesInvoice = (r.invoiceNo || r.invoice_no || "").toLowerCase().includes(query);
+          const matchesItem = (r.items || []).some(
+            (it: any) =>
+              (it.name || "").toLowerCase().includes(query) ||
+              (it.inventoryCode || it.inventory_code || "").toLowerCase().includes(query) ||
+              (it.unit || "").toLowerCase().includes(query)
+          );
+          return matchesStore || matchesInvoice || matchesItem;
+        }
+        return true;
+      });
 
       if (verifiedData.length === 0) {
         setAlertMsg({ title: "Data Kosong", message: "Tidak ada data kuitansi tervalidasi untuk diekspor." });
