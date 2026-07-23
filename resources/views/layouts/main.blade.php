@@ -53,18 +53,11 @@
                     {{-- SiperbangLogo --}}
                     <a href="/" class="flex items-center gap-3">
                         <div class="relative w-12 h-12 flex-shrink-0">
-                            <svg viewBox="0 0 100 100" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="30" y="36" width="10" height="10" rx="1.5" fill="#B90015" />
-                                <rect x="42" y="44" width="10" height="10" rx="1.5" fill="#0055A5" />
-                                <rect x="44" y="24" width="10" height="10" rx="1.5" fill="#00A1E4" />
-                                <rect x="56" y="32" width="10" height="10" rx="1.5" fill="#00A1E4" />
-                                <rect x="52" y="42" width="6" height="6" rx="1" fill="#F2B818" />
-                                <path d="M20 50 L48 64 L48 90 L20 74 Z" fill="#013A70" />
-                                <path d="M48 64 L80 50 L80 74 L48 90 Z" fill="#00A1E4" />
-                                <path d="M52 78 L72 68 M72 68 L64 67 M72 68 L71 74" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
-                                <path d="M20 50 L48 36 L48 64 L20 50 Z" fill="#E5A800" opacity="0.8" />
-                                <path d="M48 36 L80 50 L48 64 L48 36 Z" fill="#F2B818" />
-                            </svg>
+                            <img
+                                src="{{ asset('images/siperbang-logo.png') }}"
+                                alt="Logo SIPERBANG"
+                                class="w-full h-full object-contain select-none pointer-events-none"
+                            >
                         </div>
                         <div class="flex-col select-none hidden sm:flex">
                             <div class="text-2xl font-bold tracking-tight leading-none flex items-center">
