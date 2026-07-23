@@ -464,8 +464,8 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
                 onChange={(e) => setExportMode(e.target.value as any)}
                 className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
-                <option value="rekap_ta">Rekap Gabungan (Template TA 2026)</option>
-                <option value="per_kuitansi">Ekspor Per-Kuitansi (Format Teman)</option>
+                <option value="rekap_ta">Rekap Gabungan</option>
+                <option value="per_kuitansi">Ekspor Per-Kuitansi</option>
               </select>
             </div>
 
