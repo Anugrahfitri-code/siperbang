@@ -1,15 +1,31 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ReceiptData, ReceiptItem, ProcurementMethod, RequestStatus, ItemRequest, ParsedReceiptResult, OcrWarning, OcrField, ReceiptDocument, ReceiptManualDraft, InventoryCodeOption } from "../types";
 import { apiFetch } from "../api";
-import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Cpu, Save, FolderOpen, X, Download, TableProperties } from "lucide-react";
+import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Cpu, Save, FolderOpen, X, Download, TableProperties, Pencil } from "lucide-react";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 interface ReceiptOCRProcessorProps {
   receipts: ReceiptData[];
   requests: ItemRequest[];
   onAddReceipt: (newReceipt: ReceiptData) => void;
-  onVerifyReceipt: (id: string, updatedReceipt: ReceiptData, logMsg: string) => void;
-  onUnverifyReceipt?: (id: string, logMsg: string) => void;
+  onVerifyReceipt: (
+    id: string,
+    updatedReceipt: ReceiptData,
+    logMsg: string
+  ) => void | Promise<void>;
+  onUnverifyReceipt?: (
+    id: string,
+    logMsg: string
+  ) => void | Promise<void>;
+}
+
+interface StockMasterOption {
+  id: number;
+  code: string;
+  name: string;
+  category: string;
+  qty: number;
+  unit: string;
 }
 
 const RECEIPT_UNIT_OPTIONS = [
@@ -42,6 +58,20 @@ const normalizeInventoryCode = (
     .replace(/\D/g, "")
     .slice(0, 10)
 );
+
+const normalizeStockItemId = (
+  value: unknown
+): number | null => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const id = Number(value);
+
+  return Number.isInteger(id) && id > 0
+    ? id
+    : null;
+};
 
 
 export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
@@ -79,6 +109,8 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     title: string;
     message: string;
     variant?: "danger" | "warning" | "info" | "success";
+    confirmText?: string;
+    cancelText?: string;
     onConfirm?: () => void | Promise<void>;
   } | null>(null);
   const [dialogAlert, setDialogAlert] = useState<{
@@ -87,6 +119,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     variant?: "danger" | "warning" | "info" | "success";
   } | null>(null);
   const [dialogLoading, setDialogLoading] = useState(false);
+  const [exportingExcelKey, setExportingExcelKey] = useState<string | null>(null);
   const pollTimerRef = useRef<number | NodeJS.Timeout | null>(null);
   const documentRequestTokenRef = useRef(0);
 
@@ -156,8 +189,25 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     inventoryCodesLoading,
     setInventoryCodesLoading,
   ] = useState(false);
+  const [
+    stockMasterItems,
+    setStockMasterItems,
+  ] = useState<StockMasterOption[]>([]);
+  const [
+    stockMasterLoading,
+    setStockMasterLoading,
+  ] = useState(false);
+  const [
+    openStockDropdownId,
+    setOpenStockDropdownId,
+  ] = useState<string | null>(null);
   const [bastName, setBastName] = useState("");
   const [bastDate, setBastDate] = useState("");
+
+  // State for editing inventory codes on already-verified receipts
+  const [editingReceipt, setEditingReceipt] = useState<ReceiptData | null>(null);
+  const [editItemCodes, setEditItemCodes] = useState<Record<string, { inventory_code: string; unit: string }>>({}); // keyed by item.id
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -232,6 +282,80 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     return () => {
       active = false;
     };
+  }, []);
+
+  const loadStockMasterItems = async () => {
+    setStockMasterLoading(true);
+
+    try {
+      const response = await apiFetch(
+        "/api/stocks"
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP ${response.status} ${response.statusText}`
+        );
+      }
+
+      const payload = await response.json();
+      const rows = Array.isArray(payload)
+        ? payload
+        : [];
+
+      setStockMasterItems(
+        rows
+          .filter(
+            (row: any) =>
+              row?.is_active !== false
+          )
+          .map(
+            (row: any): StockMasterOption => ({
+              id: Number(row.id),
+              code: normalizeInventoryCode(
+                row.code
+              ),
+              name: String(row.name ?? ""),
+              category: String(
+                row.category ?? ""
+              ),
+              qty: Number(row.qty ?? 0),
+              unit: String(row.unit ?? "")
+                .trim()
+                .toUpperCase(),
+            })
+          )
+          .filter(
+            (row: StockMasterOption) =>
+              Number.isInteger(row.id)
+              && row.id > 0
+              && row.name.length > 0
+              && row.code.startsWith("10103")
+          )
+          .sort(
+            (
+              left: StockMasterOption,
+              right: StockMasterOption
+            ) => left.name.localeCompare(
+              right.name,
+              "id"
+            )
+          )
+      );
+    } catch (error) {
+      console.error(
+        "Gagal memuat master barang:",
+        error
+      );
+
+      setStockMasterItems([]);
+    } finally {
+      setStockMasterLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadStockMasterItems();
   }, []);
 
   const readApiError = async (
@@ -518,11 +642,9 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                       ? it.inventory_code_description
                       : null,
                 stockItemId:
-                  Number.isFinite(
-                    Number(it.stock_item_id)
-                  )
-                    ? Number(it.stock_item_id)
-                    : null,
+                  normalizeStockItemId(
+                    it.stock_item_id
+                  ),
                 codeConfidence:
                   Number.isFinite(
                     Number(
@@ -595,11 +717,9 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                       ? it.inventory_code_description
                       : null,
                 stockItemId:
-                  Number.isFinite(
-                    Number(it.stock_item_id)
-                  )
-                    ? Number(it.stock_item_id)
-                    : null,
+                  normalizeStockItemId(
+                    it.stock_item_id
+                  ),
                 codeConfidence:
                   Number.isFinite(
                     Number(
@@ -645,11 +765,9 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                     ? it.inventory_code_description
                     : null,
               stockItemId:
-                Number.isFinite(
-                  Number(it.stock_item_id)
-                )
-                  ? Number(it.stock_item_id)
-                  : null,
+                normalizeStockItemId(
+                  it.stock_item_id
+                ),
               codeConfidence:
                 Number.isFinite(
                   Number(
@@ -702,7 +820,11 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   ?.inventoryCodeDescription
                 ?? null,
               stockItemId:
-                suggestedItem?.stockItemId
+                normalizeStockItemId(
+                  item.stockItemId
+                  ?? item.stock_item_id
+                )
+                ?? suggestedItem?.stockItemId
                 ?? null,
               codeConfidence:
                 suggestedItem?.codeConfidence
@@ -954,6 +1076,143 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     );
   };
 
+  const normaliseMasterSearch = (
+    value: string
+  ): string => (
+    value
+      .trim()
+      .toLocaleLowerCase("id-ID")
+  );
+
+  const getStockMasterMatches = (
+    query: string
+  ): StockMasterOption[] => {
+    const needle = normaliseMasterSearch(
+      query
+    );
+
+    const matches = needle === ""
+      ? stockMasterItems
+      : stockMasterItems.filter(
+          (stockItem) => {
+            const searchable = [
+              stockItem.name,
+              stockItem.code,
+              stockItem.category,
+              stockItem.unit,
+            ]
+              .join(" " )
+              .toLocaleLowerCase("id-ID");
+
+            return searchable.includes(
+              needle
+            );
+          }
+        );
+
+    return matches.slice(0, 8);
+  };
+
+  const getSelectedStockMaster = (
+    item: ReceiptItem
+  ): StockMasterOption | null => (
+    item.stockItemId
+      ? (
+          stockMasterItems.find(
+            (stockItem) =>
+              stockItem.id
+              === item.stockItemId
+          ) ?? null
+        )
+      : null
+  );
+
+  const handleItemNameChange = (
+    id: string,
+    value: string
+  ) => {
+    setItems(
+      (previous) => previous.map(
+        (item) =>
+          item.id === id
+            ? {
+                ...item,
+                name: value,
+                /*
+                 * Begitu nama diketik manual, hubungan ke barang
+                 * master lama dilepas. Pengguna dapat memilih lagi
+                 * dari dropdown atau membiarkannya sebagai barang baru.
+                 */
+                stockItemId: null,
+              }
+            : item
+      )
+    );
+
+    setOpenStockDropdownId(id);
+  };
+
+  const handleSelectStockMaster = (
+    id: string,
+    stockItem: StockMasterOption
+  ) => {
+    const inventoryCode =
+      inventoryCodes.find(
+        (option) =>
+          option.code === stockItem.code
+      );
+
+    setItems(
+      (previous) => previous.map(
+        (item) =>
+          item.id === id
+            ? {
+                ...item,
+                name: stockItem.name,
+                unit: stockItem.unit,
+                inventoryCode:
+                  stockItem.code,
+                inventoryCodeDescription:
+                  inventoryCode?.description
+                  ?? stockItem.name,
+                stockItemId:
+                  stockItem.id,
+              }
+            : item
+      )
+    );
+
+    setOpenStockDropdownId(null);
+  };
+
+  const handleUnitChange = (
+    id: string,
+    unit: string
+  ) => {
+    setItems(
+      (previous) => previous.map(
+        (item) => {
+          if (item.id !== id) {
+            return item;
+          }
+
+          const selectedMaster =
+            getSelectedStockMaster(item);
+
+          return {
+            ...item,
+            unit,
+            stockItemId:
+              selectedMaster
+              && selectedMaster.unit === unit
+                ? item.stockItemId
+                : null,
+          };
+        }
+      )
+    );
+  };
+
   const handleInventoryCodeChange = (
     id: string,
     codeValue: string
@@ -967,16 +1226,28 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     );
 
     setItems(
-      items.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              inventoryCode: code,
-              inventoryCodeDescription:
-                selected?.description
-                ?? null,
-            }
-          : item
+      (previous) => previous.map(
+        (item) => {
+          if (item.id !== id) {
+            return item;
+          }
+
+          const selectedMaster =
+            getSelectedStockMaster(item);
+
+          return {
+            ...item,
+            inventoryCode: code,
+            inventoryCodeDescription:
+              selected?.description
+              ?? null,
+            stockItemId:
+              selectedMaster
+              && selectedMaster.code === code
+                ? item.stockItemId
+                : null,
+          };
+        }
       )
     );
   };
@@ -1044,6 +1315,8 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         normalizeInventoryCode(
           item.inventoryCode
         ),
+      stockItemId:
+        item.stockItemId ?? null,
       price: Number(item.price),
     })),
     method,
@@ -1082,58 +1355,78 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     }
   };
 
-  const handleVerifySave = async () => {
-    if (!activeDraft || !activeDocumentId || isSavingDraft || isVerifying) return;
-
+  const getVerificationValidationMessage = (): string | null => {
     if (!storeName.trim()) {
-      setDialogAlert({ title: "Validasi Gagal", message: "Nama toko/penyedia wajib diisi sebelum verifikasi.", variant: "warning" });
-      return;
+      return "Nama toko/penyedia wajib diisi sebelum verifikasi.";
     }
+
     if (!date) {
-      setDialogAlert({ title: "Validasi Gagal", message: "Tanggal kuitansi wajib diisi sebelum verifikasi.", variant: "warning" });
-      return;
+      return "Tanggal kuitansi wajib diisi sebelum verifikasi.";
     }
 
     const invalidItemIndex = items.findIndex(
       (item) =>
-        !item.name.trim() ||
-        !item.unit.trim() ||
-        !/^10103\d{5}$/.test(
+        !item.name.trim()
+        || !item.unit.trim()
+        || !/^10103\d{5}$/.test(
           normalizeInventoryCode(
             item.inventoryCode
           )
-        ) ||
-        !Number.isInteger(Number(item.qty)) ||
-        Number(item.qty) < 1 ||
-        !Number.isFinite(Number(item.price)) ||
-        Number(item.price) <= 0
+        )
+        || !Number.isInteger(Number(item.qty))
+        || Number(item.qty) < 1
+        || !Number.isFinite(Number(item.price))
+        || Number(item.price) <= 0
     );
 
-    if (items.length === 0 || invalidItemIndex >= 0) {
-      setDialogAlert({
-        title: "Validasi Gagal",
-        message: invalidItemIndex >= 0
-          ? `Periksa barang ke-${invalidItemIndex + 1}. Nama, kode persediaan kategori 1.01.03, satuan, jumlah, dan harga wajib valid.`
-          : "Minimal satu barang wajib diisi.",
-        variant: "warning",
-      });
-      return;
+    if (items.length === 0) {
+      return "Minimal satu barang wajib diisi.";
+    }
+
+    if (invalidItemIndex >= 0) {
+      return `Periksa barang ke-${invalidItemIndex + 1}. Nama, kode persediaan kategori 1.01.03, satuan, jumlah, dan harga wajib valid.`;
+    }
+
+    return null;
+  };
+
+  const performVerification = async () => {
+    if (
+      !activeDraft
+      || !activeDocumentId
+      || isSavingDraft
+      || isVerifying
+    ) {
+      return {
+        success: false as const,
+        message: "Dokumen tidak siap untuk diverifikasi.",
+      };
     }
 
     setIsVerifying(true);
-    try {
-      const response = await apiFetch(`/api/receipt-documents/${activeDocumentId}/verify`, {
-        method: "PUT",
-        body: JSON.stringify(buildManualPayload()),
-      });
 
-      if (!response.ok) throw new Error(await readApiError(response));
+    try {
+      const response = await apiFetch(
+        `/api/receipt-documents/${activeDocumentId}/verify`,
+        {
+          method: "PUT",
+          body: JSON.stringify(buildManualPayload()),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          await readApiError(response)
+        );
+      }
 
       const responsePayload = await response.json();
       const receipt = responsePayload?.data?.receipt;
 
       if (!receipt) {
-        throw new Error("Server tidak mengembalikan data kuitansi yang sudah diverifikasi.");
+        throw new Error(
+          "Server tidak mengembalikan data kuitansi yang sudah diverifikasi."
+        );
       }
 
       const serverItems = Array.isArray(receipt.items)
@@ -1151,7 +1444,10 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
               item.inventory_code_master
                 ?.nama_barang
                 ?? null,
-            stockItemId: null,
+            stockItemId:
+              normalizeStockItemId(
+                item.stock_item_id
+              ),
             codeConfidence: null,
             price: Number(item.price),
             subtotal: Number(item.subtotal),
@@ -1171,23 +1467,203 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
         isVerified: true,
         status: "Dokumen Valid",
         items: serverItems,
-        method: (receipt.method as ProcurementMethod) || method,
-        bastName: receipt.bast_name || bastName,
-        bastDate: receipt.bast_date ? String(receipt.bast_date).slice(0, 10) : bastDate,
+        method:
+          (receipt.method as ProcurementMethod)
+          || method,
+        bastName:
+          receipt.bast_name
+          || bastName,
+        bastDate:
+          receipt.bast_date
+            ? String(receipt.bast_date).slice(0, 10)
+            : bastDate,
       };
 
-      const displayInvoice = finalReceipt.invoiceNo || "tanpa nomor";
-      const logMsg = `Verifikasi Kuitansi: Petugas memverifikasi kuitansi nomor ${displayInvoice} dari ${finalReceipt.storeName}. Total belanja ${formatIDR(finalReceipt.total)}.`;
+      const displayInvoice =
+        finalReceipt.invoiceNo
+        || "tanpa nomor";
 
-      onVerifyReceipt(activeDraft.id, finalReceipt, logMsg);
-      setPendingDocuments((prev) => prev.filter((d) => d.id !== activeDocumentId));
+      const logMsg =
+        `Verifikasi Kuitansi: Petugas memverifikasi kuitansi nomor ${displayInvoice} dari ${finalReceipt.storeName}. Total belanja ${formatIDR(finalReceipt.total)}.`;
+
+      await Promise.resolve(
+        onVerifyReceipt(
+          activeDraft.id,
+          finalReceipt,
+          logMsg
+        )
+      );
+
+      await loadStockMasterItems();
+
+      setPendingDocuments(
+        (previous) => previous.filter(
+          (document) =>
+            document.id !== activeDocumentId
+        )
+      );
+
       closeWorkspace();
-      setDialogAlert({ title: "Berhasil", message: responsePayload.message || "Dokumen berhasil diverifikasi.", variant: "success" });
+
+      return {
+        success: true as const,
+        message:
+          (responsePayload.message
+            || "Dokumen berhasil diverifikasi.")
+          + " Kode, satuan, dan jumlah stok master telah tersimpan di database.",
+      };
     } catch (error: any) {
       console.error(error);
-      setDialogAlert({ title: "Gagal", message: "Gagal menyimpan verifikasi:\n" + (error?.message || "Kesalahan tidak diketahui"), variant: "danger" });
+
+      return {
+        success: false as const,
+        message:
+          "Gagal menyimpan verifikasi:\n"
+          + (
+            error?.message
+            || "Kesalahan tidak diketahui"
+          ),
+      };
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  const handleVerifySave = () => {
+    if (
+      !activeDraft
+      || !activeDocumentId
+      || isSavingDraft
+      || isVerifying
+    ) {
+      return;
+    }
+
+    const validationMessage =
+      getVerificationValidationMessage();
+
+    if (validationMessage) {
+      setDialogAlert({
+        title: "Validasi Gagal",
+        message: validationMessage,
+        variant: "warning",
+      });
+
+      return;
+    }
+
+    setDialogConfirm({
+      title: "Konfirmasi Verifikasi Kuitansi",
+      message:
+        "Apakah Anda yakin seluruh data sudah benar? Setelah diverifikasi, data kuitansi, kode persediaan, dan satuan akan disimpan ke database dan digunakan pada ekspor Excel.",
+      variant: "warning",
+      confirmText: "Ya, Verifikasi",
+      cancelText: "Periksa Kembali",
+      onConfirm: async () => {
+        setDialogLoading(true);
+
+        const result =
+          await performVerification();
+
+        setDialogLoading(false);
+        setDialogConfirm(null);
+
+        setDialogAlert({
+          title: result.success
+            ? "Berhasil"
+            : "Gagal",
+          message: result.message,
+          variant: result.success
+            ? "success"
+            : "danger",
+        });
+      },
+    });
+  };
+
+  const openEditInventoryCodes = (rc: ReceiptData) => {
+    setEditingReceipt(rc);
+    const initial: Record<string, { inventory_code: string; unit: string }> = {};
+    rc.items.forEach((it) => {
+      initial[it.id] = {
+        inventory_code: it.inventoryCode || "",
+        unit: it.unit || "",
+      };
+    });
+    setEditItemCodes(initial);
+  };
+
+  const handleSaveInventoryCodes = async () => {
+    if (!editingReceipt) return;
+
+    // validate all items have a code
+    const allFilled = editingReceipt.items.every((it) => {
+      const code = normalizeInventoryCode(editItemCodes[it.id]?.inventory_code ?? "");
+      return /^10103\d{5}$/.test(code);
+    });
+    if (!allFilled) {
+      setDialogAlert({
+        title: "Validasi Gagal",
+        message: "Semua barang harus memiliki kode persediaan kategori 1.01.03 yang valid.",
+        variant: "warning",
+      });
+      return;
+    }
+
+    setIsSavingEdit(true);
+    try {
+      const payload = {
+        items: editingReceipt.items.map((it) => ({
+          id: Number(it.id),
+          inventory_code: normalizeInventoryCode(editItemCodes[it.id]?.inventory_code ?? ""),
+          unit: (editItemCodes[it.id]?.unit ?? it.unit ?? "").trim(),
+        })),
+      };
+
+      const response = await apiFetch(`/api/receipts/${editingReceipt.id}/items`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error(await readApiError(response));
+
+      const json = await response.json();
+      // update receipts in parent
+      const updatedReceipt: ReceiptData = {
+        ...editingReceipt,
+        items: (json.data?.items ?? editingReceipt.items).map((it: any) => ({
+          id: String(it.id),
+          name: String(it.name ?? ""),
+          qty: Number(it.qty ?? 0),
+          unit: String(it.unit ?? ""),
+          inventoryCode: String(it.inventory_code ?? "").replace(/\D/g, ""),
+          inventoryCodeDescription: it.inventory_code_master?.nama_barang ?? null,
+          stockItemId:
+            normalizeStockItemId(
+              it.stock_item_id
+            ),
+          codeConfidence: null,
+          price: Number(it.price ?? 0),
+          subtotal: Number(it.subtotal ?? 0),
+        })),
+      };
+      if (onVerifyReceipt) {
+        await Promise.resolve(
+          onVerifyReceipt(
+            editingReceipt.id,
+            updatedReceipt,
+            `Kode persediaan kuitansi ${editingReceipt.invoiceNo} dari ${editingReceipt.storeName} diperbarui.`
+          )
+        );
+      }
+
+      await loadStockMasterItems();
+      setEditingReceipt(null);
+      setDialogAlert({ title: "Berhasil", message: "Kode persediaan berhasil diperbarui.", variant: "success" });
+    } catch (error: any) {
+      setDialogAlert({ title: "Gagal", message: "Gagal memperbarui: " + (error?.message ?? "Kesalahan tidak diketahui"), variant: "danger" });
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -1206,8 +1682,16 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
           if (!response.ok) throw new Error(await readApiError(response));
           
           const logMsg = `Pembatalan Verifikasi: Petugas membatalkan kuitansi nomor ${invoiceNo || "tanpa nomor"} dari ${storeName}.`;
-          if (onUnverifyReceipt) onUnverifyReceipt(id, logMsg);
-          
+          if (onUnverifyReceipt) {
+            await Promise.resolve(
+              onUnverifyReceipt(
+                id,
+                logMsg
+              )
+            );
+          }
+
+          await loadStockMasterItems();
           await loadPendingDocuments();
           setDialogConfirm(null);
           setDialogLoading(false);
@@ -1250,189 +1734,151 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     ).format(safeNumber);
   };
   // ── Ekspor Excel ──────────────────────────────────────────────────────────
-  const exportToExcel = (data: ReceiptData[]) => {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-    const timeStr = now.toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const exportToExcel = async (
+    data: ReceiptData[]
+  ) => {
+    if (exportingExcelKey !== null) {
+      return;
+    }
 
-    const esc = (v: string | number | null | undefined): string => {
-      if (v === null || v === undefined) return "";
-      const s = String(v);
-      return s
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    };
-
-    // Build rows
-    const headerCols = [
-      "No",
-      "No Nota / Invoice",
-      "Nama Toko",
-      "Tanggal Belanja",
-      "Metode Pengadaan",
-      "Tarif Pajak PPN (%)",
-      "Subtotal (Rp)",
-      "Pajak (Rp)",
-      "Total Nilai (Rp)",
-      "Nama Barang",
-      "Satuan",
-      "Kode Persediaan",
-      "Qty",
-      "Harga Satuan (Rp)",
-      "Subtotal Barang (Rp)",
-    ];
-
-    let rows = "";
-
-    // Title row
-    rows += `<Row ss:Height="22"><Cell ss:MergeAcross="14"><Data ss:Type="String">DAFTAR KUITANSI VALID SIPERBANG — Diekspor ${dateStr} pukul ${timeStr}</Data></Cell></Row>`;
-    rows += `<Row ss:Height="4"/>`;
-
-    // Header row
-    rows += `<Row ss:Height="18">${headerCols
+    const receiptIds = data
       .map(
-        (h) =>
-          `<Cell ss:StyleID="header"><Data ss:Type="String">${esc(h)}</Data></Cell>`,
+        (receipt) =>
+          Number(receipt.id)
       )
-      .join("")}</Row>`;
+      .filter(
+        (id) =>
+          Number.isInteger(id)
+          && id > 0
+      );
 
-    let rowNum = 0;
-    data.forEach((rc, idx) => {
-      const itemCount = rc.items.length;
+    if (receiptIds.length === 0) {
+      setDialogAlert({
+        title: "Tidak Dapat Mengekspor",
+        message:
+          "Tidak ada kuitansi valid "
+          + "yang dapat diekspor.",
+        variant: "warning",
+      });
 
-      if (itemCount === 0) {
-        rowNum++;
-        rows += `<Row>
-          <Cell><Data ss:Type="Number">${idx + 1}</Data></Cell>
-          <Cell><Data ss:Type="String">${esc(rc.invoiceNo)}</Data></Cell>
-          <Cell><Data ss:Type="String">${esc(rc.storeName)}</Data></Cell>
-          <Cell><Data ss:Type="String">${esc(rc.date)}</Data></Cell>
-          <Cell><Data ss:Type="String">${esc(rc.method)}</Data></Cell>
-          <Cell ss:StyleID="num"><Data ss:Type="Number">${rc.isTaxed ? rc.taxRate : 0}</Data></Cell>
-          <Cell ss:StyleID="idr"><Data ss:Type="Number">${rc.subtotal}</Data></Cell>
-          <Cell ss:StyleID="idr"><Data ss:Type="Number">${rc.taxAmount}</Data></Cell>
-          <Cell ss:StyleID="idr"><Data ss:Type="Number">${rc.total}</Data></Cell>
-          <Cell><Data ss:Type="String">-</Data></Cell>
-          <Cell><Data ss:Type="String">-</Data></Cell>
-          <Cell><Data ss:Type="String">-</Data></Cell>
-          <Cell><Data ss:Type="String">-</Data></Cell>
-          <Cell><Data ss:Type="String">-</Data></Cell>
-          <Cell><Data ss:Type="String">-</Data></Cell>
-        </Row>`;
-      } else {
-        rc.items.forEach((it, iIdx) => {
-          rowNum++;
-          const isFirst = iIdx === 0;
-          rows += `<Row>
-            <Cell><Data ss:Type="Number">${isFirst ? idx + 1 : ""}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(isFirst ? rc.invoiceNo : "")}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(isFirst ? rc.storeName : "")}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(isFirst ? rc.date : "")}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(isFirst ? rc.method : "")}</Data></Cell>
-            <Cell ss:StyleID="num"><Data ss:Type="Number">${isFirst ? (rc.isTaxed ? rc.taxRate : 0) : ""}</Data></Cell>
-            <Cell ss:StyleID="idr"><Data ss:Type="Number">${isFirst ? rc.subtotal : ""}</Data></Cell>
-            <Cell ss:StyleID="idr"><Data ss:Type="Number">${isFirst ? rc.taxAmount : ""}</Data></Cell>
-            <Cell ss:StyleID="idr"><Data ss:Type="Number">${isFirst ? rc.total : ""}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(it.name)}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(it.unit)}</Data></Cell>
-            <Cell><Data ss:Type="String">${esc(it.inventoryCode)}</Data></Cell>
-            <Cell ss:StyleID="num"><Data ss:Type="Number">${it.qty}</Data></Cell>
-            <Cell ss:StyleID="idr"><Data ss:Type="Number">${it.price}</Data></Cell>
-            <Cell ss:StyleID="idr"><Data ss:Type="Number">${it.qty * it.price}</Data></Cell>
-          </Row>`;
-        });
+      return;
+    }
+
+    const exportKey = data.length === 1
+      ? `receipt:${data[0].id}`
+      : "all";
+
+    setExportingExcelKey(exportKey);
+
+    try {
+      const response = await apiFetch(
+
+        "/api/receipts/export-excel",
+        {
+          method: "POST",
+
+          headers: {
+            Accept:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          },
+
+          body: JSON.stringify({
+            receipt_ids: receiptIds,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          await readApiError(response)
+        );
       }
-    });
 
-    // Grand total row
-    const grandTotal = data.reduce((s, r) => s + r.total, 0);
-    rows += `<Row ss:Height="18">
-      <Cell ss:MergeAcross="7" ss:StyleID="totalLabel"><Data ss:Type="String">TOTAL KESELURUHAN</Data></Cell>
-      <Cell ss:StyleID="totalVal"><Data ss:Type="Number">${grandTotal}</Data></Cell>
-      <Cell ss:MergeAcross="5"/>
-    </Row>`;
+      const blob =
+        await response.blob();
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
- <Styles>
-  <Style ss:ID="header">
-   <Font ss:Bold="1" ss:Color="#FFFFFF"/>
-   <Interior ss:Color="#4F46E5" ss:Pattern="Solid"/>
-   <Alignment ss:Horizontal="Center"/>
-   <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders>
-  </Style>
-  <Style ss:ID="idr">
-   <NumberFormat ss:Format="#,##0"/>
-   <Alignment ss:Horizontal="Right"/>
-  </Style>
-  <Style ss:ID="num">
-   <Alignment ss:Horizontal="Center"/>
-  </Style>
-  <Style ss:ID="totalLabel">
-   <Font ss:Bold="1"/>
-   <Interior ss:Color="#EEF2FF" ss:Pattern="Solid"/>
-   <Alignment ss:Horizontal="Right"/>
-  </Style>
-  <Style ss:ID="totalVal">
-   <Font ss:Bold="1"/>
-   <Interior ss:Color="#EEF2FF" ss:Pattern="Solid"/>
-   <NumberFormat ss:Format="#,##0"/>
-   <Alignment ss:Horizontal="Right"/>
-  </Style>
- </Styles>
- <Worksheet ss:Name="Kuitansi Valid">
-  <Table ss:DefaultColumnWidth="100">
-   <Column ss:Width="30"/>
-   <Column ss:Width="120"/>
-   <Column ss:Width="140"/>
-   <Column ss:Width="120"/>
-   <Column ss:Width="130"/>
-   <Column ss:Width="80"/>
-   <Column ss:Width="110"/>
-   <Column ss:Width="110"/>
-   <Column ss:Width="120"/>
-   <Column ss:Width="160"/>
-   <Column ss:Width="60"/>
-   <Column ss:Width="100"/>
-   <Column ss:Width="50"/>
-   <Column ss:Width="110"/>
-   <Column ss:Width="120"/>
-   ${rows}
-  </Table>
- </Worksheet>
-</Workbook>`;
+      const disposition =
+        response.headers.get(
+          "Content-Disposition"
+        ) ?? "";
 
-    const blob = new Blob([xml], {
-      type: "application/vnd.ms-excel;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const exportDateStr = `${now.getFullYear()}${String(
-      now.getMonth() + 1,
-    ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+      /*
+       * Laravel dapat mengirim filename biasa
+       * atau format UTF-8 filename*.
+       */
+      const utf8FileName =
+        disposition.match(
+          /filename\*=UTF-8''([^;]+)/i
+        );
 
-    const fileName =
-      data.length === 1 && data[0].storeName
-        ? `${data[0].storeName.replace(/[\\/:*?"<>|]/g, "_")}_${exportDateStr}.xls`
-        : `Kuitansi_Valid_SIPERBANG_${exportDateStr}.xls`;
+      const normalFileName =
+        disposition.match(
+          /filename="?([^";]+)"?/i
+        );
 
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      let fileName =
+        data.length === 1
+          ? `${
+              data[0].storeName
+              || "Kuitansi"
+            }.xlsx`
+          : "Belanja Persediaan.xlsx";
+
+      if (utf8FileName?.[1]) {
+        fileName = decodeURIComponent(
+          utf8FileName[1]
+            .trim()
+            .replace(
+              /^['"]|['"]$/g,
+              ""
+            )
+        );
+      } else if (
+        normalFileName?.[1]
+      ) {
+        fileName =
+          normalFileName[1].trim();
+      }
+
+      const url =
+        URL.createObjectURL(blob);
+
+      const anchor =
+        document.createElement("a");
+
+      anchor.href = url;
+      anchor.download = fileName;
+
+      document.body.appendChild(
+        anchor
+      );
+
+      anchor.click();
+
+      document.body.removeChild(
+        anchor
+      );
+
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      console.error(
+        "Gagal mengekspor kuitansi ke Excel:",
+        error
+      );
+
+      setDialogAlert({
+        title: "Gagal Ekspor Excel",
+
+        message:
+          error?.message
+          || "Terjadi kesalahan saat "
+          + "membuat file Excel.",
+
+        variant: "danger",
+      });
+    } finally {
+      setExportingExcelKey(null);
+    }
   };
 
   return (
@@ -1461,7 +1907,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                 : "text-slate-500 hover:text-slate-700 border-transparent hover:bg-slate-100"
             }`}
           >
-            Menunggu Verifikasi ({receipts.filter((r) => !r.isVerified).length})
+            Menunggu Verifikasi ({pendingDocuments.length})
           </button>
           <button
             onClick={() => setActiveTab("valid")}
@@ -1752,7 +2198,9 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   1.01.03 - Alat/Bahan untuk Kegiatan Kantor
                 </strong>
                 dan tetap wajib dikonfirmasi petugas.
-                Satuan berasal dari OCR atau master stok Excel.
+                Pilih nama dari master barang untuk menambah stok barang
+                yang sudah ada, atau ketik nama sendiri untuk membuat
+                barang master baru saat kuitansi diverifikasi.
               </p>
 
               <div className="overflow-auto border border-slate-200 rounded max-h-[290px]">
@@ -1771,14 +2219,125 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                   <tbody className="divide-y divide-slate-100">
                     {items.map((it) => (
                       <tr key={it.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-3 py-1.5">
-                          <input
-                            type="text"
-                            value={it.name}
-                            onChange={(e) => handleUpdateItem(it.id, "name", e.target.value)}
-                            placeholder="Nama item barang..."
-                            className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                          />
+                        <td className="px-3 py-1.5 align-top">
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={it.name}
+                              onFocus={() =>
+                                setOpenStockDropdownId(
+                                  it.id
+                                )
+                              }
+                              onBlur={() => {
+                                window.setTimeout(
+                                  () => {
+                                    setOpenStockDropdownId(
+                                      (current) =>
+                                        current === it.id
+                                          ? null
+                                          : current
+                                    );
+                                  },
+                                  150
+                                );
+                              }}
+                              onChange={(event) =>
+                                handleItemNameChange(
+                                  it.id,
+                                  event.target.value
+                                )
+                              }
+                              placeholder={
+                                stockMasterLoading
+                                  ? "Memuat master barang..."
+                                  : "Pilih atau ketik nama barang..."
+                              }
+                              autoComplete="off"
+                              className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            />
+
+                            {openStockDropdownId === it.id && (
+                              <div className="absolute left-0 right-0 top-full z-40 mt-1 max-h-56 overflow-y-auto rounded-md border border-slate-200 bg-white shadow-xl">
+                                {stockMasterLoading ? (
+                                  <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500">
+                                    <RefreshCw
+                                      size={12}
+                                      className="animate-spin"
+                                    />
+                                    Memuat master barang...
+                                  </div>
+                                ) : getStockMasterMatches(
+                                    it.name
+                                  ).length > 0 ? (
+                                  getStockMasterMatches(
+                                    it.name
+                                  ).map(
+                                    (stockItem) => (
+                                      <button
+                                        key={stockItem.id}
+                                        type="button"
+                                        onMouseDown={(
+                                          event
+                                        ) =>
+                                          event.preventDefault()
+                                        }
+                                        onClick={() =>
+                                          handleSelectStockMaster(
+                                            it.id,
+                                            stockItem
+                                          )
+                                        }
+                                        className="block w-full border-b border-slate-100 px-3 py-2 text-left last:border-b-0 hover:bg-indigo-50"
+                                      >
+                                        <span className="block text-xs font-bold text-slate-800">
+                                          {stockItem.name}
+                                        </span>
+                                        <span className="mt-0.5 block text-2xs text-slate-500">
+                                          {stockItem.code}
+                                          {" • "}
+                                          {stockItem.unit}
+                                          {" • Stok "}
+                                          {stockItem.qty}
+                                          {stockItem.category
+                                            ? ` • ${stockItem.category}`
+                                            : ""}
+                                        </span>
+                                      </button>
+                                    )
+                                  )
+                                ) : (
+                                  <div className="px-3 py-2 text-xs text-amber-700">
+                                    Tidak ada kecocokan. Nama ini akan
+                                    dibuat sebagai barang baru setelah
+                                    verifikasi.
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {(() => {
+                            const selectedMaster =
+                              getSelectedStockMaster(
+                                it
+                              );
+
+                            return selectedMaster ? (
+                              <p className="mt-1 text-2xs font-semibold text-emerald-700">
+                                Terhubung ke master: {selectedMaster.code}
+                                {" • Stok "}
+                                {selectedMaster.qty}
+                                {" "}
+                                {selectedMaster.unit}
+                              </p>
+                            ) : it.name.trim() ? (
+                              <p className="mt-1 text-2xs font-semibold text-amber-700">
+                                Barang baru — akan dibuat di master
+                                saat verifikasi.
+                              </p>
+                            ) : null;
+                          })()}
                         </td>
                         <td className="px-3 py-1.5">
                           <select
@@ -1836,9 +2395,8 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                           <select
                             value={it.unit}
                             onChange={(e) =>
-                              handleUpdateItem(
+                              handleUnitChange(
                                 it.id,
-                                "unit",
                                 e.target.value
                               )
                             }
@@ -1945,15 +2503,39 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             ? "DAFTAR DOKUMEN MASUK MENUNGGU VERIFIKASI"
             : "DAFTAR KUITANSI VALID (TERVERIFIKASI)"}
         </h3>
-        {activeTab === "verified" && receipts.filter((r) => r.isVerified).length > 0 && (
+        {activeTab === "valid" && receipts.filter((r) => r.isVerified).length > 0 && (
           <button
-            onClick={() => exportToExcel(receipts.filter((r) => r.isVerified))}
-            className="group flex-shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow hover:shadow-md transition-all duration-200 active:scale-95"
+            onClick={() =>
+              exportToExcel(
+                receipts.filter(
+                  (receipt) => receipt.isVerified
+                )
+              )
+            }
+            disabled={exportingExcelKey !== null}
+            className="group flex-shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow hover:shadow-md transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
             title="Ekspor seluruh kuitansi valid ke Excel (.xlsx)"
           >
-            <TableProperties size={13} className="group-hover:scale-110 transition-transform duration-150" />
-            Ekspor Excel
-            <Download size={12} className="opacity-80" />
+            {exportingExcelKey === "all" ? (
+              <RefreshCw
+                size={13}
+                className="animate-spin"
+              />
+            ) : (
+              <TableProperties
+                size={13}
+                className="group-hover:scale-110 transition-transform duration-150"
+              />
+            )}
+            {exportingExcelKey === "all"
+              ? "Menyiapkan Excel..."
+              : "Ekspor Excel"}
+            {exportingExcelKey !== "all" && (
+              <Download
+                size={12}
+                className="opacity-80"
+              />
+            )}
           </button>
         )}
       </div>
@@ -1984,7 +2566,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                         {doc.summary?.storeName || doc.original_filename}
                       </td>
                       <td className="px-5 py-3 text-slate-500 font-sans">
-                        {doc.summary?.date || "-"}
+                        {doc.summary?.date ? doc.summary.date.substring(0, 10) : "-"}
                       </td>
                       <td className="px-5 py-3 font-semibold text-slate-600 font-sans">
                         {doc.summary?.method || "-"}
@@ -2064,7 +2646,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                         {rc.storeName}
                       </td>
                       <td className="px-5 py-3 text-slate-500 font-sans">
-                        {rc.date}
+                        {rc.date ? rc.date.substring(0, 10) : "-"}
                       </td>
                       <td className="px-5 py-3 font-semibold text-slate-600 font-sans">
                         {rc.method}
@@ -2084,6 +2666,14 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                       <td className="px-5 py-3 text-center font-sans align-middle">
                         <div className="flex items-center justify-center gap-2 whitespace-nowrap">
                           <button
+                            onClick={() => openEditInventoryCodes(rc)}
+                            className="inline-flex items-center gap-1 text-2xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded border border-indigo-100 transition-colors"
+                            title="Lihat Detail Kode Persediaan"
+                          >
+                            <Pencil size={9} />
+                            Lihat Detail
+                          </button>
+                          <button
                             onClick={() => handleUnverify(rc.id, rc.invoiceNo, rc.storeName)}
                             className="text-2xs font-semibold text-rose-600 bg-white hover:bg-rose-50 px-2.5 py-1 rounded-md border border-rose-300 transition-colors cursor-pointer"
                           >
@@ -2091,11 +2681,24 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                           </button>
                           <button
                             onClick={() => exportToExcel([rc])}
-                            className="group inline-flex items-center gap-1 text-2xs font-bold text-emerald-700 hover:text-white bg-emerald-50 hover:bg-gradient-to-r hover:from-emerald-500 hover:to-teal-600 border border-emerald-200 hover:border-emerald-500 px-2 py-0.5 rounded transition-all duration-200 active:scale-95"
+                            disabled={exportingExcelKey !== null}
+                            className="group inline-flex items-center gap-1 text-2xs font-bold text-emerald-700 hover:text-white bg-emerald-50 hover:bg-gradient-to-r hover:from-emerald-500 hover:to-teal-600 border border-emerald-200 hover:border-emerald-500 px-2 py-0.5 rounded transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                             title="Ekspor kuitansi ini ke Excel"
                           >
-                            <Download size={10} className="flex-shrink-0" />
-                            Ekspor Excel
+                            {exportingExcelKey === `receipt:${rc.id}` ? (
+                              <RefreshCw
+                                size={10}
+                                className="animate-spin flex-shrink-0"
+                              />
+                            ) : (
+                              <Download
+                                size={10}
+                                className="flex-shrink-0"
+                              />
+                            )}
+                            {exportingExcelKey === `receipt:${rc.id}`
+                              ? "Menyiapkan..."
+                              : "Ekspor Excel"}
                           </button>
                         </div>
                       </td>
@@ -2116,13 +2719,180 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             </tbody>
           </table>
         </div>
+      {/* Modal Edit Kode Persediaan -> Detail Kuitansi */}
+      {editingReceipt && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 md:p-6 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col my-auto border border-slate-200 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                  <Receipt size={20} />
+                </div>
+                <div>
+                  <h2 className="text-base font-extrabold text-slate-800">
+                    Detail Dokumen Valid
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5 font-medium">Rincian lengkap dari dokumen yang telah diverifikasi</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setEditingReceipt(null)} 
+                className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            {/* Body */}
+            <div className="overflow-y-auto max-h-[70vh] p-6 bg-slate-50/50">
+              
+              {/* Receipt Summary Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">No Nota / Invoice</div>
+                  <div className="text-sm font-semibold text-slate-800 break-all">{editingReceipt.invoiceNo || "-"}</div>
+                </div>
+                <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">Nama Toko</div>
+                  <div className="text-sm font-semibold text-slate-800 break-words">{editingReceipt.storeName || "-"}</div>
+                </div>
+                <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tanggal Belanja</div>
+                  <div className="text-sm font-semibold text-slate-800">{editingReceipt.date ? editingReceipt.date.substring(0, 10) : "-"}</div>
+                </div>
+                <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">Metode Pengadaan</div>
+                  <div className="text-sm font-semibold text-slate-800">{editingReceipt.method || "-"}</div>
+                </div>
+              </div>
+              
+              {/* Items Table */}
+              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-6">
+                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/80 flex items-center gap-2">
+                  <TableProperties size={14} className="text-slate-500" />
+                  <h3 className="text-xs font-bold text-slate-700">Daftar Item & Kode Persediaan</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/50 text-slate-500 text-2xs font-bold uppercase tracking-wider border-b border-slate-100">
+                        <th className="px-4 py-3 w-10 text-center">No</th>
+                        <th className="px-4 py-3">Nama Item</th>
+                        <th className="px-4 py-3 text-center">Satuan</th>
+                        <th className="px-4 py-3 min-w-[200px]">Kode Persediaan</th>
+                        <th className="px-4 py-3 text-right">Harga Satuan</th>
+                        <th className="px-4 py-3 text-right">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {editingReceipt.items.map((it, idx) => {
+                        const normalCode = normalizeInventoryCode(it.inventoryCode ?? "");
+                        const isValid = /^10103\d{5}$/.test(normalCode);
+                        const selectedOption = inventoryCodes.find(o => o.code === normalCode);
+                        
+                        return (
+                          <tr key={it.id} className="hover:bg-slate-50/30 transition-colors">
+                            <td className="px-4 py-3 text-xs font-medium text-slate-400 text-center">{idx + 1}</td>
+                            <td className="px-4 py-3 text-xs font-bold text-slate-700">{it.name}</td>
+                            <td className="px-4 py-3 text-xs text-slate-600 text-center font-medium">{it.unit || "-"}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-col gap-0.5">
+                                <span className={`text-xs font-mono font-bold ${isValid ? 'text-indigo-600' : 'text-rose-500'}`}>
+                                  {normalCode || "Belum diatur"}
+                                </span>
+                                {selectedOption && (
+                                  <span className="text-2xs text-emerald-600 font-medium line-clamp-1">{selectedOption.description}</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-xs font-medium text-slate-600 text-right">{formatIDR(it.price)}</td>
+                            <td className="px-4 py-3 text-xs font-bold text-slate-800 text-right">{formatIDR(it.qty * it.price)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              {/* Totals Section */}
+              <div className="flex justify-end">
+                <div className="w-full md:w-1/3 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  <div className="p-4 space-y-3">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-slate-500">Subtotal</span>
+                      <span className="font-bold text-slate-700">{formatIDR(editingReceipt.subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-slate-500">
+                        Pajak PPN {editingReceipt.isTaxed ? `(${editingReceipt.taxRate}%)` : "(0%)"}
+                      </span>
+                      <span className="font-bold text-slate-700">{formatIDR(editingReceipt.taxAmount)}</span>
+                    </div>
+                    <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
+                      <span className="text-sm font-extrabold text-slate-800">Total Akhir</span>
+                      <span className="text-sm font-extrabold text-indigo-700">{formatIDR(editingReceipt.total)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+            
+            {/* Footer */}
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-white">
+              <button
+                onClick={() => setEditingReceipt(null)}
+                className="px-6 py-2.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all active:scale-95 flex items-center gap-2"
+              >
+                Tutup Detail
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {exportingExcelKey && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+          <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-slate-200 bg-white px-7 py-8 text-center shadow-2xl">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+              <RefreshCw
+                size={25}
+                className="animate-spin"
+              />
+            </div>
+            <h3 className="text-base font-extrabold text-slate-900">
+              Menyiapkan File Excel
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">
+              {exportingExcelKey === "all"
+                ? "Sistem sedang menggabungkan seluruh kuitansi valid ke dalam workbook Belanja Persediaan."
+                : "Sistem sedang menyusun data kuitansi ke dalam format Belanja Persediaan."}
+            </p>
+            <p className="mt-3 text-xs font-semibold text-emerald-700">
+              Mohon tunggu dan jangan menutup halaman.
+            </p>
+          </div>
+        </div>
+      )}
       {dialogConfirm && (
         <ConfirmDialog
           open
           title={dialogConfirm.title}
           message={dialogConfirm.message}
           variant={dialogConfirm.variant || "warning"}
-          confirmText={dialogLoading ? "Memproses..." : "Konfirmasi"}
+          confirmText={
+            dialogLoading
+              ? "Memproses..."
+              : (
+                  dialogConfirm.confirmText
+                  ?? "Konfirmasi"
+                )
+          }
+          cancelText={
+            dialogConfirm.cancelText
+            ?? "Batal"
+          }
           loading={dialogLoading}
           onConfirm={async () => {
             if (dialogConfirm.onConfirm) await dialogConfirm.onConfirm();
