@@ -25,6 +25,15 @@ import {
   ArrowLeft,
   Package,
   Edit3,
+  Info,
+  ShoppingBag,
+  Box,
+  Tag,
+  CircleDollarSign,
+  Calendar,
+  ShieldCheck,
+  Filter,
+  Sparkles,
 } from "lucide-react";
 import { apiFetch } from "../api";
 
@@ -311,283 +320,406 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
 
   // ── Render ────────────────────────────────────────────────────
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm space-y-6">
+    <div className="space-y-6">
+      {/* HEADER BANNER */}
+      <div className="relative bg-gradient-to-r from-[#f0f4ff] to-[#f8faff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+        {/* Background shapes (optional) */}
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-100/40 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-24 right-32 w-64 h-64 bg-purple-100/40 rounded-full blur-3xl pointer-events-none"></div>
 
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        {isEditMode && onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="mt-0.5 p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors shrink-0"
-            aria-label="Kembali"
-          >
-            <ArrowLeft size={15} />
-          </button>
-        )}
-        <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
-          {isEditMode ? <Edit3 size={24} /> : <ClipboardList size={24} />}
-        </div>
-        <div className="flex-1">
-          <h2 className="text-lg font-semibold leading-7 text-slate-900">
-            {isEditMode ? `Edit Draft — ${initialData?.bonNo}` : "BON Digital"}
-          </h2>
-          <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
-            {isEditMode
-              ? "Lengkapi dan kirim draft pengajuan ini, atau simpan kembali sebagai draft."
-              : "Form pengajuan kebutuhan barang persediaan unit kerja"}
-          </p>
+        <div className="relative z-10 flex-1 space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-indigo-100 text-indigo-600">
+              {isEditMode ? <Edit3 size={28} strokeWidth={2.5} /> : <ClipboardList size={28} strokeWidth={2.5} />}
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                {isEditMode ? `Edit Draft — ${initialData?.bonNo}` : "BON Digital"}
+              </h2>
+              <p className="text-sm font-medium text-slate-500 mt-1">
+                {isEditMode
+                  ? "Lengkapi dan kirim draft pengajuan ini, atau simpan kembali sebagai draft."
+                  : "Form pengajuan kebutuhan barang persediaan unit kerja."}
+              </p>
+            </div>
+          </div>
+
+          {!isEditMode && (
+            <div className="inline-flex items-start gap-3 bg-indigo-50/80 rounded-xl p-3 border border-indigo-100/50 max-w-2xl">
+              <Info size={18} className="text-indigo-500 shrink-0 mt-0.5" />
+              <p className="text-xs font-semibold text-indigo-900 leading-relaxed">
+                Pastikan data yang diisi sudah benar sebelum mengajukan.<br />
+                <span className="font-medium text-indigo-700">Pengajuan akan diverifikasi oleh Petugas Persediaan.</span>
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Flash */}
+      {/* Flash Messages */}
       {successMsg && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg p-3.5 text-xs font-semibold flex items-start gap-2">
-          <CheckCircle size={14} className="text-emerald-600 mt-0.5 shrink-0" />
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 text-sm font-semibold flex items-center gap-3 animate-fade-in shadow-sm">
+          <CheckCircle size={18} className="text-emerald-600 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
       {errorMsg && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-lg p-3.5 text-xs font-semibold flex items-start gap-2">
-          <AlertCircle size={14} className="text-rose-500 mt-0.5 shrink-0" />
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-4 text-sm font-semibold flex items-center gap-3 animate-fade-in shadow-sm">
+          <AlertCircle size={18} className="text-rose-500 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* Section 1 — Info */}
-      <div className="space-y-4">
-        <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">
-          Informasi Pengajuan
-        </h3>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-            Keperluan / Tujuan Pengajuan <span className="text-rose-500">*</span>
-          </label>
-          <textarea
-            rows={2} disabled={isSubmitting}
-            placeholder="Contoh: Kebutuhan ATK untuk operasional bulanan Subbagian TU..."
-            value={keperluan}
-            onChange={(e) => {
-              setKeperluan(e.target.value);
-              if (fieldErrors.keperluan) setFieldErrors((p) => ({ ...p, keperluan: "" }));
-            }}
-            className={`w-full bg-slate-50 border rounded px-3 py-2 text-xs font-medium text-slate-700
-              focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-60 resize-none
-              ${fieldErrors.keperluan ? "border-rose-400 bg-rose-50" : "border-slate-200"}`}
-          />
-          {fieldErrors.keperluan && (
-            <p className="mt-1 text-xs text-rose-600 font-semibold flex items-center gap-1">
-              <AlertCircle size={11} /> {fieldErrors.keperluan}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-            Nama Pengaju
-          </label>
-          <input type="text" value={currentUser} disabled
-            className="w-full bg-slate-100 border border-slate-200 rounded px-3 py-2 text-xs font-semibold text-slate-500 cursor-not-allowed" />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-            Catatan Tambahan
-          </label>
-          <textarea rows={2} disabled={isSubmitting}
-            placeholder="Catatan opsional untuk Petugas Persediaan..."
-            value={catatan}
-            onChange={(e) => setCatatan(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs font-medium text-slate-700
-              focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-60 resize-none" />
-        </div>
-      </div>
-
-      {/* Section 2 — Items */}
-      <div className="space-y-4">
-        <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">
-          Daftar Barang yang Diminta <span className="text-rose-500">*</span>
-        </h3>
-
-        {/* Stock search */}
-        <div className="relative" ref={dropdownRef}>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-            Cari &amp; Tambah Barang dari Gudang
-          </label>
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            {searchLoading && (
-              <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-500 animate-spin" />
-            )}
-            <input
-              type="text" disabled={isSubmitting} value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
-              placeholder="Ketik nama atau kode barang (min. 2 karakter)..."
-              className="w-full pl-9 pr-9 py-2 bg-slate-50 border border-slate-200 rounded text-xs font-medium
-                text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-60"
-            />
-          </div>
-          {searchError && <p className="mt-1 text-xs text-rose-600 font-semibold">{searchError}</p>}
-
-          {showDropdown && searchResults.length > 0 && (
-            <div className="absolute z-50 top-full mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {searchResults.map((result) => {
-                const alreadyAdded = items.some((i) => i.barang_id === result.id);
-                return (
-                  <button key={result.id} type="button"
-                    disabled={alreadyAdded || result.id === 0}
-                    onClick={() => addItem(result)}
-                    className={`w-full text-left px-4 py-3 text-xs hover:bg-indigo-50 transition-colors border-b border-slate-100 last:border-0
-                      ${alreadyAdded ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-xs text-indigo-600 font-bold">{result.kode}</span>
-                          <span className="text-xs text-slate-400">{result.kategori}</span>
-                        </div>
-                        <p className="font-semibold text-slate-800 mt-0.5 truncate">{result.nama}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className={`font-extrabold text-sm ${result.stok === 0 ? "text-rose-500" : result.stok <= 5 ? "text-amber-600" : "text-emerald-600"}`}>
-                          {result.stok}
-                        </p>
-                        <p className="text-xs text-slate-400">{result.satuan}</p>
-                      </div>
-                    </div>
-                    {alreadyAdded && <span className="text-xs text-indigo-500 font-bold">✓ Sudah ditambahkan</span>}
-                  </button>
-                );
-              })}
+      {/* MAIN GRID LAYOUT */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* LEFT COLUMN: FORMS */}
+        <div className="xl:col-span-2 space-y-6">
+          
+          {/* Section 1: Informasi Pengajuan */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center justify-center size-8 rounded-lg bg-indigo-500 text-white font-bold text-sm shadow-sm">
+                1
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-800">Informasi Pengajuan</h3>
+                <p className="text-xs font-medium text-slate-500 mt-0.5">Lengkapi informasi dasar pengajuan kebutuhan barang.</p>
+              </div>
             </div>
-          )}
-        </div>
 
-        {fieldErrors.items && (
-          <p className="text-xs text-rose-600 font-semibold flex items-center gap-1">
-            <AlertCircle size={11} /> {fieldErrors.items}
-          </p>
-        )}
+            <div className="space-y-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                  Keperluan / Tujuan Pengajuan <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <textarea
+                    rows={2} disabled={isSubmitting}
+                    placeholder="Contoh: Kebutuhan ATK untuk operasional bulanan Subbagian TU..."
+                    value={keperluan}
+                    onChange={(e) => {
+                      setKeperluan(e.target.value);
+                      if (fieldErrors.keperluan) setFieldErrors((p) => ({ ...p, keperluan: "" }));
+                    }}
+                    className={`w-full bg-slate-50/50 border rounded-xl px-4 py-3 text-sm font-medium text-slate-700
+                      focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:opacity-60 resize-none transition-all
+                      ${fieldErrors.keperluan ? "border-rose-400 bg-rose-50/50" : "border-slate-200 hover:border-slate-300"}`}
+                  />
+                  <Edit3 size={14} className="absolute right-3 bottom-3 text-slate-400" />
+                </div>
+                {fieldErrors.keperluan && (
+                  <p className="mt-1.5 text-xs text-rose-600 font-semibold flex items-center gap-1.5">
+                    <AlertCircle size={12} /> {fieldErrors.keperluan}
+                  </p>
+                )}
+              </div>
 
-        {items.length === 0 ? (
-          <div className="border-2 border-dashed border-slate-200 rounded-lg py-8 text-center">
-            <Package className="mx-auto text-slate-300 mb-2" size={24} />
-            <p className="text-xs font-semibold text-slate-400">Belum ada barang yang dipilih</p>
-            <p className="text-xs text-slate-300 mt-0.5">Gunakan kotak pencarian di atas untuk menambah barang</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {items.map((item, index) => (
-              <div key={`${item.barang_id}-${index}`}
-                className="border border-slate-200 rounded-lg p-4 bg-slate-50/50 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-extrabold text-slate-800 truncate">{item.nama_barang}</p>
-                    {item.stok_tersedia > 0 && (
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Stok gudang:{" "}
-                        <span className={`font-bold ${item.stok_tersedia <= 5 ? "text-amber-600" : "text-emerald-600"}`}>
-                          {item.stok_tersedia} {item.satuan}
-                        </span>
-                      </p>
-                    )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                    Nama Pengaju
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    </div>
+                    <input type="text" value={`${currentUser} (Ketua Tim Kerja)`} disabled
+                      className="w-full pl-9 pr-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 cursor-not-allowed" />
                   </div>
-                  <button type="button" disabled={isSubmitting} onClick={() => removeItem(index)}
-                    className="text-slate-400 hover:text-rose-500 transition-colors p-1 rounded hover:bg-rose-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                    aria-label="Hapus barang">
-                    <Trash2 size={14} />
-                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Jumlah Diminta <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input type="number" min={1} disabled={isSubmitting}
-                        value={item.jumlah_diminta}
-                        onChange={(e) => {
-                          const val = Math.max(1, Number(e.target.value) || 1);
-                          updateItem(index, "jumlah_diminta", val);
-                          if (fieldErrors[`items_${index}`])
-                            setFieldErrors((p) => ({ ...p, [`items_${index}`]: "" }));
-                        }}
-                        className={`w-full bg-white border rounded px-3 py-1.5 text-xs font-semibold text-slate-700
-                          focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-60
-                          ${fieldErrors[`items_${index}`] ? "border-rose-400" : "border-slate-200"}`}
-                      />
-                      <span className="text-xs text-slate-500 font-semibold shrink-0">{item.satuan}</span>
-                    </div>
-                    {fieldErrors[`items_${index}`] && (
-                      <p className="mt-0.5 text-xs text-rose-600 font-semibold">{fieldErrors[`items_${index}`]}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Catatan Item
-                    </label>
-                    <input type="text" disabled={isSubmitting} placeholder="Opsional..."
-                      value={item.catatan}
-                      onChange={(e) => updateItem(index, "catatan", e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded px-3 py-1.5 text-xs font-medium
-                        text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-60"
-                    />
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                    Catatan Tambahan
+                  </label>
+                  <div className="relative">
+                    <textarea rows={1} disabled={isSubmitting}
+                      placeholder="Catatan opsional untuk Petugas Persediaan..."
+                      value={catatan}
+                      onChange={(e) => setCatatan(e.target.value)}
+                      className="w-full bg-slate-50/50 border border-slate-200 hover:border-slate-300 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700
+                        focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:opacity-60 resize-none transition-all" />
+                     <Edit3 size={14} className="absolute right-3 bottom-3 text-slate-400" />
                   </div>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
-        )}
 
-        {items.length > 0 && (
-          <p className="text-xs text-slate-500 font-semibold text-right">
-            {items.length} jenis barang dipilih
-          </p>
-        )}
-      </div>
+          {/* Section 2: Daftar Barang */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center justify-center size-8 rounded-lg bg-indigo-500 text-white font-bold text-sm shadow-sm">
+                2
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-800">Daftar Barang yang Diminta</h3>
+                <p className="text-xs font-medium text-slate-500 mt-0.5">Cari dan tambahkan barang dari katalog gudang.</p>
+              </div>
+            </div>
 
-      {/* Section 3 — Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-slate-100">
-        {/* Batal / kembali (hanya mode edit) */}
-        {isEditMode && onCancel && (
-          <button type="button" onClick={onCancel} disabled={isSubmitting}
-            className="sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200
-              text-slate-600 bg-white hover:bg-slate-50 font-bold text-xs rounded transition-all
-              disabled:opacity-50 disabled:cursor-not-allowed">
-            <ArrowLeft size={13} />
-            Batal
-          </button>
-        )}
+            {/* Stock search */}
+            <div className="relative mb-5" ref={dropdownRef}>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                Cari &amp; Tambah Barang dari Gudang
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  {searchLoading && (
+                    <Loader2 size={16} className="absolute right-16 top-1/2 -translate-y-1/2 text-indigo-500 animate-spin" />
+                  )}
+                  <input
+                    type="text" disabled={isSubmitting} value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                    placeholder="Ketik nama atau kode barang (min. 2 karakter)..."
+                    className="w-full pl-10 pr-16 py-2.5 bg-white border border-slate-200 hover:border-indigo-300 rounded-xl text-sm font-medium
+                      text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:opacity-60 transition-all shadow-sm"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">Ctrl + K</span>
+                  </div>
+                </div>
+                
+                <button type="button" className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 hover:border-slate-300 bg-white rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm whitespace-nowrap">
+                  <Filter size={14} />
+                  Filter Kategori
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1 opacity-50"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+              </div>
+              
+              {searchError && <p className="mt-1.5 text-xs text-rose-600 font-semibold">{searchError}</p>}
 
-        {/* Simpan Draft */}
-        <button type="button" disabled={isSubmitting} onClick={() => handleSubmit("draft")}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-300
-            text-slate-700 bg-white hover:bg-slate-50 font-bold text-xs rounded transition-all
-            disabled:opacity-50 disabled:cursor-not-allowed shadow-xs">
-          {isSubmitting && submitMode === "draft"
-            ? <Loader2 size={13} className="animate-spin" />
-            : <Save size={13} />}
-          {isSubmitting && submitMode === "draft"
-            ? "Menyimpan..."
-            : isEditMode ? "Simpan Perubahan Draft" : "Simpan Draft"}
-        </button>
+              {showDropdown && searchResults.length > 0 && (
+                <div className="absolute z-50 top-[calc(100%+0.5rem)] w-[calc(100%-140px)] bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto">
+                  {searchResults.map((result) => {
+                    const alreadyAdded = items.some((i) => i.barang_id === result.id);
+                    return (
+                      <button key={result.id} type="button"
+                        disabled={alreadyAdded || result.id === 0}
+                        onClick={() => addItem(result)}
+                        className={`w-full text-left px-4 py-3 hover:bg-indigo-50/50 transition-colors border-b border-slate-100 last:border-0
+                          ${alreadyAdded ? "opacity-40 cursor-not-allowed bg-slate-50" : "cursor-pointer"}`}
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className="font-mono text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-bold border border-indigo-100">{result.kode}</span>
+                              <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{result.kategori}</span>
+                            </div>
+                            <p className="font-bold text-sm text-slate-800 truncate">{result.nama}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className={`font-extrabold text-sm ${result.stok === 0 ? "text-rose-500" : result.stok <= 5 ? "text-amber-600" : "text-emerald-600"}`}>
+                              {result.stok}
+                            </p>
+                            <p className="text-[10px] font-semibold text-slate-400 uppercase">{result.satuan}</p>
+                          </div>
+                        </div>
+                        {alreadyAdded && <span className="text-[10px] text-indigo-500 font-bold mt-1 block">✓ Sudah ditambahkan ke daftar</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
-        {/* Kirim Pengajuan */}
-        <button type="button" disabled={isSubmitting} onClick={() => handleSubmit("menunggu_verifikasi")}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600
-            hover:bg-indigo-700 text-white font-bold text-xs rounded transition-all
-            disabled:opacity-50 disabled:cursor-not-allowed shadow-xs">
-          {isSubmitting && submitMode === "kirim"
-            ? <Loader2 size={13} className="animate-spin" />
-            : <Send size={13} />}
-          {isSubmitting && submitMode === "kirim"
-            ? "Mengirim..."
-            : isEditMode ? "Kirim Sekarang" : "Kirim Pengajuan"}
-        </button>
+            {fieldErrors.items && (
+              <p className="text-xs text-rose-600 font-semibold flex items-center gap-1.5 mb-4">
+                <AlertCircle size={12} /> {fieldErrors.items}
+              </p>
+            )}
+
+            {items.length === 0 ? (
+              <div className="border border-dashed border-slate-200 bg-slate-50/50 rounded-xl py-12 text-center flex flex-col items-center justify-center">
+                <div className="relative mb-4">
+                  <div className="size-16 bg-indigo-50 rounded-full flex items-center justify-center border border-indigo-100">
+                    <Package className="text-indigo-300" size={32} />
+                  </div>
+                  <Sparkles className="absolute -top-1 -right-1 text-indigo-400" size={16} />
+                </div>
+                <h4 className="text-sm font-extrabold text-slate-800 mb-1">Belum ada barang yang dipilih</h4>
+                <p className="text-xs font-medium text-slate-500 mb-5">Gunakan kotak pencarian di atas untuk menambah barang</p>
+                <button type="button" onClick={() => document.querySelector('input[placeholder*="Ketik nama"]')?.focus()} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm flex items-center gap-2 transition-colors">
+                  <Search size={14} />
+                  Cari Barang Sekarang
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {items.map((item, index) => (
+                  <div key={`${item.barang_id}-${index}`}
+                    className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:border-indigo-200 transition-colors">
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-slate-800 leading-tight">{item.nama_barang}</p>
+                        {item.stok_tersedia > 0 && (
+                          <p className="text-xs font-medium text-slate-500 mt-1">
+                            Stok gudang:{" "}
+                            <span className={`font-bold ${item.stok_tersedia <= 5 ? "text-amber-600" : "text-emerald-600"}`}>
+                              {item.stok_tersedia} {item.satuan}
+                            </span>
+                          </p>
+                        )}
+                      </div>
+                      <button type="button" disabled={isSubmitting} onClick={() => removeItem(index)}
+                        className="text-slate-400 hover:text-rose-500 bg-white hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all p-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                        aria-label="Hapus barang">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/50 p-3 rounded-lg border border-slate-100">
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">
+                          Jumlah Diminta <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input type="number" min={1} disabled={isSubmitting}
+                            value={item.jumlah_diminta}
+                            onChange={(e) => {
+                              const val = Math.max(1, Number(e.target.value) || 1);
+                              updateItem(index, "jumlah_diminta", val);
+                              if (fieldErrors[`items_${index}`])
+                                setFieldErrors((p) => ({ ...p, [`items_${index}`]: "" }));
+                            }}
+                            className={`w-full max-w-[120px] bg-white border rounded-lg px-3 py-2 text-sm font-bold text-slate-800
+                              focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:opacity-60 shadow-sm
+                              ${fieldErrors[`items_${index}`] ? "border-rose-400" : "border-slate-200"}`}
+                          />
+                          <span className="text-xs text-slate-600 font-bold bg-white border border-slate-200 px-3 py-2 rounded-lg shadow-sm shrink-0">{item.satuan}</span>
+                        </div>
+                        {fieldErrors[`items_${index}`] && (
+                          <p className="mt-1 text-[10px] text-rose-600 font-bold">{fieldErrors[`items_${index}`]}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">
+                          Catatan Item (Opsional)
+                        </label>
+                        <input type="text" disabled={isSubmitting} placeholder="Contoh: Ukuran F4..."
+                          value={item.catatan}
+                          onChange={(e) => updateItem(index, "catatan", e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium
+                            text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:opacity-60 shadow-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: SIDEBAR SUMMARY */}
+        <div className="xl:col-span-1 space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm sticky top-6">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2 text-slate-800">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                <h3 className="text-sm font-extrabold">Ringkasan Pengajuan</h3>
+              </div>
+              <button className="text-slate-400 hover:text-slate-600"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg></button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 mb-6">
+              <div className="flex items-center justify-between p-3.5 bg-slate-50/50 border border-slate-100 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center"><ShoppingBag size={16} /></div>
+                  <span className="text-xs font-bold text-slate-600">Jumlah Item</span>
+                </div>
+                <span className="text-sm font-extrabold text-slate-800">{items.reduce((acc, curr) => acc + (curr.jumlah_diminta || 0), 0)}</span>
+              </div>
+              
+              <div className="flex items-center justify-between p-3.5 bg-slate-50/50 border border-slate-100 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center"><Box size={16} /></div>
+                  <span className="text-xs font-bold text-slate-600">Total Barang (Jenis)</span>
+                </div>
+                <span className="text-sm font-extrabold text-slate-800">{items.length}</span>
+              </div>
+
+              <div className="flex items-center justify-between p-3.5 bg-slate-50/50 border border-slate-100 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center"><Tag size={16} /></div>
+                  <span className="text-xs font-bold text-slate-600">Kategori</span>
+                </div>
+                <span className="text-sm font-extrabold text-slate-800">
+                  {new Set(items.map(it => searchResults.find(s => s.id === it.barang_id)?.kategori).filter(Boolean)).size}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-3.5 bg-slate-50/50 border border-slate-100 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center"><CircleDollarSign size={16} /></div>
+                  <span className="text-xs font-bold text-slate-600">Estimasi Nilai</span>
+                </div>
+                <span className="text-sm font-extrabold text-slate-800">Rp 0</span>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-slate-100 mb-6">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500">Status Pengajuan</span>
+                <span className="px-2.5 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold rounded uppercase tracking-wider">{isEditMode ? "Draft Tersimpan" : "Draft"}</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-500">
+                <Calendar size={14} />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Dibuat</span>
+                  <span className="text-xs font-medium text-slate-700">{new Date().toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 bg-blue-50/50 border border-blue-100 p-3 rounded-xl mb-6">
+              <ShieldCheck size={16} className="text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-[10px] font-semibold text-blue-800 leading-relaxed">
+                Data pengajuan disimpan otomatis.<br />
+                <span className="text-blue-600/80 font-medium">Anda dapat melanjutkan nanti</span>
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-3">
+              <button type="button" disabled={isSubmitting} onClick={() => handleSubmit("menunggu_verifikasi")}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600
+                  hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all
+                  disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                {isSubmitting && submitMode === "kirim"
+                  ? <Loader2 size={14} className="animate-spin" />
+                  : <Send size={14} />}
+                {isSubmitting && submitMode === "kirim"
+                  ? "Mengirim..."
+                  : isEditMode ? "Kirim Sekarang" : "Kirim Pengajuan"}
+              </button>
+
+              <button type="button" disabled={isSubmitting} onClick={() => handleSubmit("draft")}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-slate-200
+                  text-slate-700 bg-white hover:bg-slate-50 font-bold text-xs rounded-xl transition-all
+                  disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                {isSubmitting && submitMode === "draft"
+                  ? <Loader2 size={14} className="animate-spin" />
+                  : <Save size={14} />}
+                {isSubmitting && submitMode === "draft"
+                  ? "Menyimpan..."
+                  : isEditMode ? "Simpan Perubahan Draft" : "Simpan Draft"}
+              </button>
+              
+              {isEditMode && onCancel && (
+                <button type="button" onClick={onCancel} disabled={isSubmitting}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 font-bold text-xs rounded-lg transition-all
+                    disabled:opacity-50 disabled:cursor-not-allowed mt-2">
+                  <ArrowLeft size={14} />
+                  Batal / Kembali
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
