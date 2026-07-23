@@ -58,8 +58,14 @@ class InventoryCodeSuggestionService
                 'code' => $stockMatch['item']->code,
                 'description' => $stockMatch['item']->name,
                 'category' => $stockMatch['item']->category,
-                'unit' => $normalisedUnit
-                    ?: $this->normaliseUnit($stockMatch['item']->unit),
+                /*
+                 * Karena suggestion ini menunjuk langsung ke stock_item_id,
+                 * satuan harus mengikuti master barang. Satuan OCR hanya
+                 * menjadi fallback bila master lama belum mempunyai satuan.
+                 */
+                'unit' => $this->normaliseUnit(
+                    $stockMatch['item']->unit,
+                ) ?: $normalisedUnit,
                 'confidence' => round($stockMatch['confidence'], 4),
                 'source' => 'stock_master_excel',
                 'stock_item_id' => $stockMatch['item']->id,

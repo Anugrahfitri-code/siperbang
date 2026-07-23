@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReceiptItem extends Model
 {
@@ -22,12 +23,20 @@ class ReceiptItem extends Model
         return $this->belongsTo(Receipt::class);
     }
 
-    public function inventoryCodeMaster()
+    public function inventoryCodeMaster(): BelongsTo
     {
         return $this->belongsTo(
             KodePersediaan::class,
             'inventory_code',
             'kode',
+        );
+    }
+
+    public function stockItem(): BelongsTo
+    {
+        return $this->belongsTo(
+            StockItem::class,
+            'stock_item_id',
         );
     }
 }

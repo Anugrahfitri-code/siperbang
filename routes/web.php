@@ -9,6 +9,10 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
+Route::get('/login', function () {
+    return view('welcome');
+})->name('login');
+
 // Authenticated User Info
 Route::get('/api/user', function (Request $request) {
     if (Auth::check()) {
@@ -123,8 +127,29 @@ Route::middleware('auth')->prefix('api')->group(function () {
         );
 
         // Receipts
-        Route::get('/receipts', [\App\Http\Controllers\Api\ReceiptController::class, 'index']);
-        Route::post('/receipts', [\App\Http\Controllers\Api\ReceiptController::class, 'store']);
+        Route::get(
+            '/receipts',
+            [
+                \App\Http\Controllers\Api\ReceiptController::class,
+                'index',
+            ]
+        );
+
+        Route::post(
+            '/receipts',
+            [
+                \App\Http\Controllers\Api\ReceiptController::class,
+                'store',
+            ]
+        );
+
+        Route::post(
+            '/receipts/export-excel',
+            [
+                \App\Http\Controllers\Api\ReceiptController::class,
+                'exportExcel',
+            ]
+        );
         Route::get('/receipt-documents', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'index']);
         Route::post('/receipt-documents', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'store']);
         Route::get(
@@ -159,6 +184,8 @@ Route::middleware('auth')->prefix('api')->group(function () {
             ]
         );
         Route::put('/receipts/{receipt}/unverify', [\App\Http\Controllers\Api\ReceiptController::class, 'unverify']);
+        Route::put('/receipts/{receipt}/items', [\App\Http\Controllers\Api\ReceiptController::class, 'updateItems']);
+
         Route::post('/receipt-documents/{receiptDocument}/retry', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'retry']);
         Route::delete('/receipt-documents/{receiptDocument}', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'destroy']);
         

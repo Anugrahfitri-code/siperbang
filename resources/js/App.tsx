@@ -306,7 +306,14 @@ useEffect(() => {
                   item.inventory_code_master
                     ?.nama_barang
                     ?? null,
-                stockItemId: null,
+                stockItemId:
+                  item.stock_item_id != null
+                  && Number.isInteger(
+                    Number(item.stock_item_id)
+                  )
+                  && Number(item.stock_item_id) > 0
+                    ? Number(item.stock_item_id)
+                    : null,
                 codeConfidence: null,
                 price: Number(item.price ?? 0),
                 subtotal: Number(
@@ -645,12 +652,30 @@ useEffect(() => {
       })
     );
 
-    await addLog(currentUser, "Verifikasi Kuitansi", logMsg);
+    await addLog(
+      currentUser,
+      "Verifikasi Kuitansi",
+      logMsg
+    );
+
+    /*
+     * Verifikasi kuitansi juga mengubah stock_items di backend.
+     * Muat ulang agar menu Master Barang langsung menampilkan
+     * barang baru atau jumlah stok terbaru tanpa refresh browser.
+     */
+    await loadData();
   };
 
   const handleUnverifyReceipt = async (id: string, logMsg: string) => {
     setReceipts((prev) => prev.filter((r) => r.id !== id));
-    await addLog(currentUser, "Batalkan Verifikasi", logMsg);
+
+    await addLog(
+      currentUser,
+      "Batalkan Verifikasi",
+      logMsg
+    );
+
+    await loadData();
   };
 
   const handleAddReceipt = async (newReceipt: ReceiptData) => {
@@ -851,7 +876,9 @@ useEffect(() => {
             <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-7 sm:px-6 lg:px-8">
 
         {/* Stats Section */}
-        <DashboardStats requests={requests} receipts={receipts} />
+        {currentRole !== UserRole.KETUA_TIM && (
+          <DashboardStats requests={requests} receipts={receipts} />
+        )}
 
         {/* Role-Specific Workspaces */}
         {currentRole === UserRole.PETUGAS_PERSERDIAN ? (

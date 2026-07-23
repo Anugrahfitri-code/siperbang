@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ReceiptDocument;
 use App\Models\Receipt;
 use App\Services\InventoryCodeSuggestionService;
+use App\Services\ReceiptStockSyncService;
 use App\Jobs\ProcessReceiptOcr;
 use App\Enums\ReceiptDocumentStatus;
 use Illuminate\Http\Request;
@@ -537,6 +538,16 @@ class ReceiptDocumentController extends Controller
                     ),
             ],
 
+            'items.*.stockItemId' => [
+                'nullable',
+                'integer',
+                Rule::exists('stock_items', 'id')
+                    ->where(
+                        fn ($query) => $query
+                            ->where('is_active', true)
+                    ),
+            ],
+
             'items.*.price' =>
                 'nullable|numeric|min:0',
         ]);
@@ -594,6 +605,11 @@ class ReceiptDocumentController extends Controller
                         'inventoryCode' =>
                             isset($item['inventoryCode'])
                                 ? trim((string) $item['inventoryCode'])
+                                : null,
+
+                        'stockItemId' =>
+                            isset($item['stockItemId'])
+                                ? (int) $item['stockItemId']
                                 : null,
 
                         'price' =>
@@ -750,6 +766,7 @@ class ReceiptDocumentController extends Controller
         Request $request,
         ReceiptDocument $receiptDocument,
         InventoryCodeSuggestionService $suggestionService,
+        ReceiptStockSyncService $stockSyncService,
     ): JsonResponse {
         /*
          * Idempotensi: klik dua kali tidak membuat
@@ -768,7 +785,10 @@ class ReceiptDocumentController extends Controller
                     'receipt' =>
                         $receiptDocument
                             ->receipt()
-                            ->with('items.inventoryCodeMaster')
+                            ->with([
+                                'items.inventoryCodeMaster',
+                                'items.stockItem',
+                            ])
                             ->first(),
 
                     'document' =>
@@ -857,6 +877,16 @@ class ReceiptDocumentController extends Controller
                         ),
                 ],
 
+                'items.*.stockItemId' => [
+                    'nullable',
+                    'integer',
+                    Rule::exists('stock_items', 'id')
+                        ->where(
+                            fn ($query) => $query
+                                ->where('is_active', true)
+                        ),
+                ],
+
                 'items.*.price' =>
                     'required|numeric|gt:0',
             ],
@@ -927,6 +957,11 @@ class ReceiptDocumentController extends Controller
 
                         'inventory_code' =>
                             trim($item['inventoryCode']),
+
+                        'stock_item_id' =>
+                            isset($item['stockItemId'])
+                                ? (int) $item['stockItemId']
+                                : null,
 
                         'price' =>
                             round(
@@ -1012,18 +1047,74 @@ class ReceiptDocumentController extends Controller
             );
         }
 
+        $receiptData = [
+            'invoice_no' => $invoiceNo,
+            'store_name' => $storeName,
+            'date' => $validated['date'],
+            'is_taxed' => (bool) $validated['isTaxed'],
+            'tax_rate' => $taxRate,
+            'subtotal' => $subtotal,
+            'tax_amount' => $taxAmount,
+            'total' => $total,
+            'is_verified' => true,
+            'status' => 'Dokumen Valid',
+            'method' => $validated['method'] ?? null,
+            'bast_name' => $validated['bastName'] ?? null,
+            'bast_date' => $validated['bastDate'] ?? null,
+        ];
+
+        /*
+         * Simpan nilai akhir form verifikasi juga sebagai manual_draft.
+         * Dengan begitu pilihan master barang, kode, dan satuan tidak
+         * hilang ketika kuitansi dibatalkan lalu dibuka kembali.
+         */
+        $verifiedDraft = [
+            'invoiceNo' => $invoiceNo,
+            'storeName' => $storeName,
+            'date' => $validated['date'],
+            'isTaxed' => (bool) $validated['isTaxed'],
+            'taxRate' => $taxRate,
+            'subtotal' => $subtotal,
+            'taxAmount' => $taxAmount,
+            'total' => $total,
+            'method' => $validated['method'] ?? null,
+            'bastName' => trim(
+                (string) ($validated['bastName'] ?? '')
+            ),
+            'bastDate' => $validated['bastDate'] ?? null,
+            'items' => collect($normalisedItems)
+                ->map(
+                    static fn (array $item): array => [
+                        'name' => $item['name'],
+                        'qty' => $item['qty'],
+                        'unit' => $item['unit'],
+                        'inventoryCode' => $item['inventory_code'],
+                        'stockItemId' => $item['stock_item_id'],
+                        'price' => $item['price'],
+                        'subtotal' => round(
+                            $item['qty'] * $item['price'],
+                            2,
+                        ),
+                    ]
+                )
+                ->values()
+                ->all(),
+        ];
+
+        $draftSavedBy = $request->user()?->id;
+
         try {
             $result = DB::transaction(
                 function () use (
                     $receiptDocument,
-                    $validated,
                     $normalisedItems,
-                    $subtotal,
-                    $taxRate,
-                    $taxAmount,
                     $total,
                     $storeName,
                     $invoiceNo,
+                    $receiptData,
+                    $verifiedDraft,
+                    $draftSavedBy,
+                    $stockSyncService,
                 ) {
                     $lockedDocument = (
                         ReceiptDocument::query()
@@ -1042,7 +1133,10 @@ class ReceiptDocumentController extends Controller
                             'receipt' =>
                                 $lockedDocument
                                     ->receipt()
-                                    ->with('items.inventoryCodeMaster')
+                                    ->with([
+                                        'items.inventoryCodeMaster',
+                                        'items.stockItem',
+                                    ])
                                     ->first(),
 
                             'document' =>
@@ -1059,7 +1153,10 @@ class ReceiptDocumentController extends Controller
                      */
                     $duplicate = (
                         Receipt::query()
-                            ->with('items.inventoryCodeMaster')
+                            ->with([
+                                'items.inventoryCodeMaster',
+                                'items.stockItem',
+                            ])
                             ->where(
                                 'invoice_no',
                                 $invoiceNo,
@@ -1072,6 +1169,7 @@ class ReceiptDocumentController extends Controller
                                     ),
                                 ],
                             )
+                            ->lockForUpdate()
                             ->first()
                     );
 
@@ -1080,7 +1178,7 @@ class ReceiptDocumentController extends Controller
                             $duplicate
                                 ->date
                                 ?->format('Y-m-d')
-                            === $validated['date']
+                            === $receiptData['date']
                         );
 
                         $sameTotal = (
@@ -1107,9 +1205,34 @@ class ReceiptDocumentController extends Controller
                                 ]);
                         }
 
+                        /*
+                         * Data pada form verifikasi adalah sumber
+                         * data terbaru. Jika invoice yang sama sudah
+                         * ada, perbarui header dan seluruh itemnya.
+                         *
+                         * Ini mencegah kode persediaan dan satuan
+                         * tetap kosong pada kuitansi lama yang dibuat
+                         * sebelum kolom tersebut tersedia.
+                         */
+                        $duplicate->update($receiptData);
+
+                        $stockSyncService->replaceReceiptItems(
+                            $duplicate,
+                            $normalisedItems,
+                        );
+
                         $lockedDocument->update([
                             'receipt_id' =>
                                 $duplicate->id,
+
+                            'manual_draft' =>
+                                $verifiedDraft,
+
+                            'draft_saved_by' =>
+                                $draftSavedBy,
+
+                            'draft_saved_at' =>
+                                now(),
 
                             'status' =>
                                 ReceiptDocumentStatus
@@ -1121,7 +1244,12 @@ class ReceiptDocumentController extends Controller
 
                         return [
                             'receipt' =>
-                                $duplicate,
+                                $duplicate
+                                    ->fresh()
+                                    ->load([
+                                        'items.inventoryCodeMaster',
+                                        'items.stockItem',
+                                    ]),
 
                             'document' =>
                                 $lockedDocument
@@ -1132,84 +1260,27 @@ class ReceiptDocumentController extends Controller
                         ];
                     }
 
-                    $receipt = Receipt::create([
-                        'invoice_no' =>
-                            $invoiceNo,
+                    $receipt = Receipt::create(
+                        $receiptData
+                    );
 
-                        'store_name' =>
-                            $storeName,
-
-                        'date' =>
-                            $validated['date'],
-
-                        'is_taxed' =>
-                            $validated['isTaxed'],
-
-                        'tax_rate' =>
-                            $taxRate,
-
-                        'subtotal' =>
-                            $subtotal,
-
-                        'tax_amount' =>
-                            $taxAmount,
-
-                        'total' =>
-                            $total,
-
-                        'is_verified' =>
-                            true,
-
-                        'status' =>
-                            'Dokumen Valid',
-
-                        'method' =>
-                            $validated['method']
-                            ?? null,
-
-                        'bast_name' =>
-                            $validated['bastName']
-                            ?? null,
-
-                        'bast_date' =>
-                            $validated['bastDate']
-                            ?? null,
-                    ]);
-
-                    foreach (
-                        $normalisedItems
-                        as $item
-                    ) {
-                        $receipt
-                            ->items()
-                            ->create([
-                                'name' =>
-                                    $item['name'],
-
-                                'qty' =>
-                                    $item['qty'],
-
-                                'unit' =>
-                                    $item['unit'],
-
-                                'inventory_code' =>
-                                    $item['inventory_code'],
-
-                                'price' =>
-                                    $item['price'],
-
-                                'subtotal' =>
-                                    round(
-                                        $item['qty']
-                                        * $item['price'],
-                                        2,
-                                    ),
-                            ]);
-                    }
+                    $stockSyncService->replaceReceiptItems(
+                        $receipt,
+                        $normalisedItems,
+                    );
 
                     $lockedDocument->update([
                         'receipt_id' =>
                             $receipt->id,
+
+                        'manual_draft' =>
+                            $verifiedDraft,
+
+                        'draft_saved_by' =>
+                            $draftSavedBy,
+
+                        'draft_saved_at' =>
+                            now(),
 
                         'status' =>
                             ReceiptDocumentStatus
@@ -1222,7 +1293,10 @@ class ReceiptDocumentController extends Controller
                     return [
                         'receipt' =>
                             $receipt
-                                ->load('items.inventoryCodeMaster'),
+                                ->load([
+                                    'items.inventoryCodeMaster',
+                                    'items.stockItem',
+                                ]),
 
                         'document' =>
                             $lockedDocument
@@ -1240,13 +1314,13 @@ class ReceiptDocumentController extends Controller
                     $result['reused']
                         ? (
                             'Invoice sudah pernah '
-                            . 'diverifikasi. Dokumen '
-                            . 'dihubungkan ke data '
-                            . 'yang sudah ada.'
+                            . 'diverifikasi. Data kuitansi, '
+                            . 'kode persediaan, satuan, dan stok master '
+                            . 'telah diperbarui.'
                         )
                         : (
-                            'Dokumen berhasil '
-                            . 'diverifikasi.'
+                            'Dokumen berhasil diverifikasi dan '
+                            . 'stok master telah diperbarui.'
                         ),
 
                 'data' =>
@@ -1335,49 +1409,7 @@ class ReceiptDocumentController extends Controller
         }
     }
 
-    public function unverify(
-        ReceiptDocument $receiptDocument,
-    ): JsonResponse {
-        if ($receiptDocument->status !== ReceiptDocumentStatus::VERIFIED || !$receiptDocument->receipt_id) {
-            return response()->json([
-                'message' => 'Dokumen ini belum diverifikasi atau tidak memiliki kuitansi.',
-            ], 400);
-        }
 
-        try {
-            DB::transaction(function () use ($receiptDocument) {
-                $receiptId = $receiptDocument->receipt_id;
-                
-                // Hapus kuitansi (cascade akan menghapus receipt_items jika diset di DB)
-                \App\Models\Receipt::where('id', $receiptId)->delete();
-
-                // Kembalikan status dokumen
-                $receiptDocument->update([
-                    'receipt_id' => null,
-                    'status' => ReceiptDocumentStatus::NEEDS_REVIEW,
-                ]);
-
-                \App\Models\HistoryLog::create([
-                    'actor' => auth()->user()->name . ' (' . auth()->user()->role . ')',
-                    'action' => 'Batalkan Verifikasi Kuitansi',
-                    'details' => 'Petugas membatalkan verifikasi dokumen OCR.',
-                ]);
-            });
-
-            return response()->json([
-                'message' => 'Verifikasi kuitansi berhasil dibatalkan. Dokumen dikembalikan ke status draft.',
-                'data' => [
-                    'document' => $receiptDocument,
-                ],
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Gagal membatalkan verifikasi kuitansi', ['id' => $receiptDocument->id, 'error' => $e->getMessage()]);
-            return response()->json([
-                'message' => 'Terjadi kesalahan sistem saat membatalkan verifikasi.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
-        }
-    }
 
     public function retry(
         ReceiptDocument $receiptDocument,
@@ -1444,7 +1476,7 @@ class ReceiptDocumentController extends Controller
     }
     public function destroy(ReceiptDocument $receiptDocument)
     {
-        if ($receiptDocument->status === ReceiptDocumentStatus::VERIFIED) {
+        if ($receiptDocument->status === ReceiptDocumentStatus::VERIFIED && $receiptDocument->receipt_id !== null) {
             return response()->json([
                 'message' => 'Dokumen yang sudah diverifikasi tidak dapat dihapus.',
             ], 403);
