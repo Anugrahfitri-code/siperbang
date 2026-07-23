@@ -27,12 +27,12 @@
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
 
         {{-- ── Baris 1: Logo | KOMDIGI | User + Back ── --}}
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
 
             <div class="flex justify-between h-16">
                 <!-- Logo & Brand -->
                 <div class="flex items-center gap-8">
-                    <a href="/" class="flex items-center gap-3">
+                    <a href="/" class="flex items-center gap-2">
                         <div class="relative w-12 h-12 flex-shrink-0">
                             <img
                                 src="{{ asset('images/siperbang-logo.png') }}"
@@ -40,7 +40,7 @@
                                 class="w-full h-full object-contain select-none pointer-events-none"
                             >
                         </div>
-                        <div class="flex flex-col select-none">
+                        <div class="flex flex-col select-none text-left">
                           <div class="text-2xl font-bold tracking-tight leading-none flex items-center">
                             <span class="text-[#0055A5]">S</span>
                                 <span class="text-[#00A1E4]">I</span>
@@ -57,10 +57,10 @@
                     <div class="hidden md:block h-8 w-px bg-slate-200"></div>
 
                     <div class="hidden md:flex items-center gap-2">
-                      <div class="relative w-9 h-9 flex-shrink-0">
+                        <div class="relative w-9 h-9 flex-shrink-0">
                             <img src="{{ asset('images/komdigi-logo.png') }}" alt="Logo KOMDIGI" class="w-full h-full object-contain select-none pointer-events-none">
                         </div>
-                      <div class="flex flex-col select-none">
+                      <div class="flex flex-col select-none text-left">
                         <span class="text-sm font-extrabold text-[#4A4A4A] tracking-wider leading-none">
                           KOMDIGI
                         </span>
@@ -99,7 +99,7 @@
 
         {{-- ── Baris 2: Nav Links (desktop) ── --}}
         <div class="hidden md:block border-t border-slate-100 bg-white">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
                 <nav class="flex items-center h-10">
                     <a href="/stok-upload"
                        class="flex-1 h-full inline-flex items-center justify-center text-[13px] font-semibold border-b-2 transition-colors
