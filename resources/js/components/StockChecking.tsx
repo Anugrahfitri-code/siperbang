@@ -165,7 +165,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
       case RequestStatus.SELESAI:
         return "bg-emerald-100 text-emerald-800 border-emerald-200";
       case RequestStatus.DITOLAK:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-rose-50 text-rose-700 border-rose-300 font-bold";
     }
   };
 
