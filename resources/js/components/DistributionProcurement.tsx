@@ -40,10 +40,24 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
   currentUser,
   onClose,
 }) => {
-  const [activeTab, setActiveTab] = useState<"distribute" | "procure">("distribute");
+  // Calculate initial matching stock and max distributable
+  const matchingStock = stockList.find(
+    (s) => s.name.toLowerCase() === request.itemName.toLowerCase()
+  );
+  const currentStockQty = matchingStock ? matchingStock.qty : 0;
+  const totalAvailableInitial = currentStockQty + (request.stockAllocated ? request.qtyFulfilled : 0);
+  const maxDistributableInitial = Math.min(request.qtyRequested, totalAvailableInitial);
+
+  const canDistributeInitial = 
+    !request.distribution && 
+    maxDistributableInitial > 0;
+
+  const [activeTab, setActiveTab] = useState<"distribute" | "procure">(
+    canDistributeInitial ? "distribute" : "procure"
+  );
   const [selectedStockItem, setSelectedStockItem] = useState<string>("");
   const [qtyDistributed, setQtyDistributed] = useState<number>(
-    request.qtyFulfilled > 0 ? request.qtyFulfilled : 1
+    maxDistributableInitial > 0 ? maxDistributableInitial : 1
   );
   const [distributionNotes, setDistributionNotes] = useState<string>("");
 
@@ -157,12 +171,15 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
     }).format(num);
   };
 
+  const selectedStockObj = stockList.find((s) => s.id === selectedStockItem);
+  const selectedStockQty = selectedStockObj ? selectedStockObj.qty : 0;
+  const isMatchingAllocated = request.stockAllocated && matchingStock && selectedStockItem === matchingStock.id;
+  const availableSelected = selectedStockQty + (isMatchingAllocated ? request.qtyFulfilled : 0);
+  const currentMaxDistributable = Math.min(request.qtyRequested, availableSelected);
+
   const canDistribute = 
     !request.distribution && 
-    (request.status === RequestStatus.TERPENUHI || 
-     request.status === RequestStatus.TERPENUHI_SEBAGIAN ||
-     request.status === RequestStatus.SIAP_DIDISTRIBUSIKAN) &&
-    request.qtyFulfilled > 0;
+    currentMaxDistributable > 0;
 
   const canProcure = 
     request.qtyToProcure > 0 &&
@@ -356,12 +373,12 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
                   <input
                     type="number"
                     min="1"
-                    max={request.qtyFulfilled}
+                    max={currentMaxDistributable}
                     value={qtyDistributed}
-                    onChange={(e) => setQtyDistributed(Math.min(request.qtyFulfilled, Math.max(1, parseInt(e.target.value) || 0)))}
+                    onChange={(e) => setQtyDistributed(Math.min(currentMaxDistributable, Math.max(1, parseInt(e.target.value) || 0)))}
                     className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
-                  <p className="text-xs text-slate-400 mt-1">Maks: {request.qtyFulfilled} {request.unit}</p>
+                  <p className="text-xs text-slate-400 mt-1">Maks: {currentMaxDistributable} {request.unit}</p>
                 </div>
               </div>
 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { ItemRequest, RequestStatus, StockItem } from "../types";
-import { SearchCode, CheckCircle, AlertTriangle, Play, HelpCircle, Package, ArrowRight, ShieldAlert, Truck, ShoppingCart, XCircle, Loader2, Search, Trash2, User } from "lucide-react";
+import { SearchCode, CheckCircle, AlertTriangle, Play, HelpCircle, Package, ArrowRight, ShieldAlert, Truck, ShoppingCart, XCircle, Loader2, Search, Trash2, User, X } from "lucide-react";
 import { DistributionProcurement } from "./DistributionProcurement";
 
 interface StockCheckingProps {
@@ -668,9 +668,10 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
               </h3>
               <button
                 onClick={() => setSelectedForAction(null)}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
+                className="text-slate-500 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-full transition-all flex items-center justify-center"
+                title="Tutup"
               >
-                <CheckCircle size={20} />
+                <X size={20} strokeWidth={2.5} />
               </button>
             </div>
             <div className="p-5">
