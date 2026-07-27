@@ -349,37 +349,35 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
                     {/* Right Actions */}
                     <div className="shrink-0 flex flex-col sm:flex-row items-end sm:items-center justify-center gap-3 border-l border-slate-100 pl-4 sm:pl-6">
                       {isDraft ? (
-                         <div className="flex flex-col gap-2 items-end">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold border ${cfg.color}`}>
-                              {cfg.icon} {cfg.label}
-                            </span>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => setConfirmDelete({ id: bon.id, bonNo: bon.bonNo })}
-                                disabled={deletingId === bon.id}
-                                className="flex items-center justify-center size-8 border border-rose-200 text-rose-500 hover:bg-rose-50 hover:border-rose-300 rounded-lg transition-colors"
-                                title="Hapus Draft">
-                                {deletingId === bon.id ? <Loader2 size={14} className="animate-spin" /> : <Trash size={14} />}
-                              </button>
-                              <button
-                                onClick={() => onEditDraft({
-                                  id:        bon.id,
-                                  bonNo:     bon.bonNo,
-                                  keperluan: bon.keperluan ?? "",
-                                  catatan:   bon.catatan   ?? "",
-                                  items:     (bon.items ?? []).map((it) => ({
-                                    stockItemId:   it.stockItemId ?? it.stock_item_id ?? 0,
-                                    namaBarang:    it.itemName ?? it.item_name ?? "",
-                                    satuan:        it.unit,
-                                    jumlahDiminta: it.qtyRequested ?? it.qty_requested ?? 0,
-                                    catatan:       it.notes ?? "",
-                                  })),
-                                })}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
-                                <Edit3 size={12} /> Lanjutkan Draft
-                              </button>
-                            </div>
-                         </div>
+                        <>
+                          <button
+                              onClick={() => onEditDraft({
+                                id:        bon.id,
+                                bonNo:     bon.bonNo,
+                                keperluan: bon.keperluan ?? "",
+                                catatan:   bon.catatan   ?? "",
+                                items:     (bon.items ?? []).map((it) => ({
+                                  stockItemId:   it.stockItemId ?? it.stock_item_id ?? 0,
+                                  namaBarang:    it.itemName ?? it.item_name ?? "",
+                                  satuan:        it.unit,
+                                  jumlahDiminta: it.qtyRequested ?? it.qty_requested ?? 0,
+                                  catatan:       it.notes ?? "",
+                                })),
+                              })}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors shadow-sm whitespace-nowrap">
+                              <Edit3 size={14} /> Lanjutkan Draft
+                          </button>
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold border ${cfg.color}`}>
+                            {cfg.icon} {cfg.label}
+                          </span>
+                          <button
+                            onClick={() => setConfirmDelete({ id: bon.id, bonNo: bon.bonNo })}
+                            disabled={deletingId === bon.id}
+                            className="flex items-center justify-center size-9 border border-rose-200 text-rose-500 hover:bg-rose-50 hover:border-rose-300 rounded-xl transition-colors shrink-0"
+                            title="Hapus Draft">
+                            {deletingId === bon.id ? <Loader2 size={18} className="animate-spin" /> : <Trash size={18} />}
+                          </button>
+                        </>
                       ) : (
                         <>
                           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold border ${cfg.color}`}>
