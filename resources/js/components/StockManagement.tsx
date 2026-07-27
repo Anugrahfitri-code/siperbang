@@ -98,39 +98,43 @@ export const StockManagement: React.FC<StockManagementProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
-        <div className="flex items-center gap-4">
-          <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-indigo-50 text-indigo-600 border-indigo-100">
-            <Database size={24} />
+    <div className="space-y-6">
+      {/* Banner */}
+      <div className="relative bg-gradient-to-r from-[#f8faff] to-[#f0f4ff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-5">
+        {/* Glow effects */}
+        <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div className="absolute left-0 bottom-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+        
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-100 text-indigo-600">
+            <Database size={26} strokeWidth={2.5} />
           </div>
           <div>
-            <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">Manajemen Stok & Kode Persediaan</h2>
-            <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
+            <h2 className="text-base font-extrabold text-slate-800 uppercase tracking-wide">Manajemen Stok & Kode Persediaan</h2>
+            <p className="text-xs font-medium text-slate-500 mt-1">
               Unggah file Excel stok dan verifikasi kode persediaan barang masuk
             </p>
           </div>
         </div>
 
         {/* View Tabs */}
-        <div className="flex bg-slate-50 border border-slate-200 rounded-md overflow-hidden self-start md:self-auto">
+        <div className="flex bg-white/60 backdrop-blur border border-slate-200/60 rounded-md overflow-hidden relative z-10 shadow-xs self-start md:self-auto">
           <button
             onClick={() => setActiveTab("current")}
-            className={`px-6 py-2.5 text-xs font-bold transition-all border-b-2 ${
+            className={`px-6 py-2.5 text-xs font-bold transition-all ${
               activeTab === "current"
-                ? "bg-white text-blue-600 border-blue-600 shadow-sm"
-                : "text-slate-500 hover:text-slate-700 border-transparent hover:bg-slate-100"
+                ? "bg-white text-blue-600 shadow-sm ring-1 ring-inset ring-slate-200"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50/50"
             }`}
           >
             Stok Aktif ({stockList.length})
           </button>
           <button
             onClick={() => setActiveTab("verify")}
-            className={`px-6 py-2.5 text-xs font-bold transition-all flex items-center gap-1.5 border-b-2 ${
+            className={`px-6 py-2.5 text-xs font-bold transition-all flex items-center gap-1.5 ${
               activeTab === "verify"
-                ? "bg-white text-blue-600 border-blue-600 shadow-sm"
-                : "text-slate-500 hover:text-slate-700 border-transparent hover:bg-slate-100"
+                ? "bg-white text-blue-600 shadow-sm ring-1 ring-inset ring-slate-200"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50/50"
             }`}
           >
             Verifikasi Kode
