@@ -32,8 +32,9 @@ import {
   CircleDollarSign,
   Calendar,
   ShieldCheck,
-  Filter,
   Sparkles,
+  ChevronDown,
+  Filter,
 } from "lucide-react";
 import { apiFetch } from "../api";
 
@@ -219,12 +220,30 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
 
   // ── Stock search ──────────────────────────────────────────────
   const [searchQuery,   setSearchQuery]   = useState("");
+  const [searchCategory, setSearchCategory] = useState("");
+  const [categories, setCategories] = useState<{value: string, label: string}[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError,   setSearchError]   = useState<string | null>(null);
   const [showDropdown,  setShowDropdown]  = useState(false);
   const debounceRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dropdownRef  = useRef<HTMLDivElement>(null);
+
+  // Load categories on mount
+  useEffect(() => {
+    apiFetch("/api/stocks/search?per_page=1")
+      .then(res => res.json())
+      .then(data => {
+        if (data.category_options) {
+          const mapped = data.category_options.map((opt: any) => ({
+            value: opt.name,
+            label: opt.name
+          }));
+          setCategories(mapped);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -236,8 +255,8 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const searchStock = useCallback(async (q: string) => {
-    if (q.trim().length < 2) { 
+  const searchStock = useCallback(async (q: string, cat: string = searchCategory) => {
+    if (q.trim().length < 2 && !cat) { 
       setSearchResults([]); 
       setShowDropdown(false); 
       return; 
@@ -245,7 +264,10 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
     setSearchLoading(true);
     setSearchError(null);
     try {
-      const params = new URLSearchParams({ q: q.trim(), per_page: "15" });
+      const params = new URLSearchParams({ per_page: "15" });
+      if (q.trim()) params.append("q", q.trim());
+      if (cat) params.append("category", cat);
+      
       const res    = await apiFetch(`/api/stocks/search?${params}`);
       if (!res.ok) throw new Error("Gagal memuat data barang.");
       const json   = await res.json();
@@ -586,11 +608,27 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
                   </div>
                 </div>
                 
-                <button type="button" className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 hover:border-slate-300 bg-white rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm whitespace-nowrap">
-                  <Filter size={14} />
-                  Filter Kategori
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1 opacity-50"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
+                <div className="relative shrink-0">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <Filter size={14} />
+                  </div>
+                  <select
+                    value={searchCategory}
+                    onChange={(e) => {
+                      setSearchCategory(e.target.value);
+                      searchStock(searchQuery, e.target.value);
+                    }}
+                    className="pl-9 pr-8 py-2.5 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer w-[200px] max-w-full"
+                  >
+                    <option value="">Semua Kategori</option>
+                    {categories.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                    <ChevronDown size={14} />
+                  </div>
+                </div>
               </div>
               
               {searchError && <p className="mt-1.5 text-xs text-rose-600 font-semibold">{searchError}</p>}
