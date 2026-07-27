@@ -106,6 +106,7 @@ export function RequesterStockList() {
   const [category, setCategory]   = useState("");
   const [statusFilter, setStatus] = useState<StockStatusFilter>("");
   const [page, setPage]           = useState(1);
+  const [perPage, setPerPage]     = useState(10);
 
   // ── Data state ────────────────────────────────────────────────
   const [rows, setRows]               = useState<StockRow[]>([]);
@@ -134,7 +135,7 @@ export function RequesterStockList() {
       if (cat) params.set("category", cat);
       if (st)  params.set("status",   st);
       params.set("page",     String(pg));
-      params.set("per_page", "20");
+      params.set("per_page", String(perPage));
 
       const res = await apiFetch(`/api/stocks/search?${params.toString()}`);
 
@@ -200,18 +201,23 @@ export function RequesterStockList() {
     <div className="space-y-5">
 
       {/* ── Header ── */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 flex items-center gap-4">
-        <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
-          <Package size={24} />
-        </div>
-        <div>
-          <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
-            Katalog Stok Gudang
-          </h2>
-          <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
-            Cari dan periksa ketersediaan barang sebelum mengajukan BON.
-            Data diperbarui secara langsung dari database gudang.
-          </p>
+      <div className="relative bg-gradient-to-r from-[#f8faff] to-[#f0f4ff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="absolute -top-24 -left-24 w-64 h-64 bg-blue-100/40 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10 flex-1 space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-orange-100 text-orange-400">
+              <Package size={28} strokeWidth={2.5} />
+            </div>
+            <div>
+              <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
+                Katalog Stok Gudang
+              </h2>
+              <p className="text-sm font-medium text-slate-500 mt-1">
+                Cari dan periksa ketersediaan barang sebelum mengajukan BON.
+                Data diperbarui secara langsung dari database gudang.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -245,13 +251,15 @@ export function RequesterStockList() {
           </div>
 
           {/* Category filter */}
-          <div className="flex items-center gap-2 shrink-0">
-            <Filter size={14} className="text-slate-400 shrink-0" />
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="p-2 border border-slate-200 rounded-lg text-slate-500 bg-white shadow-sm">
+              <Filter size={15} />
+            </div>
             <select
               value={category}
               onChange={(e) => { setCategory(e.target.value); setPage(1); }}
-              className="py-2 pl-3 pr-8 text-xs border border-slate-200 rounded-lg bg-slate-50 text-slate-700 font-semibold
-                         focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all min-w-[160px]"
+              className="py-2.5 pl-4 pr-10 text-xs border border-slate-200 rounded-lg bg-slate-50 text-slate-700 font-semibold
+                         focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all min-w-[200px]"
             >
               <option value="">Semua Subkategori 1.01.03</option>
               {(categoryOptions.length > 0
@@ -274,8 +282,8 @@ export function RequesterStockList() {
           <select
             value={statusFilter}
             onChange={(e) => { setStatus(e.target.value as StockStatusFilter); setPage(1); }}
-            className="py-2 pl-3 pr-8 text-xs border border-slate-200 rounded-lg bg-slate-50 text-slate-700 font-semibold
-                       focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all shrink-0"
+            className="py-2.5 pl-4 pr-10 text-xs border border-slate-200 rounded-lg bg-slate-50 text-slate-700 font-semibold
+                       focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all shrink-0 min-w-[160px]"
           >
             <option value="">Semua Status</option>
             <option value="tersedia">Tersedia (&gt; 5)</option>
@@ -411,8 +419,8 @@ export function RequesterStockList() {
                           {item.nama}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-slate-500 whitespace-nowrap">
-                        {item.kategori}
+                      <td className="px-5 py-3.5 text-slate-500 whitespace-nowrap text-xs font-medium">
+                        {item.kategori.toUpperCase()}
                       </td>
                       <td className="px-4 py-3.5 text-center text-slate-500 whitespace-nowrap">
                         {item.satuan}
@@ -448,46 +456,65 @@ export function RequesterStockList() {
                 </p>
 
                 {meta.last_page > 1 && (
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      disabled={page <= 1 || loading}
-                      onClick={() => setPage((p) => p - 1)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold
-                                 text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={perPage}
+                      onChange={(e) => {
+                        setPerPage(Number(e.target.value));
+                        setPage(1);
+                        fetchData(query, category, statusFilter, 1);
+                      }}
+                      className="py-2 pl-4 pr-8 text-xs border border-slate-200 rounded-lg bg-white text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     >
-                      <ChevronLeft size={13} />
-                      Sebelumnya
-                    </button>
+                      <option value={10}>10 / halaman</option>
+                      <option value={20}>20 / halaman</option>
+                      <option value={50}>50 / halaman</option>
+                    </select>
 
-                    {/* Page numbers — show up to 5 around current */}
-                    <div className="flex gap-1">
-                      {Array.from({ length: meta.last_page }, (_, i) => i + 1)
-                        .filter((p) => Math.abs(p - page) <= 2)
-                        .map((p) => (
-                          <button
-                            key={p}
-                            onClick={() => setPage(p)}
-                            disabled={loading}
-                            className={`w-8 h-8 rounded-lg text-xs font-extrabold border transition-colors
-                              ${p === page
-                                ? "bg-amber-500 text-white border-amber-500 shadow-xs"
-                                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                              } disabled:opacity-40`}
-                          >
-                            {p}
-                          </button>
-                        ))}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        disabled={page <= 1 || loading}
+                        onClick={() => setPage((p) => p - 1)}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 text-xs font-bold
+                                   text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+
+                      <div className="flex gap-1">
+                        {Array.from({ length: meta.last_page }, (_, i) => i + 1)
+                          .filter((p) => p === 1 || p === meta.last_page || Math.abs(p - page) <= 1)
+                          .map((p, i, arr) => (
+                            <React.Fragment key={p}>
+                              {i > 0 && arr[i - 1] !== p - 1 && (
+                                <span className="w-8 h-8 flex items-center justify-center text-slate-400 text-xs">
+                                  ...
+                                </span>
+                              )}
+                              <button
+                                onClick={() => setPage(p)}
+                                disabled={loading}
+                                className={`w-8 h-8 rounded-lg text-xs font-extrabold border transition-colors
+                                  ${p === page
+                                    ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                                  } disabled:opacity-40`}
+                              >
+                                {p}
+                              </button>
+                            </React.Fragment>
+                          ))}
+                      </div>
+
+                      <button
+                        disabled={page >= meta.last_page || loading}
+                        onClick={() => setPage((p) => p + 1)}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 text-xs font-bold
+                                   text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
                     </div>
-
-                    <button
-                      disabled={page >= meta.last_page || loading}
-                      onClick={() => setPage((p) => p + 1)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold
-                                 text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Berikutnya
-                      <ChevronRight size={13} />
-                    </button>
                   </div>
                 )}
               </div>

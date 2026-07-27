@@ -55,16 +55,19 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ logs: incomingLogs }) =>
   }, []); // fetch once on mount
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-blue-50 text-blue-600 border-blue-100">
-          <History size={24} />
-        </div>
-        <div className="flex-1">
-          <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">Histori Perubahan & Audit Log</h2>
-          <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
-            Riwayat lengkap semua tindakan dari seluruh pengguna sistem.
-          </p>
+    <div className="space-y-6">
+      <div className="relative bg-gradient-to-r from-[#f8faff] to-[#f0f4ff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="absolute -top-24 -left-24 w-64 h-64 bg-blue-100/40 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10 flex-1 flex items-center gap-4">
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-indigo-100 text-indigo-600">
+            <History size={28} strokeWidth={2.5} />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">Histori Perubahan & Audit Log</h2>
+            <p className="text-sm font-medium text-slate-500 mt-1">
+              Riwayat lengkap semua tindakan dari seluruh pengguna sistem.
+            </p>
+          </div>
         </div>
         <button
           onClick={() => {
@@ -79,7 +82,7 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ logs: incomingLogs }) =>
               .catch(() => setError("Gagal memuat ulang log."))
               .finally(() => setLoading(false));
           }}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-200 text-xs font-bold text-blue-600 hover:bg-slate-50 transition-colors shadow-sm"
+          className="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-100 text-xs font-bold text-indigo-600 bg-white hover:bg-indigo-50 transition-colors shadow-sm"
           title="Muat ulang log"
         >
           <svg className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
