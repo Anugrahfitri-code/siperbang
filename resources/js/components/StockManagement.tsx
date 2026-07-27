@@ -1,105 +1,224 @@
-import React, { useState } from "react";
-import { StockItem } from "../types";
-import { FileUp, FileSpreadsheet, Check, CheckCircle2, ShieldCheck, Database, RefreshCcw, CloudUpload, Clock, Package, DownloadCloud, ArrowRight, BookOpen, AlertCircle, Filter, Search } from "lucide-react";
+import React, {
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+  type FormEvent,
+} from "react";
+import {
+  AlertCircle,
+  ArrowRight,
+  BookOpen,
+  Check,
+  CheckCircle2,
+  CloudUpload,
+  Database,
+  Download,
+  FileCheck2,
+  FileSpreadsheet,
+  History,
+  Package,
+  Search,
+  ShieldCheck,
+  X,
+} from "lucide-react";
+import type { StockItem } from "../types";
 
 interface StockManagementProps {
   stockList: StockItem[];
-  onUploadStock: (newStock: StockItem[]) => void;
+  onUploadStock?: (newStock: StockItem[]) => void;
 }
 
-interface DraftUploadItem {
-  id: string;
-  category: string;
-  suggestedCode: string;
-  name: string;
-  qty: number;
-  unit: string;
-}
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_EXTENSIONS = ["xlsx", "xls"];
+
+const getCsrfToken = (): string => {
+  if (typeof document === "undefined") {
+    return "";
+  }
+
+  return (
+    document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+      ?.content ?? ""
+  );
+};
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+};
+
+const formatDate = (value: string): string => {
+  if (!value) {
+    return "-";
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(parsed);
+};
 
 export const StockManagement: React.FC<StockManagementProps> = ({
   stockList,
-  onUploadStock,
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [drafts, setDrafts] = useState<DraftUploadItem[]>([]);
-  const [activeTab, setActiveTab] = useState<"current" | "verify">("current");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const handleSimulateUpload = () => {
-    setIsProcessing(true);
-    // Simulate reading excel with small delay
-    setTimeout(() => {
-      setIsProcessing(false);
-      setDrafts([
-        {
-          id: "df-1",
-          category: "KERTAS DAN COVER",
-          suggestedCode: "1010302001",
-          name: "Kertas F4 80gr Sinar Dunia",
-          qty: 25,
-          unit: "Rim",
-        },
-        {
-          id: "df-2",
-          category: "ALAT TULIS KANTOR",
-          suggestedCode: "1010301001",
-          name: "Spidol Boardmarker Snowman Red",
-          qty: 15,
-          unit: "Buah",
-        },
-        {
-          id: "df-3",
-          category: "BAHAN KOMPUTER",
-          suggestedCode: "1010304006",
-          name: "Flashdisk SanDisk 32GB USB 3.0",
-          qty: 10,
-          unit: "Buah",
-        },
-      ]);
-      setActiveTab("verify");
-    }, 1500);
+  const csrfToken = getCsrfToken();
+
+  const categories = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          stockList
+            .map((item) => item.category?.trim())
+            .filter((value): value is string => Boolean(value))
+        )
+      ).sort((a, b) => a.localeCompare(b, "id-ID")),
+    [stockList]
+  );
+
+  const filteredStock = useMemo(() => {
+    const normalizedQuery = searchTerm.trim().toLowerCase();
+
+    return stockList.filter((item) => {
+      const categoryMatches =
+        selectedCategory === "all" || item.category === selectedCategory;
+      const queryMatches =
+        normalizedQuery === "" ||
+        item.code.toLowerCase().includes(normalizedQuery) ||
+        item.name.toLowerCase().includes(normalizedQuery) ||
+        item.category.toLowerCase().includes(normalizedQuery);
+
+      return categoryMatches && queryMatches;
+    });
+  }, [searchTerm, selectedCategory, stockList]);
+
+  const validateFile = (file: File): string | null => {
+    const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+
+    if (!ALLOWED_EXTENSIONS.includes(extension)) {
+      return "Format file tidak didukung. Gunakan file .xlsx atau .xls.";
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return "Ukuran file melebihi batas 10 MB.";
+    }
+
+    if (file.size === 0) {
+      return "File kosong dan tidak dapat diproses.";
+    }
+
+    return null;
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
+  const applyFile = (file: File | null) => {
+    if (!file) {
+      setSelectedFile(null);
+      setFileError(null);
+      return;
+    }
+
+    const validationError = validateFile(file);
+    if (validationError) {
+      setSelectedFile(null);
+      setFileError(validationError);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setSelectedFile(file);
+    setFileError(null);
+  };
+
+  const handleInputChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    applyFile(event.target.files?.[0] ?? null);
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
     setIsDragging(true);
   };
 
-  const handleDragLeave = () => {
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
     setIsDragging(false);
+
+    const file = event.dataTransfer.files?.[0] ?? null;
+    if (!file) {
+      return;
+    }
+
+    const validationError = validateFile(file);
+    if (validationError) {
+      applyFile(file);
+      return;
+    }
+
+    if (fileInputRef.current) {
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      fileInputRef.current.files = transfer.files;
+    }
+
+    applyFile(file);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    handleSimulateUpload();
+  const clearSelectedFile = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    setSelectedFile(null);
+    setFileError(null);
   };
 
-  const handleCodeChange = (id: string, newCode: string) => {
-    setDrafts(
-      drafts.map((d) => (d.id === id ? { ...d, suggestedCode: newCode } : d))
-    );
-  };
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (!selectedFile) {
+      event.preventDefault();
+      setFileError("Pilih file Excel terlebih dahulu.");
+      return;
+    }
 
-  const handleVerifyAndApprove = () => {
-    const formattedNewStock: StockItem[] = drafts.map((d) => ({
-      id: "st-upload-" + Math.random().toString(36).substring(2, 9),
-      category: d.category,
-      code: d.suggestedCode,
-      name: d.name,
-      qty: d.qty,
-      unit: d.unit,
-      lastUpdated: new Date().toISOString().split("T")[0],
-    }));
+    if (!csrfToken) {
+      event.preventDefault();
+      setFileError(
+        "Token keamanan tidak ditemukan. Muat ulang halaman lalu coba kembali."
+      );
+      return;
+    }
 
-    onUploadStock(formattedNewStock);
-    setDrafts([]);
-    setActiveTab("current");
+    setIsSubmitting(true);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Banner */}
+    <div className="space-y-6 animate-fade-in">
       <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-5 relative">
         <div className="flex items-center gap-4">
           <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600">
@@ -119,7 +238,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
             <CloudUpload size={16} /> Upload Excel
           </button>
           <button onClick={() => window.location.href = '/stok-upload/riwayat'} className="flex items-center gap-2 text-slate-500 font-bold text-sm h-full pb-2 xl:pb-0 xl:pt-1 hover:text-slate-700">
-            <Clock size={16} /> Riwayat Upload
+            <History size={16} /> Riwayat Upload
           </button>
           <button onClick={() => window.location.href = "/master-barang"} className="flex items-center gap-2 text-slate-500 font-bold text-sm h-full pb-2 xl:pb-0 xl:pt-1 hover:text-slate-700">
             <Package size={16} /> Master Barang
@@ -128,250 +247,365 @@ export const StockManagement: React.FC<StockManagementProps> = ({
 
         {/* View Tabs */}
         <div className="flex bg-white border border-slate-200 rounded-md overflow-hidden relative z-10 shadow-xs self-start xl:self-auto">
-          <button
-            onClick={() => setActiveTab("current")}
-            className={`px-6 py-2.5 text-xs font-bold transition-all ${
-              activeTab === "current"
-                ? "bg-white text-blue-600 shadow-sm ring-1 ring-inset ring-slate-200"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50/50"
-            }`}
-          >
+          <button className="px-6 py-2.5 text-xs font-bold transition-all bg-white text-blue-600 shadow-sm ring-1 ring-inset ring-slate-200">
             Stok Aktif ({stockList.length})
           </button>
-          <button
-            onClick={() => setActiveTab("verify")}
-            className={`px-6 py-2.5 text-xs font-bold transition-all flex items-center gap-1.5 ${
-              activeTab === "verify"
-                ? "bg-white text-blue-600 shadow-sm ring-1 ring-inset ring-slate-200"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50/50"
-            }`}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.75fr)]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-extrabold text-slate-900">
+                <CloudUpload size={18} className="text-blue-600" />
+                Upload Stok & Persediaan Excel
+              </div>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Sistem membaca seluruh sheet dan memvalidasi setiap baris sebelum
+                data masuk ke tahap verifikasi kode.
+              </p>
+            </div>
+            <span className="hidden rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1 text-2xs font-bold text-blue-700 sm:inline-flex">
+              Maks. 10 MB
+            </span>
+          </div>
+
+          <form
+            action="/stok-upload"
+            method="POST"
+            encType="multipart/form-data"
+            onSubmit={handleSubmit}
+            className="space-y-4"
           >
-            Verifikasi Kode
-            {drafts.length > 0 && (
-              <span className={`text-2xs px-1.5 py-0.5 rounded font-bold ${
-                activeTab === "verify" ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"
-              }`}>
-                {drafts.length}
-              </span>
+            <input type="hidden" name="_token" value={csrfToken} />
+            <input
+              ref={fileInputRef}
+              type="file"
+              name="file_excel"
+              accept=".xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              onChange={handleInputChange}
+              className="sr-only"
+              required
+            />
+
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`relative rounded-2xl border-2 border-dashed px-5 py-10 text-center transition-all sm:py-12 ${
+                isDragging
+                  ? "border-blue-500 bg-blue-50 ring-4 ring-blue-100/70"
+                  : selectedFile
+                    ? "border-emerald-300 bg-emerald-50/50"
+                    : "border-slate-300 bg-slate-50/60 hover:border-blue-400 hover:bg-blue-50/40"
+              }`}
+            >
+              {selectedFile ? (
+                <div className="mx-auto max-w-xl">
+                  <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-600 shadow-sm">
+                    <FileCheck2 size={27} />
+                  </div>
+                  <p className="text-sm font-extrabold text-slate-900">
+                    File siap diproses
+                  </p>
+                  <div className="mx-auto mt-3 flex max-w-lg items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-left shadow-sm">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-extrabold text-slate-800">
+                        {selectedFile.name}
+                      </p>
+                      <p className="mt-0.5 text-2xs font-semibold text-slate-400">
+                        {formatFileSize(selectedFile.size)} · Excel
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearSelectedFile}
+                      className="flex size-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                      aria-label="Hapus file terpilih"
+                    >
+                      <X size={17} />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mt-4 text-xs font-bold text-blue-700 hover:text-blue-800"
+                  >
+                    Ganti file
+                  </button>
+                </div>
+              ) : (
+                <div className="mx-auto max-w-xl">
+                  <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl border border-blue-100 bg-white text-blue-600 shadow-sm">
+                    <CloudUpload size={27} />
+                  </div>
+                  <p className="text-sm font-extrabold text-slate-800">
+                    Seret dan lepas file Excel di area ini
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    atau pilih file dari perangkat. Format yang diterima .xlsx dan
+                    .xls.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mt-5 inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2.5 text-xs font-extrabold text-blue-700 shadow-sm transition-colors hover:bg-blue-50"
+                  >
+                    <FileSpreadsheet size={15} />
+                    Pilih File Excel
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {fileError && (
+              <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700">
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                <span>{fileError}</span>
+              </div>
             )}
-          </button>
-        </div>
-      </div>
 
-      {/* Upload Drag & Drop Area */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-        <div className="flex items-center gap-2 mb-4 text-blue-600 font-bold text-sm">
-          <CloudUpload size={18} /> Upload Stok & Persediaan Excel
-        </div>
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={handleSimulateUpload}
-          className={`border-2 border-dashed rounded-xl py-12 px-6 text-center cursor-pointer transition-all ${
-            isDragging ? 'border-blue-400 bg-blue-100/50' : 'border-blue-200 bg-blue-50/30 hover:bg-blue-50/50'
-          }`}
-        >
-          <div className="mx-auto w-12 h-12 bg-white rounded-full border border-blue-100 flex items-center justify-center shadow-xs mb-3 text-blue-500">
-            <CloudUpload size={24} strokeWidth={2} />
-          </div>
-          <p className="text-sm font-bold text-slate-700 mb-1">
-            Seret & lepas file Anda ke sini, atau klik untuk menelusuri
-          </p>
-          <p className="text-xs text-slate-500">
-            Hanya menerima format Excel (.xlsx, .xls) dengan ukuran maks 10MB
-          </p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4">
-          <button className="flex items-center gap-2 text-blue-600 font-bold text-xs hover:text-blue-700">
-            <DownloadCloud size={14} /> Download Template Excel
-          </button>
-          <button onClick={handleSimulateUpload} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2">
-            Mulai Proses Upload <ArrowRight size={14} />
-          </button>
-        </div>
-      </div>
-
-      {/* Petunjuk Area */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4 mb-8">
-        <div className="flex items-center gap-2 text-blue-600 font-bold text-sm uppercase tracking-wide">
-          <BookOpen size={16} /> PETUNJUK FORMAT DOKUMEN EXCEL
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-xs text-slate-600">
-          <div className="space-y-2">
-            <h4 className="font-bold text-blue-600">1. Struktur Dokumen</h4>
-            <ul className="list-disc pl-4 space-y-1.5 marker:text-slate-400">
-              <li>Dapat berisi banyak sheet (sistem akan membaca <strong>seluruh sheet</strong>).</li>
-              <li>Setiap sheet mewakili satu nota/transaksi (contoh nama: <code className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">020126 RP</code>).</li>
-              <li>Informasi Supplier/Nama Toko di baris 2 Kolom A (contoh: <code className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">SUPPLIER : REDZKY PLASTIK</code>).</li>
-              <li>Header tabel di baris 4 dan baris data dimulai dari baris 5.</li>
-            </ul>
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-bold text-blue-600">2. Layout Tabel yang Didukung</h4>
-            <ul className="list-disc pl-4 space-y-1.5 marker:text-slate-400">
-              <li><strong>Format Tanpa Pajak:</strong> A (No), B (Kode), C (Nama), D (Jumlah), E (Satuan), F (Harga Satuan), G (Total).</li>
-              <li><strong>Format Dengan Pajak:</strong> A (No), B (Kode), C (Nama), D (Jumlah), E (Satuan), F (Harga Satuan), G (Harga + Pajak), H (Total), I (Pajak).</li>
-              <li>Baris total di baris paling bawah akan dilewati secara otomatis.</li>
-            </ul>
-          </div>
-        </div>
-        <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-800 flex gap-2 mt-4">
-          <AlertCircle size={14} className="text-amber-600 shrink-0 mt-0.5" />
-          <p>
-            <strong>Catatan Perhitungan Pajak:</strong> Jika sheet memuat kolom Pajak (bernilai 1.11 atau formula serupa) atau kolom Harga Satuan + Pajak, sistem akan otomatis melakukan perbandingan total belanja dengan menyertakan PPN 11% sesuai aturan instansi.
-          </p>
-        </div>
-      </div>
-
-      {/* Main Tab Contents */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="bg-blue-50 text-blue-600 p-1.5 rounded-lg">
-              <FileSpreadsheet size={16} />
+            <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <a
+                href="/stok-upload/template"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-xs font-extrabold text-slate-600 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+              >
+                <Download size={15} />
+                Download Template Excel
+              </a>
+              <button
+                type="submit"
+                disabled={!selectedFile || isSubmitting}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-xs font-extrabold text-white shadow-sm transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    Memproses File...
+                  </>
+                ) : (
+                  <>
+                    Mulai Proses Upload
+                    <ArrowRight size={15} />
+                  </>
+                )}
+              </button>
             </div>
-            <h3 className="text-sm font-extrabold text-slate-800">
-              {activeTab === "current" ? "Daftar Barang Stok Aktif" : "Daftar Barang Menunggu Verifikasi"}
+          </form>
+        </section>
+
+        <aside className="space-y-4">
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <ShieldCheck size={18} className="text-indigo-600" />
+              <h3 className="text-sm font-extrabold text-slate-900">
+                Alur Pemrosesan
+              </h3>
+            </div>
+            <div className="space-y-3">
+              {[
+                ["1", "Upload file", "Pilih Excel sesuai template."],
+                ["2", "Pemeriksaan data", "Sistem memvalidasi semua baris."],
+                ["3", "Verifikasi kode", "Petugas memeriksa kode persediaan."],
+                ["4", "Finalisasi", "Stok disimpan ke master barang."],
+              ].map(([number, title, description], index) => (
+                <div key={number} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <span className="flex size-7 items-center justify-center rounded-full bg-blue-600 text-2xs font-extrabold text-white">
+                      {number}
+                    </span>
+                    {index < 3 && (
+                      <span className="mt-1 h-full min-h-5 w-px bg-slate-200" />
+                    )}
+                  </div>
+                  <div className="pb-2">
+                    <p className="text-xs font-extrabold text-slate-800">
+                      {title}
+                    </p>
+                    <p className="mt-0.5 text-xs leading-5 text-slate-500">
+                      {description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+            <div className="flex items-start gap-3">
+              <AlertCircle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+              <div>
+                <h3 className="text-xs font-extrabold text-amber-900">
+                  Validasi bersifat menyeluruh
+                </h3>
+                <p className="mt-1 text-xs leading-5 text-amber-800">
+                  Satu baris yang tidak valid akan menolak seluruh file. Sistem
+                  menampilkan sheet dan baris yang perlu diperbaiki.
+                </p>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <BookOpen size={18} />
+          </div>
+          <div>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-slate-900">
+              Petunjuk Format Dokumen Excel
             </h3>
-          </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-none">
-              <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
-              <input type="text" placeholder="Cari kode atau nama barang..." className="w-full sm:w-64 pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500" />
-            </div>
-            <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50">
-              <Filter size={14} /> Filter
-            </button>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Gunakan struktur berikut agar sistem membaca file secara konsisten.
+            </p>
           </div>
         </div>
-      {activeTab === "current" ? (
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="flex size-6 items-center justify-center rounded-lg bg-blue-600 text-2xs font-extrabold text-white">
+                1
+              </span>
+              <h4 className="text-xs font-extrabold text-slate-800">
+                Struktur dokumen
+              </h4>
+            </div>
+            <ul className="space-y-2 text-xs leading-5 text-slate-600">
+              <li className="flex gap-2"><Check size={14} className="mt-0.5 shrink-0 text-emerald-600" /> Sistem membaca seluruh sheet.</li>
+              <li className="flex gap-2"><Check size={14} className="mt-0.5 shrink-0 text-emerald-600" /> Setiap sheet mewakili satu nota atau transaksi.</li>
+              <li className="flex gap-2"><Check size={14} className="mt-0.5 shrink-0 text-emerald-600" /> Supplier dapat ditempatkan pada baris 1 sampai 5.</li>
+              <li className="flex gap-2"><Check size={14} className="mt-0.5 shrink-0 text-emerald-600" /> Header harus memuat Kode dan Nama Barang.</li>
+            </ul>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="flex size-6 items-center justify-center rounded-lg bg-indigo-600 text-2xs font-extrabold text-white">
+                2
+              </span>
+              <h4 className="text-xs font-extrabold text-slate-800">
+                Kolom yang didukung
+              </h4>
+            </div>
+            <ul className="space-y-2 text-xs leading-5 text-slate-600">
+              <li className="flex gap-2"><Check size={14} className="mt-0.5 shrink-0 text-emerald-600" /> Tanpa pajak: No, Kode, Nama, Jumlah, Satuan, Harga, Total.</li>
+              <li className="flex gap-2"><Check size={14} className="mt-0.5 shrink-0 text-emerald-600" /> Dengan pajak: tambahkan Harga + Pajak, Total, dan Pajak.</li>
+              <li className="flex gap-2"><Check size={14} className="mt-0.5 shrink-0 text-emerald-600" /> Kolom lokasi atau rak dapat ditambahkan bila tersedia.</li>
+              <li className="flex gap-2"><Check size={14} className="mt-0.5 shrink-0 text-emerald-600" /> Baris subtotal dan total dilewati otomatis.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-4 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+              <FileSpreadsheet size={18} />
+            </div>
+            <div>
+              <h3 className="text-sm font-extrabold text-slate-900">
+                Daftar Barang Stok Aktif
+              </h3>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Menampilkan {filteredStock.length} dari {stockList.length} barang.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <div className="relative min-w-0 sm:w-72">
+              <Search
+                size={15}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Cari kode atau nama barang..."
+                className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+              />
+            </div>
+            <select
+              value={selectedCategory}
+              onChange={(event) => setSelectedCategory(event.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-600 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+            >
+              <option value="all">Semua kategori</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full min-w-[900px] border-collapse text-left">
             <thead>
-              <tr className="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+              <tr className="border-b border-slate-200 bg-slate-50 text-xs font-extrabold uppercase tracking-wider text-slate-500">
                 <th className="px-5 py-3">Kode Persediaan</th>
                 <th className="px-5 py-3">Nama Barang</th>
                 <th className="px-5 py-3">Kategori</th>
-                <th className="px-5 py-3 text-right">Stok Tersedia</th>
+                <th className="px-5 py-3 text-right">Stok</th>
                 <th className="px-5 py-3">Satuan</th>
-                <th className="px-5 py-3">Terakhir Diperbarui</th>
+                <th className="px-5 py-3">Diperbarui</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {stockList.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50/50 transition-colors text-xs font-mono">
-                  <td className="px-5 py-3 font-semibold text-indigo-600">
-                    {item.code}
-                  </td>
-                  <td className="px-5 py-3 font-bold text-slate-800 font-sans">
-                    {item.name}
-                  </td>
-                  <td className="px-5 py-3 text-xs font-medium text-slate-500 font-sans">
-                    {item.category}
-                  </td>
-                  <td className="px-5 py-3 text-right font-bold text-slate-700 font-sans">
-                    {item.qty}
-                  </td>
-                  <td className="px-5 py-3 font-medium text-slate-500 font-sans">
-                    {item.unit}
-                  </td>
-                  <td className="px-5 py-3 text-slate-400 font-sans">
-                    {item.lastUpdated}
+              {filteredStock.length > 0 ? (
+                filteredStock.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="text-xs transition-colors hover:bg-blue-50/30"
+                  >
+                    <td className="px-5 py-3.5 font-mono font-bold text-indigo-700">
+                      {item.code}
+                    </td>
+                    <td className="px-5 py-3.5 font-bold text-slate-800">
+                      {item.name}
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-500">
+                      {item.category}
+                    </td>
+                    <td className="px-5 py-3.5 text-right font-extrabold text-slate-800">
+                      {Number(item.qty).toLocaleString("id-ID")}
+                    </td>
+                    <td className="px-5 py-3.5 font-semibold text-slate-500">
+                      {item.unit}
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-400">
+                      {formatDate(item.lastUpdated)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="px-5 py-14 text-center">
+                    <CheckCircle2
+                      size={38}
+                      strokeWidth={1.4}
+                      className="mx-auto mb-3 text-slate-300"
+                    />
+                    <p className="text-sm font-extrabold text-slate-700">
+                      Data tidak ditemukan
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Ubah kata kunci atau filter kategori.
+                    </p>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
-      ) : (
-        /* Code Verification Workspace */
-        <div>
-          {drafts.length === 0 ? (
-            <div className="py-12 border border-slate-200 rounded-lg">
-              <div className="flex flex-col items-center justify-center text-center">
-                <CheckCircle2 size={40} className="text-slate-300 mb-3" strokeWidth={1} />
-                <h4 className="text-sm font-extrabold text-slate-800 mb-1">Tidak ada draf dalam antrean verifikasi</h4>
-                <p className="text-xs text-slate-500">Gunakan pengunggah Excel di atas untuk memproses baris baru.</p>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div className="bg-amber-50 border border-amber-100 rounded p-3.5 mb-4 text-xs text-amber-800 flex items-start gap-2">
-                <ShieldCheck size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <span className="font-extrabold">Pemeriksaan Ganda Diperlukan:</span> Petugas Persediaan wajib melakukan pemeriksaan dan memverifikasi kesesuaian kategori, nama barang, dan kode persediaan sebelum data masuk ke database utama (Section 3.2, 4.12).
-                </div>
-              </div>
-
-              <div className="overflow-x-auto border border-slate-200 rounded mb-4">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
-                      <th className="px-5 py-3">Kategori Barang</th>
-                      <th className="px-5 py-3">Nama Barang</th>
-                      <th className="px-5 py-3">Jumlah Excel</th>
-                      <th className="px-5 py-3">Satuan</th>
-                      <th className="px-5 py-3">Kode Persediaan (Bisa Diedit)</th>
-                      <th className="px-5 py-3 text-center">Status Verif</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {drafts.map((d) => (
-                      <tr key={d.id} className="hover:bg-slate-50/50 transition-colors text-xs font-mono">
-                        <td className="px-5 py-3 text-xs text-slate-500 font-semibold font-sans">
-                          {d.category}
-                        </td>
-                        <td className="px-5 py-3 font-bold text-slate-800 font-sans">
-                          {d.name}
-                        </td>
-                        <td className="px-5 py-3 font-bold text-slate-700 font-sans">
-                          {d.qty}
-                        </td>
-                        <td className="px-5 py-3 text-slate-500 font-sans">
-                          {d.unit}
-                        </td>
-                        <td className="px-5 py-3">
-                          <input
-                            type="text"
-                            value={d.suggestedCode}
-                            onChange={(e) => handleCodeChange(d.id, e.target.value.toUpperCase())}
-                            className="bg-white border border-slate-200 rounded px-2 py-1 text-xs font-mono font-bold text-indigo-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                          />
-                        </td>
-                        <td className="px-5 py-3 text-center">
-                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 font-bold">
-                            <Check size={11} />
-                            Valid (Auto)
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex justify-end gap-2.5">
-                <button
-                  onClick={() => setDrafts([])}
-                  className="px-3.5 py-2 rounded text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all"
-                >
-                  Batalkan Draf
-                </button>
-                <button
-                  onClick={handleVerifyAndApprove}
-                  className="px-4 py-2 rounded text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs flex items-center gap-1.5"
-                >
-                  <Check size={13} />
-                  Setujui & Simpan ke Stok Master
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-      </div>
+      </section>
     </div>
   );
 };

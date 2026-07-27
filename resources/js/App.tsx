@@ -126,13 +126,25 @@ export default function App() {
     };
   }, []);
   const [officerTab, setOfficerTab] = useState<"dashboard" | "checking" | "stock" | "ocr" | "report" | "history">(
-    () => (localStorage.getItem("officerTab") as any) || "dashboard"
+    () => {
+      const requestedModule = new URLSearchParams(window.location.search).get("module");
+      if (requestedModule === "excel") {
+        return "stock";
+      }
+      return (localStorage.getItem("officerTab") as any) || "dashboard";
+    }
   );
   const [requesterTab, setRequesterTab] = useState<"dashboard" | "bon" | "monitoring" | "history" | "stock">(
     () => (localStorage.getItem("requesterTab") as any) || "dashboard"
   );
   const [superadminTab, setSuperadminTab] = useState<"users" | "dashboard" | "checking" | "stock_manage" | "ocr" | "report" | "bon" | "monitoring" | "stock_catalog" | "history">(
-    () => (localStorage.getItem("superadminTab") as any) || "users"
+    () => {
+      const requestedModule = new URLSearchParams(window.location.search).get("module");
+      if (requestedModule === "excel") {
+        return "stock_manage";
+      }
+      return (localStorage.getItem("superadminTab") as any) || "users";
+    }
   );
 
   useEffect(() => {
@@ -146,6 +158,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("superadminTab", superadminTab);
   }, [superadminTab]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("module") === "excel") {
+      url.searchParams.delete("module");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+  }, []);
 
   // Memulihkan sesi Laravel ketika browser di-refresh.
 useEffect(() => {
