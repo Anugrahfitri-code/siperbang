@@ -576,7 +576,7 @@ useEffect(() => {
     qtyAvailable: number,
     qtyFulfilled: number,
     logMessage: string,
-    deductStock?: { code: string; qtyToDeduct: number }
+    deductStock?: { id: string | number; qtyToDeduct: number }
   ) => {
     try {
       const payload = {
@@ -584,7 +584,7 @@ useEffect(() => {
         qtyAvailable,
         qtyFulfilled,
         deductStock: deductStock ? {
-          code: deductStock.code,
+          id: deductStock.id,
           qtyToDeduct: deductStock.qtyToDeduct
         } : null
       };
