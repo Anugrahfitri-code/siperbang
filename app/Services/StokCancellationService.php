@@ -81,6 +81,8 @@ class StokCancellationService
                         . "{$shortfall} unit sebelum pembatalan, stok disetel ke 0.";
                 }
 
+                $qtyBefore = $barang->qty;
+
                 $barang->update([
                     'qty'          => $newQty,
                     'last_updated' => now(),
@@ -90,7 +92,7 @@ class StokCancellationService
                     'stock_item_id'  => $history->stock_item_id,
                     'stok_upload_id' => $batch->id,
                     'qty_change'     => -$history->qty_change,
-                    'qty_before'     => $barang->getOriginal('qty'),
+                    'qty_before'     => $qtyBefore,
                     'qty_after'      => $newQty,
                     'type'           => 'Pembatalan Upload',
                     'notes'          => $notes,
