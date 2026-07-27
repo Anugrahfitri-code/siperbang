@@ -1890,7 +1890,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
             <FileText size={24} />
           </div>
           <div>
-            <h2 className="text-lg font-semibold leading-7 text-slate-900">Pembacaan Kuitansi Otomatis (OCR)</h2>
+            <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">Pembacaan Kuitansi Otomatis (OCR)</h2>
             <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
               Unggah struk belanja, baca otomatis dengan AI, verifikasi manual, sesuaikan pajak toko
             </p>

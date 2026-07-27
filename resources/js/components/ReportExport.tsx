@@ -421,7 +421,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
               <FileSpreadsheet size={24} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold leading-7 text-slate-900">Rekap Laporan & Export Excel</h2>
+              <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">Rekap Laporan & Export Excel</h2>
               <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
                 Saring laporan kuitansi tervalidasi dan unduh spreadsheet Excel berformat rapi
               </p>

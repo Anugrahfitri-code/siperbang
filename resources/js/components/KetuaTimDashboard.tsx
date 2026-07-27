@@ -85,7 +85,7 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
               Dashboard Ketua Tim
             </span>
           </div>
-          <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">
+          <h1 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
             Selamat Datang Kembali, {currentUser.split(" (")[0]}
           </h1>
           <p className="text-xs text-slate-500 flex items-center gap-1.5 font-medium">

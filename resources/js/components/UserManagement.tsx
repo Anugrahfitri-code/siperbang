@@ -91,7 +91,7 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
               <Users size={24} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold leading-7 text-slate-900 uppercase">Kelola Akun Pengguna</h2>
+              <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">Kelola Akun Pengguna</h2>
               <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
                 Atur akses untuk Petugas Persediaan dan Ketua Tim.
               </p>
