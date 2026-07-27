@@ -124,9 +124,14 @@
                     Download Template Excel
                 </a>
 
-                <button type="submit" class="w-full sm:w-auto flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm transition-all hover:shadow">
-                    <span>Mulai Proses Upload →</span>
-                </button>
+                <div class="flex w-full sm:w-auto gap-2">
+                    <a href="/?module=excel" class="w-full sm:w-auto flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 transition-colors">
+                        Kembali
+                    </a>
+                    <button type="submit" class="w-full sm:w-auto flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm transition-all hover:shadow">
+                        <span>Mulai Proses Upload →</span>
+                    </button>
+                </div>
             </div>
         </form>
     </div>

@@ -29,7 +29,7 @@
         <p class="text-xs text-slate-500 mt-0.5">Diupload oleh {{ $batch->user?->name ?? '—' }}</p>
     </div>
     <div class="flex gap-2 flex-wrap">
-        <a href="{{ route('stok-upload.riwayat') }}" class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">← Riwayat</a>
+        <a href="{{ url('/?module=excel&tab=riwayat') }}" class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">← Riwayat</a>
         @if($batch->isDeletable())
         <button type="button" onclick="openConfirmModal('delStepperModal')"
                 class="px-3 py-1.5 rounded-lg border border-rose-200 text-xs font-semibold text-rose-600 hover:bg-rose-50">

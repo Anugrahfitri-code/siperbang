@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import type { StockItem } from "../types";
+import { UploadHistoryReact } from "./UploadHistoryReact";
 
 interface StockManagementProps {
   stockList: StockItem[];
@@ -78,6 +79,16 @@ export const StockManagement: React.FC<StockManagementProps> = ({
   const [fileError, setFileError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [activeTab, setActiveTab] = useState<"current" | "verify">("current");
+  const [activeNav, setActiveNav] = useState<"upload" | "riwayat">(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("tab") === "riwayat") {
+        return "riwayat";
+      }
+    }
+    return "upload";
+  });
 
   const csrfToken = getCsrfToken();
 
@@ -219,41 +230,78 @@ export const StockManagement: React.FC<StockManagementProps> = ({
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-5 relative">
-        <div className="flex items-center gap-4">
-          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600">
+      <div className="relative bg-gradient-to-r from-[#f8faff] to-[#f0f4ff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm overflow-hidden flex flex-col xl:flex-row xl:items-center justify-between gap-5">
+        {/* Glow effects */}
+        <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div className="absolute left-0 bottom-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-100 text-amber-500">
             <Database size={26} strokeWidth={2.5} />
           </div>
           <div>
-            <h2 className="text-base font-extrabold text-slate-800 uppercase tracking-wide">Manajemen Stok & Kode Persediaan</h2>
+            <h2 className="text-base font-extrabold text-slate-800 uppercase tracking-wide">
+              MANAJEMEN STOK & KODE PERSEDIAAN
+            </h2>
             <p className="text-xs font-medium text-slate-500 mt-1">
-              Unggah file Excel stok dan persediaan, verifikasi kode barang,<br className="hidden xl:block"/> dan kelola data inventori dengan mudah.
+              Unggah file Excel stok dan persediaan, verifikasi kode barang, dan kelola data inventori dengan mudah
             </p>
           </div>
         </div>
 
-        {/* Center Tabs */}
-        <div className="flex items-center gap-6 xl:absolute xl:left-1/2 xl:-translate-x-1/2 xl:bottom-0 xl:h-full mt-4 xl:mt-0">
-          <button className="flex items-center gap-2 text-blue-600 font-bold text-sm border-b-2 border-blue-600 h-full pb-2 xl:pb-0 xl:pt-1">
-            <CloudUpload size={16} /> Upload Excel
-          </button>
-          <button onClick={() => window.location.href = '/stok-upload/riwayat'} className="flex items-center gap-2 text-slate-500 font-bold text-sm h-full pb-2 xl:pb-0 xl:pt-1 hover:text-slate-700">
-            <History size={16} /> Riwayat Upload
-          </button>
-          <button onClick={() => window.location.href = "/master-barang"} className="flex items-center gap-2 text-slate-500 font-bold text-sm h-full pb-2 xl:pb-0 xl:pt-1 hover:text-slate-700">
-            <Package size={16} /> Master Barang
-          </button>
-        </div>
-
         {/* View Tabs */}
-        <div className="flex bg-white border border-slate-200 rounded-md overflow-hidden relative z-10 shadow-xs self-start xl:self-auto">
-          <button className="px-6 py-2.5 text-xs font-bold transition-all bg-white text-blue-600 shadow-sm ring-1 ring-inset ring-slate-200">
+        <div className="flex bg-white border border-slate-200 rounded-md overflow-hidden shadow-xs self-start md:self-auto relative z-10">
+          <button 
+            onClick={() => setActiveTab("current")}
+            className={`px-6 py-2.5 text-xs font-bold transition-all ${
+              activeTab === "current" 
+                ? "bg-white text-blue-600 shadow-sm ring-1 ring-inset ring-slate-200" 
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50/50"
+            }`}
+          >
             Stok Aktif ({stockList.length})
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.75fr)]">
+      <div className="border border-slate-200 rounded-xl bg-white px-3 sm:px-5 shadow-sm">
+        <nav className="flex min-w-max items-center gap-2 overflow-x-auto" aria-label="Navigasi manajemen stok">
+          <button
+            type="button"
+            onClick={() => setActiveNav("upload")}
+            className={`flex items-center gap-2 border-b-2 px-4 py-3.5 text-xs font-extrabold ${
+              activeNav === "upload" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800"
+            }`}
+          >
+            <CloudUpload size={16} />
+            Upload Excel
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveNav("riwayat")}
+            className={`flex items-center gap-2 border-b-2 px-4 py-3.5 text-xs font-bold transition-colors ${
+              activeNav === "riwayat" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800"
+            }`}
+          >
+            <History size={16} />
+            Riwayat Upload
+          </button>
+          <button
+            type="button"
+            onClick={() => window.location.assign("/master-barang")}
+            className="flex items-center gap-2 border-b-2 border-transparent px-4 py-3.5 text-xs font-bold text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-800"
+          >
+            <Package size={16} />
+            Master Barang
+          </button>
+        </nav>
+      </div>
+
+      {activeNav === "riwayat" ? (
+        <UploadHistoryReact />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.75fr)]">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
@@ -501,111 +549,113 @@ export const StockManagement: React.FC<StockManagementProps> = ({
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-4 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-              <FileSpreadsheet size={18} />
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-4 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                <FileSpreadsheet size={18} />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900">
+                  Daftar Barang Stok Aktif
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Menampilkan {filteredStock.length} dari {stockList.length} barang.
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-extrabold text-slate-900">
-                Daftar Barang Stok Aktif
-              </h3>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Menampilkan {filteredStock.length} dari {stockList.length} barang.
-              </p>
+
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <div className="relative min-w-0 sm:w-72">
+                <Search
+                  size={15}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  type="search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Cari kode atau nama barang..."
+                  className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+              <select
+                value={selectedCategory}
+                onChange={(event) => setSelectedCategory(event.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-600 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+              >
+                <option value="all">Semua kategori</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <div className="relative min-w-0 sm:w-72">
-              <Search
-                size={15}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              />
-              <input
-                type="search"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Cari kode atau nama barang..."
-                className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-              />
-            </div>
-            <select
-              value={selectedCategory}
-              onChange={(event) => setSelectedCategory(event.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-600 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-            >
-              <option value="all">Semua kategori</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-xs font-extrabold uppercase tracking-wider text-slate-500">
-                <th className="px-5 py-3">Kode Persediaan</th>
-                <th className="px-5 py-3">Nama Barang</th>
-                <th className="px-5 py-3">Kategori</th>
-                <th className="px-5 py-3 text-right">Stok</th>
-                <th className="px-5 py-3">Satuan</th>
-                <th className="px-5 py-3">Diperbarui</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredStock.length > 0 ? (
-                filteredStock.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="text-xs transition-colors hover:bg-blue-50/30"
-                  >
-                    <td className="px-5 py-3.5 font-mono font-bold text-indigo-700">
-                      {item.code}
-                    </td>
-                    <td className="px-5 py-3.5 font-bold text-slate-800">
-                      {item.name}
-                    </td>
-                    <td className="px-5 py-3.5 text-slate-500">
-                      {item.category}
-                    </td>
-                    <td className="px-5 py-3.5 text-right font-extrabold text-slate-800">
-                      {Number(item.qty).toLocaleString("id-ID")}
-                    </td>
-                    <td className="px-5 py-3.5 font-semibold text-slate-500">
-                      {item.unit}
-                    </td>
-                    <td className="px-5 py-3.5 text-slate-400">
-                      {formatDate(item.lastUpdated)}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                  <th className="px-5 py-3">Kode Persediaan</th>
+                  <th className="px-5 py-3">Nama Barang</th>
+                  <th className="px-5 py-3">Kategori</th>
+                  <th className="px-5 py-3 text-right">Stok</th>
+                  <th className="px-5 py-3">Satuan</th>
+                  <th className="px-5 py-3">Diperbarui</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredStock.length > 0 ? (
+                  filteredStock.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="text-xs transition-colors hover:bg-blue-50/30"
+                    >
+                      <td className="px-5 py-3.5 font-mono font-bold text-indigo-700">
+                        {item.code}
+                      </td>
+                      <td className="px-5 py-3.5 font-bold text-slate-800">
+                        {item.name}
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-500">
+                        {item.category}
+                      </td>
+                      <td className="px-5 py-3.5 text-right font-extrabold text-slate-800">
+                        {Number(item.qty).toLocaleString("id-ID")}
+                      </td>
+                      <td className="px-5 py-3.5 font-semibold text-slate-500">
+                        {item.unit}
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-400">
+                        {formatDate(item.lastUpdated)}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-14 text-center">
+                      <CheckCircle2
+                        size={38}
+                        strokeWidth={1.4}
+                        className="mx-auto mb-3 text-slate-300"
+                      />
+                      <p className="text-sm font-extrabold text-slate-700">
+                        Data tidak ditemukan
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Ubah kata kunci atau filter kategori.
+                      </p>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="px-5 py-14 text-center">
-                    <CheckCircle2
-                      size={38}
-                      strokeWidth={1.4}
-                      className="mx-auto mb-3 text-slate-300"
-                    />
-                    <p className="text-sm font-extrabold text-slate-700">
-                      Data tidak ditemukan
-                    </p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      Ubah kata kunci atau filter kategori.
-                    </p>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+        </>
+      )}
     </div>
   );
 };
