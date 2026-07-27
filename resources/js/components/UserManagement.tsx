@@ -256,9 +256,9 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className={`px-2 py-1 rounded text-xs font-bold ${
-                        user.status === "Aktif" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
+                        user.status?.toLowerCase() === "aktif" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
                       }`}>
-                        {user.status}
+                        {user.status?.toLowerCase() === 'aktif' ? 'Aktif' : 'Nonaktif'}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-right">

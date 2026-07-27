@@ -59,8 +59,11 @@ class RequestController extends Controller
         DB::beginTransaction();
         try {
             $user      = $request->user();
-            $section   = $user->section ?? 'Tata Usaha';
-            $requester = $user->name;
+            $requester = $request->input('requester') ?? $user->name;
+            
+            // If admin selected another user, try to get their section
+            $actualUser = \App\Models\User::where('name', $requester)->first();
+            $section   = $actualUser ? ($actualUser->section ?? 'Tata Usaha') : ($user->section ?? 'Tata Usaha');
 
             // ── Generate unique bon_no dengan retry ──────────────────────
             // Format: BON/YYYY/MM/DD/NNN  — unik per hari, aman dari race condition
@@ -513,12 +516,18 @@ class RequestController extends Controller
         DB::beginTransaction();
         try {
             $oldStatus = $bonHeader->status;
+            
+            $requester = $request->input('requester') ?? $bonHeader->requester;
+            $actualUser = \App\Models\User::where('name', $requester)->first();
+            $section = $actualUser ? ($actualUser->section ?? 'Tata Usaha') : $bonHeader->section;
 
             // Update header
             $bonHeader->update([
                 'status' => $statusVal,
                 'keperluan' => $validated['keperluan'],
                 'catatan' => $validated['catatan'] ?? null,
+                'requester' => $requester,
+                'section' => $section,
                 'last_updated' => today(),
             ]);
 
@@ -541,8 +550,8 @@ class RequestController extends Controller
                     'bon_header_id' => $bonHeader->id,
                     'bon_no' => $bonHeader->bon_no,
                     'user_id' => $user->id,
-                    'section' => $bonHeader->section,
-                    'requester' => $bonHeader->requester,
+                    'section' => $section,
+                    'requester' => $requester,
                     'date' => $bonHeader->date,
                     'status' => $statusVal === 'Draft' ? 'Draft' : 'Diajukan',
                     'stock_item_id' => $stockItem->id,
