@@ -35,28 +35,13 @@
                         <input type="text" name="search" id="search" value="{{ request('search') }}" class="block w-full pl-10 pr-3 py-2.5 text-sm font-medium text-slate-900 border border-slate-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm" placeholder="Cari kode atau nama barang...">
                     </div>
                 </div>
-                <div class="w-full md:w-56 shrink-0 relative">
-                    <select name="kategori_id" class="block w-full pl-4 pr-10 py-2.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm appearance-none">
-                        <option value="">Semua Kategori</option>
-                        @php
-                            $printedCategories = [];
-                        @endphp
-                        @foreach($kategoris as $kat)
-                            @php
-                                $displayName = ucwords(strtolower($kat->nama));
-                                $displayName = str_replace(
-                                    ['(Atk)', ' Dan ', ' Untuk '], 
-                                    ['(ATK)', ' dan ', ' untuk '], 
-                                    $displayName
-                                );
-                                
-                                if (in_array($displayName, $printedCategories)) {
-                                    continue;
-                                }
-                                $printedCategories[] = $displayName;
-                            @endphp
-                            <option value="{{ $kat->nama }}" {{ request('kategori_id') == $kat->nama ? 'selected' : '' }}>
-                                {{ $displayName }}
+                <div class="w-full md:w-96 shrink-0 relative">
+                    <label for="kategori_id" class="sr-only">Filter Subkategori 1.01.03</label>
+                    <select id="kategori_id" name="kategori_id" class="block w-full pl-4 pr-10 py-2.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm appearance-none">
+                        <option value="">Semua Subkategori 1.01.03</option>
+                        @foreach($categoryOptions as $categoryOption)
+                            <option value="{{ $categoryOption['name'] }}" {{ $selectedCategory === $categoryOption['name'] ? 'selected' : '' }}>
+                                {{ $categoryOption['code'] }} - {{ $categoryOption['name'] }}
                             </option>
                         @endforeach
                     </select>
@@ -97,7 +82,7 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-slate-100">
                     @forelse($barangs as $barang)
-                    <tr class="hover:bg-slate-50/50 transition-colors" data-id="{{ $barang->id }}" data-code="{{ $barang->code }}" data-name="{{ $barang->name }}" data-unit="{{ $barang->unit }}" data-category="{{ $barang->category }}">
+                    <tr class="hover:bg-slate-50/50 transition-colors" data-id="{{ $barang->id }}" data-code="{{ $barang->code }}" data-name="{{ $barang->name }}" data-unit="{{ $barang->unit }}" data-category="{{ $barang->canonical_category }}">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-800">
                             {{ $barang->code }}
                         </td>
@@ -105,7 +90,7 @@
                             <div class="flex items-center gap-2">
                                 <span class="text-sm font-medium text-slate-700">{{ $barang->name }}</span>
                                 @php
-                                    $catName = $barang->kategori->nama ?? $barang->category ?? '';
+                                    $catName = $barang->canonical_category ?? $barang->category ?? '';
                                     $isElektronik = stripos($catName, 'elektronik') !== false;
                                     $isKebersihan = stripos($catName, 'bersih') !== false;
                                     $isAtk = stripos($catName, 'atk') !== false;
@@ -289,27 +274,32 @@
                                     class="block w-full pl-3.5 pr-10 py-2.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm appearance-none">
                                 <option value="">Pilih Kode Persediaan</option>
                                 @php
-                                    $groupedKodes = $kodePersediaans->groupBy(function($kp) {
-                                        $name = $kp->kategoriBarang->nama ?? 'Umum';
-                                        $displayName = ucwords(strtolower($name));
-                                        return str_replace(['(Atk)', ' Dan ', ' Untuk '], ['(ATK)', ' dan ', ' untuk '], $displayName);
-                                    });
+                                    $categoryOptionsByGroup = $categoryOptions->keyBy('group');
+                                    $groupedKodes = $kodePersediaans->groupBy(
+                                        fn ($kp) => substr($kp->kode, 5, 2)
+                                    );
                                 @endphp
-                                @foreach($groupedKodes as $kategori => $items)
-                                <optgroup label="{{ $kategori }}">
-                                    @foreach($items as $kp)
-                                    <option value="{{ $kp->kode }}" data-kategori="{{ $kategori }}">
-                                        {{ $kp->kode }} - {{ $kp->nama_barang }}
-                                    </option>
-                                    @endforeach
-                                </optgroup>
+                                @foreach($groupedKodes as $group => $items)
+                                    @php
+                                        $codeCategory = $categoryOptionsByGroup->get($group);
+                                    @endphp
+                                    @if($codeCategory)
+                                    <optgroup label="{{ $codeCategory['code'] }} - {{ $codeCategory['name'] }}">
+                                        @foreach($items as $kp)
+                                        <option value="{{ $kp->kode }}" data-kategori="{{ $codeCategory['name'] }}">
+                                            {{ $kp->kode }} - {{ $kp->nama_barang }}
+                                        </option>
+                                        @endforeach
+                                    </optgroup>
+                                    @endif
                                 @endforeach
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                             </div>
                         </div>
-                        <p class="mt-1 text-xs text-slate-400">Kategori akan terisi otomatis saat kode persediaan dipilih.</p>
+                        <p class="mt-1 text-xs text-slate-400">Hanya kode resmi kelompok 1.01.03 yang tersedia. Kategori terisi otomatis.</p>
+                        <p id="editErrorCode" class="mt-1.5 text-xs font-medium text-rose-600 hidden"></p>
                     </div>
 
                     {{-- Nama Barang --}}
@@ -325,28 +315,20 @@
                     <div>
                         <label for="editCategory" class="block text-sm font-bold text-slate-700 mb-1.5">Kategori</label>
                         <div class="relative">
-                            <select name="category" id="editCategory"
-                                    class="block w-full pl-3.5 pr-10 py-2.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm appearance-none">
-                                <option value="">Pilih Kategori</option>
-                                @php
-                                    $printedEditCategories = [];
-                                @endphp
-                                @foreach($kategoris as $kat)
-                                    @php
-                                        $displayName = ucwords(strtolower($kat->nama));
-                                        $displayName = str_replace(['(Atk)', ' Dan ', ' Untuk '], ['(ATK)', ' dan ', ' untuk '], $displayName);
-                                        if (in_array($displayName, $printedEditCategories)) {
-                                            continue;
-                                        }
-                                        $printedEditCategories[] = $displayName;
-                                    @endphp
-                                    <option value="{{ $kat->nama }}">{{ $displayName }}</option>
+                            <select id="editCategory" disabled
+                                    class="block w-full pl-3.5 pr-10 py-2.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none transition-colors shadow-sm appearance-none cursor-not-allowed">
+                                <option value="">Kategori mengikuti kode persediaan</option>
+                                @foreach($categoryOptions as $categoryOption)
+                                    <option value="{{ $categoryOption['name'] }}">
+                                        {{ $categoryOption['code'] }} - {{ $categoryOption['name'] }}
+                                    </option>
                                 @endforeach
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                             </div>
                         </div>
+                        <p class="mt-1 text-xs text-slate-400">Kategori tidak dapat dipisahkan dari subkelompok kode persediaan.</p>
                     </div>
 
                     {{-- Satuan --}}
@@ -445,6 +427,10 @@ function openEditModal(button) {
     errEl.classList.add('hidden');
     errEl.textContent = '';
 
+    var codeErrEl = document.getElementById('editErrorCode');
+    codeErrEl.classList.add('hidden');
+    codeErrEl.textContent = '';
+
     var modal = document.getElementById('editModal');
     var panel = document.getElementById('editModalPanel');
     modal.classList.remove('hidden');
@@ -482,13 +468,19 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('editKodePersediaan').value = '{{ old('kode_persediaan', '') }}';
     document.getElementById('editName').value = '{{ old('name', '') }}';
     document.getElementById('editUnit').value = '{{ old('unit', '') }}';
-    document.getElementById('editCategory').value = '{{ old('category', '') }}';
+    autoFillKategori(document.getElementById('editKodePersediaan'));
     document.getElementById('editForm').action = '/master-barang/' + editId + '/update';
 
     @if($errors->has('name'))
     var errEl = document.getElementById('editErrorName');
-    errEl.textContent = '{{ $errors->first('name') }}';
+    errEl.textContent = @json($errors->first('name'));
     errEl.classList.remove('hidden');
+    @endif
+
+    @if($errors->has('kode_persediaan'))
+    var codeErrEl = document.getElementById('editErrorCode');
+    codeErrEl.textContent = @json($errors->first('kode_persediaan'));
+    codeErrEl.classList.remove('hidden');
     @endif
 
     var modal = document.getElementById('editModal');

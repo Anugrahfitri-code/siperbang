@@ -7,6 +7,7 @@ use App\Models\Receipt;
 use App\Models\ReceiptItem;
 use App\Models\StockHistory;
 use App\Models\StockItem;
+use App\Support\OfficeInventoryCatalog;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -185,13 +186,14 @@ class ReceiptStockSyncService
         $codeMaster = KodePersediaan::query()
             ->with('kategoriBarang:id,nama')
             ->where('kode', $normalisedCode)
+            ->where('kode', 'like', OfficeInventoryCatalog::codePrefix() . '%')
             ->lockForUpdate()
             ->first();
 
         if ($codeMaster === null) {
             throw ValidationException::withMessages([
                 "items.{$index}.inventoryCode" => [
-                    'Kode persediaan tidak ditemukan pada master resmi.',
+                    'Kode persediaan tidak ditemukan pada master resmi kelompok 1.01.03.',
                 ],
             ]);
         }
@@ -220,9 +222,10 @@ class ReceiptStockSyncService
         }
 
         return StockItem::create([
-            'category' => $codeMaster->kategoriBarang?->nama
-                ?? $codeMaster->nama_barang
-                ?? 'Alat/Bahan untuk Kegiatan Kantor',
+            'category' => OfficeInventoryCatalog::categoryForCode(
+                $normalisedCode,
+            ) ?? $codeMaster->kategoriBarang?->nama
+                ?? OfficeInventoryCatalog::groups()['99'],
             'code' => $normalisedCode,
             'name' => trim($item['name']),
             'qty' => 0,

@@ -8,8 +8,8 @@ import { StockItem, ItemRequest, RequestStatus, ReceiptData, ProcurementMethod }
 export const INITIAL_STOCK: StockItem[] = [
   {
     id: "st-01",
-    category: "Alat Tulis Kantor (ATK)",
-    code: "ATK-PAP-A4",
+    category: "KERTAS DAN COVER",
+    code: "1010302001",
     name: "Kertas HVS A4 80gr Sinar Dunia",
     qty: 45,
     unit: "Rim",
@@ -17,8 +17,8 @@ export const INITIAL_STOCK: StockItem[] = [
   },
   {
     id: "st-02",
-    category: "Alat Tulis Kantor (ATK)",
-    code: "ATK-PEN-PIL",
+    category: "ALAT TULIS KANTOR",
+    code: "1010301001",
     name: "Balpoin Pilot G2 0.7 Black",
     qty: 120,
     unit: "Buah",
@@ -26,8 +26,8 @@ export const INITIAL_STOCK: StockItem[] = [
   },
   {
     id: "st-03",
-    category: "Alat Tulis Kantor (ATK)",
-    code: "ATK-MKR-SND",
+    category: "ALAT TULIS KANTOR",
+    code: "1010301001",
     name: "Spidol Boardmarker Snowman Black",
     qty: 8,
     unit: "Buah",
@@ -35,8 +35,8 @@ export const INITIAL_STOCK: StockItem[] = [
   },
   {
     id: "st-04",
-    category: "Peralatan Komputer",
-    code: "KOM-MOU-LOG",
+    category: "BAHAN KOMPUTER",
+    code: "1010304010",
     name: "Mouse Wireless Logitech M170",
     qty: 15,
     unit: "Buah",
@@ -44,8 +44,8 @@ export const INITIAL_STOCK: StockItem[] = [
   },
   {
     id: "st-05",
-    category: "Peralatan Komputer",
-    code: "KOM-INK-EPS",
+    category: "BAHAN KOMPUTER",
+    code: "1010304004",
     name: "Tinta Printer Epson 003 Black",
     qty: 3,
     unit: "Botol",
@@ -53,8 +53,8 @@ export const INITIAL_STOCK: StockItem[] = [
   },
   {
     id: "st-06",
-    category: "Rumah Tangga & Kebersihan",
-    code: "RUM-TIS-PAS",
+    category: "PERABOT KANTOR",
+    code: "1010305002",
     name: "Tisu Paseo Facial 250 Sheets",
     qty: 35,
     unit: "Pak",

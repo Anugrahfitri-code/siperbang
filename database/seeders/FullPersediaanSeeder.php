@@ -54,7 +54,7 @@ class FullPersediaanSeeder extends Seeder
         $cat['010306'] = KategoriBarang::firstOrCreate(['nama' => 'ALAT LISTRIK'])->id;
         $cat['010307'] = KategoriBarang::firstOrCreate(['nama' => 'PERLENGKAPAN DINAS'])->id;
         $cat['010308'] = KategoriBarang::firstOrCreate(['nama' => 'KAPORLAP DAN PERLENGKAPAN SATWA'])->id;
-        $cat['010309'] = KategoriBarang::firstOrCreate(['nama' => 'PERLENGKAPAN PENUNJANG KEGIATAN KANTOR'])->id;
+        $cat['010309'] = KategoriBarang::firstOrCreate(['nama' => 'PERLENGKAPAN PENUNJANG KEGAITAN KANTOR'])->id;
         $cat['010310'] = KategoriBarang::firstOrCreate(['nama' => 'ALAT PENUNJANG KEGIATAN KANTOR'])->id;
         $cat['010311'] = KategoriBarang::firstOrCreate(['nama' => 'BAHAN PENUNJANG KEGIATAN KANTOR'])->id;
         $cat['010312'] = KategoriBarang::firstOrCreate(['nama' => 'ALAT/BAHAN PENUNJANG KEGIATAN KEAMANAN'])->id;
