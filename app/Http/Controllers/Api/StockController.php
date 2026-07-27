@@ -4,54 +4,67 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
+use App\Models\KodePersediaan;
 use App\Models\StockItem;
+use App\Support\OfficeInventoryCatalog;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class StockController extends Controller
 {
     /**
-     * Full stock list — Petugas Persediaan & Superadmin only.
+     * Full stock list - Petugas Persediaan & Superadmin only.
      */
     public function index()
     {
-        return response()->json(StockItem::orderBy('name')->get());
+        $query = StockItem::query();
+        $this->applyOfficeCodeScope($query);
+
+        $items = $query->orderBy('name')->get();
+
+        $items->each(function (StockItem $item): void {
+            $item->code = OfficeInventoryCatalog::normalizeCode($item->code);
+            $item->category = OfficeInventoryCatalog::categoryForCode($item->code)
+                ?? OfficeInventoryCatalog::canonicalCategory($item->category)
+                ?? $item->category;
+        });
+
+        return response()->json($items);
     }
 
     /**
      * Read-only paginated stock search.
-     * Accessible by ALL authenticated roles (Ketua Tim, Petugas, Superadmin).
-     *
-     * Query params:
-     *   q        – free-text search on name, code, or category
-     *   category – exact category filter
-     *   status   – 'tersedia' | 'terbatas' | 'kosong'
-     *   per_page – items per page (default 20, max 100)
-     *   page     – page number
+     * Accessible by all authenticated roles.
      */
     public function search(Request $request)
     {
-        $q        = trim($request->input('q', ''));
-        $category = trim($request->input('category', ''));
-        $status   = $request->input('status', '');
-        $perPage  = min((int) $request->input('per_page', 20), 100);
+        $search = trim((string) $request->input('q', ''));
+        $requestedCategory = trim((string) $request->input('category', ''));
+        $status = (string) $request->input('status', '');
+        $perPage = max(1, min((int) $request->input('per_page', 20), 100));
 
-        $query = Barang::where('is_active', true);
+        $query = Barang::query()->where('is_active', true);
+        $this->applyOfficeCodeScope($query);
 
-        // Free-text: code, name, or category — case-insensitive (PostgreSQL ILIKE)
-        if ($q !== '') {
-            $query->where(function ($sub) use ($q) {
-                $sub->where('code',     'ilike', "%{$q}%")
-                    ->orWhere('name',     'ilike', "%{$q}%")
-                    ->orWhere('category', 'ilike', "%{$q}%");
+        if ($search !== '') {
+            $query->where(function (Builder $builder) use ($search): void {
+                $builder->where('code', 'ilike', "%{$search}%")
+                    ->orWhere('name', 'ilike', "%{$search}%")
+                    ->orWhere('category', 'ilike', "%{$search}%");
             });
         }
 
-        // Exact category filter
-        if ($category !== '') {
-            $query->where('category', $category);
+        if ($requestedCategory !== '') {
+            $group = OfficeInventoryCatalog::groupForCategory($requestedCategory);
+
+            if ($group === null) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $this->applyCategoryCodeScope($query, $group);
+            }
         }
 
-        // Stock status filter
         if ($status === 'tersedia') {
             $query->where('qty', '>', 5);
         } elseif ($status === 'terbatas') {
@@ -62,78 +75,119 @@ class StockController extends Controller
 
         $paginated = $query->orderBy('name')->paginate($perPage);
 
-        // Map to a clean read-only shape
-        // NOTE: 'id' is included so the BON Digital form can populate barang_id
-        $items = collect($paginated->items())->map(fn (Barang $item) => [
-            'id'                => $item->id,
-            'kode'              => $item->code,
-            'nama'              => $item->name,
-            'kategori'          => $item->category ?? '-',
-            'satuan'            => $item->unit,
-            'stok'              => $item->qty,
-            'status_stok'       => $this->resolveStatus($item->qty),
-            'update_terakhir'   => $item->last_updated?->toDateString()
-                                    ?? $item->updated_at?->toDateString(),
+        $items = collect($paginated->items())->map(fn (Barang $item): array => [
+            'id' => $item->id,
+            'kode' => OfficeInventoryCatalog::normalizeCode($item->code),
+            'nama' => $item->name,
+            'kategori' => OfficeInventoryCatalog::categoryForCode($item->code)
+                ?? OfficeInventoryCatalog::canonicalCategory($item->category)
+                ?? $item->category
+                ?? '-',
+            'satuan' => $item->unit,
+            'stok' => $item->qty,
+            'status_stok' => $this->resolveStatus($item->qty),
+            'update_terakhir' => $item->last_updated?->toDateString()
+                ?? $item->updated_at?->toDateString(),
         ]);
-
-        // Distinct categories for filter dropdown (only categories in stock)
-        $categories = Barang::where('is_active', true)
-            ->whereNotNull('category')
-            ->distinct()
-            ->orderBy('category')
-            ->pluck('category');
 
         return response()->json([
-            'data'       => $items,
-            'categories' => $categories,
-            'meta'       => [
+            'data' => $items,
+            'categories' => OfficeInventoryCatalog::categoryNames(),
+            'category_options' => OfficeInventoryCatalog::categoryOptions(),
+            'meta' => [
                 'current_page' => $paginated->currentPage(),
-                'last_page'    => $paginated->lastPage(),
-                'per_page'     => $paginated->perPage(),
-                'total'        => $paginated->total(),
-                'from'         => $paginated->firstItem(),
-                'to'           => $paginated->lastItem(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+                'from' => $paginated->firstItem(),
+                'to' => $paginated->lastItem(),
             ],
         ]);
-    }
-
-    private function resolveStatus(int $qty): string
-    {
-        if ($qty <= 0) return 'Tidak Tersedia';
-        if ($qty <= 5) return 'Stok Terbatas';
-        return 'Tersedia';
     }
 
     public function bulkStore(Request $request)
     {
         $stocks = $request->validate([
-            '*.code' => 'required|string',
-            '*.category' => 'required|string',
-            '*.name' => 'required|string',
+            '*.code' => 'required|string|max:20',
+            '*.category' => 'nullable|string|max:255',
+            '*.name' => 'required|string|max:255',
             '*.qty' => 'required|integer',
-            '*.unit' => 'required|string',
+            '*.unit' => 'required|string|max:50',
             '*.lastUpdated' => 'nullable|date',
         ]);
 
-        foreach ($stocks as $stockData) {
-            $stock = StockItem::where('code', $stockData['code'])->where('name', $stockData['name'])->first();
+        foreach ($stocks as $index => $stockData) {
+            $code = OfficeInventoryCatalog::normalizeCode($stockData['code']);
+            $category = OfficeInventoryCatalog::categoryForCode($code);
+
+            $isOfficialCode = $category !== null
+                && KodePersediaan::query()->where('kode', $code)->exists();
+
+            if (! $isOfficialCode) {
+                throw ValidationException::withMessages([
+                    "{$index}.code" => 'Kode wajib berasal dari master resmi kelompok 1.01.03.',
+                ]);
+            }
+
+            $stock = StockItem::query()
+                ->where('code', $code)
+                ->where('name', trim($stockData['name']))
+                ->first();
+
             if ($stock) {
                 $stock->update([
+                    'category' => $category,
                     'qty' => $stock->qty + $stockData['qty'],
+                    'unit' => trim($stockData['unit']),
                     'last_updated' => $stockData['lastUpdated'] ?? now(),
                 ]);
             } else {
                 StockItem::create([
-                    'code' => $stockData['code'],
-                    'category' => $stockData['category'],
-                    'name' => $stockData['name'],
+                    'code' => $code,
+                    'category' => $category,
+                    'name' => trim($stockData['name']),
                     'qty' => $stockData['qty'],
-                    'unit' => $stockData['unit'],
+                    'unit' => trim($stockData['unit']),
                     'last_updated' => $stockData['lastUpdated'] ?? now(),
                 ]);
             }
         }
 
         return response()->json(['message' => 'Stocks uploaded successfully']);
+    }
+
+    private function resolveStatus(int $qty): string
+    {
+        if ($qty <= 0) {
+            return 'Tidak Tersedia';
+        }
+
+        if ($qty <= 5) {
+            return 'Stok Terbatas';
+        }
+
+        return 'Tersedia';
+    }
+
+    private function applyOfficeCodeScope(Builder $query): void
+    {
+        $query->where(function (Builder $builder): void {
+            $builder->where(
+                'code',
+                'like',
+                OfficeInventoryCatalog::codePrefix() . '%',
+            )->orWhere('code', 'like', '1.01.03.%');
+        });
+    }
+
+    private function applyCategoryCodeScope(Builder $query, string $group): void
+    {
+        $query->where(function (Builder $builder) use ($group): void {
+            $builder->where(
+                'code',
+                'like',
+                OfficeInventoryCatalog::codePrefix() . $group . '%',
+            )->orWhere('code', 'like', '1.01.03.' . $group . '%');
+        });
     }
 }

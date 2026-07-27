@@ -48,9 +48,17 @@ interface Meta {
   to: number | null;
 }
 
+interface CategoryOption {
+  group: string;
+  code: string;
+  code_prefix: string;
+  name: string;
+}
+
 interface ApiResponse {
   data: StockRow[];
   categories: string[];
+  category_options?: CategoryOption[];
   meta: Meta;
 }
 
@@ -102,6 +110,7 @@ export function RequesterStockList() {
   // ── Data state ────────────────────────────────────────────────
   const [rows, setRows]               = useState<StockRow[]>([]);
   const [categories, setCategories]   = useState<string[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
   const [meta, setMeta]               = useState<Meta | null>(null);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState<string | null>(null);
@@ -145,6 +154,9 @@ export function RequesterStockList() {
       // Preserve categories after first successful load
       if (json.categories.length > 0) {
         setCategories(json.categories);
+      }
+      if (json.category_options && json.category_options.length > 0) {
+        setCategoryOptions(json.category_options);
       }
     } catch (err: any) {
       setError(err.message ?? "Terjadi kesalahan. Coba lagi.");
@@ -241,10 +253,20 @@ export function RequesterStockList() {
               className="py-2 pl-3 pr-8 text-xs border border-slate-200 rounded-lg bg-slate-50 text-slate-700 font-semibold
                          focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all min-w-[160px]"
             >
-              <option value="">Semua Kategori</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
+              <option value="">Semua Subkategori 1.01.03</option>
+              {(categoryOptions.length > 0
+                ? categoryOptions
+                : categories.map((name) => ({
+                    group: name,
+                    code: "",
+                    code_prefix: "",
+                    name,
+                  })))
+                .map((option) => (
+                  <option key={option.group} value={option.name}>
+                    {option.code ? `${option.code} - ${option.name}` : option.name}
+                  </option>
+                ))}
             </select>
           </div>
 

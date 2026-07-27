@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\KodePersediaan;
 use App\Models\StokUpload;
 use App\Models\StokUploadDetail;
+use App\Support\OfficeInventoryCatalog;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -235,7 +236,9 @@ class ExcelPersediaanImportService
                 $excelRowLabel = "baris {$row}"; // actual Excel row number for error messages
 
                 $noUrut         = $noStr !== '' ? (int) $cleanNum($noStr) : null;
-                $kodePersediaan = $kodeStr !== '' ? $kodeStr : null;
+                $kodePersediaan = $kodeStr !== ''
+                    ? OfficeInventoryCatalog::normalizeCode($kodeStr)
+                    : null;
                 $namaBarang     = $namaStr;
                 $qty            = $qtyStr  !== '' ? (int) $cleanNum($qtyStr)  : 0;
                 $unit           = $unitStr;
@@ -297,10 +300,14 @@ class ExcelPersediaanImportService
 
                 // Verify kode against master (only if kode provided)
                 if ($kodePersediaan !== null && $kodePersediaan !== '') {
-                    $codeExists = KodePersediaan::where('kode', $kodePersediaan)->exists();
+                    $codeExists = OfficeInventoryCatalog::isOfficeCode($kodePersediaan)
+                        && KodePersediaan::query()
+                            ->where('kode', $kodePersediaan)
+                            ->where('kode', 'like', OfficeInventoryCatalog::codePrefix() . '%')
+                            ->exists();
                     if (! $codeExists) {
                         $errorDetails[] = ['column' => $colKode,
-                            'message' => "Baris Excel {$row}: Kode persediaan '{$kodePersediaan}' tidak ditemukan di master kode."];
+                            'message' => "Baris Excel {$row}: Kode persediaan '{$kodePersediaan}' tidak ditemukan pada master resmi kelompok 1.01.03."];
                     }
                     $codeCounts[$kodePersediaan] = ($codeCounts[$kodePersediaan] ?? 0) + 1;
                 }

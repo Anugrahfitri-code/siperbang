@@ -93,7 +93,7 @@ Workflow utama pengisian stok dari file Excel supplier.
 ### 3.1 Master Kategori Barang
 - **Tabel:** `kategori_barang`
 - **Model:** `app/Models/KategoriBarang.php`
-- **Seeder:** `database/seeders/KategoriDanKodePersediaanSeeder.php`
+- **Seeder:** `database/seeders/OfficeActivityInventoryCodeSeeder.php`
 - **Status:** Berfungsi normal
 
 ### 3.2 Master Kode Persediaan

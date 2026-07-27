@@ -1,8 +1,11 @@
 <?php
 namespace Database\Seeders;
+use App\Models\Barang;
 use App\Models\KategoriBarang;
 use App\Models\KodePersediaan;
+use App\Support\OfficeInventoryCatalog;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class OfficeActivityInventoryCodeSeeder extends Seeder
 {
@@ -10,57 +13,11 @@ class OfficeActivityInventoryCodeSeeder extends Seeder
     {
         $categoryIds = [];
 
-        $categoryIds['01'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'ALAT TULIS KANTOR'])
-            ->id;
-        $categoryIds['02'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'KERTAS DAN COVER'])
-            ->id;
-        $categoryIds['03'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'BAHAN CETAK'])
-            ->id;
-        $categoryIds['04'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'BAHAN KOMPUTER'])
-            ->id;
-        $categoryIds['05'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'PERABOT KANTOR'])
-            ->id;
-        $categoryIds['06'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'ALAT LISTRIK'])
-            ->id;
-        $categoryIds['07'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'PERLENGKAPAN DINAS'])
-            ->id;
-        $categoryIds['08'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'KAPORLAP DAN PERLENGKAPAN SATWA'])
-            ->id;
-        $categoryIds['09'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'PERLENGKAPAN PENUNJANG KEGIATAN KANTOR'])
-            ->id;
-        $categoryIds['10'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'ALAT PENUNJANG KEGIATAN KANTOR'])
-            ->id;
-        $categoryIds['11'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'BAHAN PENUNJANG KEGIATAN KANTOR'])
-            ->id;
-        $categoryIds['12'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'ALAT/BAHAN PENUNJANG KEGIATAN KEAMANAN'])
-            ->id;
-        $categoryIds['13'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'BAHAN BAKAR DAN PELUMAS'])
-            ->id;
-        $categoryIds['14'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'OBAT-OBATAN'])
-            ->id;
-        $categoryIds['15'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'DOKUMEN LAYANAN KEIMIGRASIAN'])
-            ->id;
-        $categoryIds['16'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'BLANGKO NIKAH'])
-            ->id;
-        $categoryIds['99'] = KategoriBarang::query()
-            ->firstOrCreate(['nama' => 'ALAT/BAHAN UNTUK KEGIATAN KANTOR LAINNYA'])
-            ->id;
+        foreach (OfficeInventoryCatalog::groups() as $group => $name) {
+            $categoryIds[$group] = KategoriBarang::query()
+                ->firstOrCreate(['nama' => $name])
+                ->id;
+        }
 
         $items = [
             ['group' => '01', 'kode' => '1010301001', 'nama_barang' => 'Alat Tulis'],
@@ -176,14 +133,75 @@ class OfficeActivityInventoryCodeSeeder extends Seeder
             ['group' => '99', 'kode' => '1010399999', 'nama_barang' => 'Alat/bahan Untuk Kegiatan Kantor Lainnya'],
         ];
 
-        foreach ($items as $item) {
-            KodePersediaan::query()->updateOrCreate(
-                ['kode' => $item['kode']],
-                [
-                    'kategori_barang_id' => $categoryIds[$item['group']],
-                    'nama_barang' => $item['nama_barang'],
-                ],
-            );
+        DB::transaction(function () use ($items, $categoryIds): void {
+            foreach ($items as $item) {
+                KodePersediaan::query()->updateOrCreate(
+                    ['kode' => $item['kode']],
+                    [
+                        'kategori_barang_id' => $categoryIds[$item['group']],
+                        'nama_barang' => $item['nama_barang'],
+                    ],
+                );
+            }
+
+            $this->normaliseExistingStockCategories();
+            $this->mergeLegacyCategoryRows($categoryIds);
+        });
+    }
+
+    private function normaliseExistingStockCategories(): void
+    {
+        foreach (OfficeInventoryCatalog::groups() as $group => $name) {
+            Barang::query()
+                ->where(function ($query) use ($group): void {
+                    $query->where(
+                        'code',
+                        'like',
+                        OfficeInventoryCatalog::codePrefix() . $group . '%',
+                    )->orWhere('code', 'like', '1.01.03.' . $group . '%');
+                })
+                ->update(['category' => $name]);
         }
+    }
+
+    /**
+     * Satukan kategori lama/case variant ke kategori resmi. Kategori lain
+     * di luar kelompok 1.01.03 tidak disentuh.
+     *
+     * @param array<string, int> $categoryIds
+     */
+    private function mergeLegacyCategoryRows(array $categoryIds): void
+    {
+        KategoriBarang::query()
+            ->orderBy('id')
+            ->get()
+            ->each(function (KategoriBarang $category) use ($categoryIds): void {
+                $canonicalName = OfficeInventoryCatalog::canonicalCategory(
+                    $category->nama,
+                );
+
+                if ($canonicalName === null || $canonicalName === $category->nama) {
+                    return;
+                }
+
+                $group = OfficeInventoryCatalog::groupForCategory($canonicalName);
+
+                if ($group === null || ! isset($categoryIds[$group])) {
+                    return;
+                }
+
+                KodePersediaan::query()
+                    ->where('kategori_barang_id', $category->id)
+                    ->where('kode', 'like', OfficeInventoryCatalog::codePrefix() . '%')
+                    ->update(['kategori_barang_id' => $categoryIds[$group]]);
+
+                Barang::query()
+                    ->where('category', $category->nama)
+                    ->update(['category' => $canonicalName]);
+
+                if (! $category->kodePersediaan()->exists()) {
+                    $category->delete();
+                }
+            });
     }
 }

@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\KategoriBarang;
 use App\Models\KodePersediaan;
+use App\Support\OfficeInventoryCatalog;
 
 class KodePersediaanService
 {
@@ -12,42 +12,46 @@ class KodePersediaanService
      */
     public function suggestCode(string $categoryName, string $itemName): ?string
     {
-        // 1. Try to find the category in database
-        $category = KategoriBarang::where('nama', 'like', '%' . trim($categoryName) . '%')
-            ->orWhere('nama', 'like', '%' . explode('(', trim($categoryName))[0] . '%')
-            ->first();
+        $canonicalCategory = OfficeInventoryCatalog::canonicalCategory(
+            $categoryName,
+        );
+        $group = OfficeInventoryCatalog::groupForCategory($canonicalCategory);
 
-        // 2. Query codes
-        $query = KodePersediaan::query();
-        if ($category) {
-            $query->where('kategori_barang_id', $category->id);
+        $query = KodePersediaan::query()
+            ->where('kode', 'like', OfficeInventoryCatalog::codePrefix() . '%');
+
+        if ($group !== null) {
+            $query->where(
+                'kode',
+                'like',
+                OfficeInventoryCatalog::codePrefix() . $group . '%',
+            );
         }
 
-        $codes = $query->get();
-
-        // 3. Find the best match using keyword matching
+        $codes = $query->orderBy('kode')->get();
         $bestMatchCode = null;
         $highestScore = 0;
-
-        $itemNameLower = strtolower(trim($itemName));
+        $itemNameLower = mb_strtolower(trim($itemName));
 
         foreach ($codes as $codeItem) {
-            $dbNameLower = strtolower($codeItem->nama_barang);
-            
-            // Clean up name for comparison
-            $dbWords = explode(' ', preg_replace('/[^\w\s]/', '', $dbNameLower));
-            $itemWords = explode(' ', preg_replace('/[^\w\s]/', '', $itemNameLower));
+            $databaseNameLower = mb_strtolower($codeItem->nama_barang);
+            $databaseWords = explode(
+                ' ',
+                preg_replace('/[^\pL\pN\s]/u', '', $databaseNameLower) ?? '',
+            );
 
-            // Count overlapping words
             $matchCount = 0;
-            foreach ($dbWords as $word) {
-                if (strlen($word) > 2 && str_contains($itemNameLower, $word)) {
-                    $matchCount += 2; // Exact word match gets more weight
+
+            foreach ($databaseWords as $word) {
+                if (mb_strlen($word) > 2 && str_contains($itemNameLower, $word)) {
+                    $matchCount += 2;
                 }
             }
 
-            // check substring match
-            if (str_contains($itemNameLower, $dbNameLower) || str_contains($dbNameLower, $itemNameLower)) {
+            if (
+                str_contains($itemNameLower, $databaseNameLower)
+                || str_contains($databaseNameLower, $itemNameLower)
+            ) {
                 $matchCount += 5;
             }
 
@@ -57,41 +61,35 @@ class KodePersediaanService
             }
         }
 
-        // 4. Fallback if no match
-        if ($bestMatchCode === null) {
-            // Check if there is a category fallback
-            if ($category) {
-                $fallback = KodePersediaan::where('kategori_barang_id', $category->id)->first();
-                if ($fallback) {
-                    return $fallback->kode;
-                }
-            }
-            // Absolute fallback (Lain-lain)
-            return '1010399999';
+        if ($bestMatchCode !== null) {
+            return $bestMatchCode;
         }
 
-        return $bestMatchCode;
+        if ($group !== null) {
+            $fallback = $codes->first(
+                fn (KodePersediaan $code): bool => str_ends_with($code->kode, '999'),
+            ) ?? $codes->first();
+
+            return $fallback?->kode;
+        }
+
+        return KodePersediaan::query()
+            ->where('kode', '1010399999')
+            ->value('kode');
     }
 
     /**
-     * Map category string to standard database category.
+     * Map code to the official 1.01.03 category.
      */
     public function getCategoryByCode(string $code): string
     {
-        $codeRule = KodePersediaan::with('kategoriBarang')->where('kode', $code)->first();
-        if ($codeRule && $codeRule->kategoriBarang) {
-            return $codeRule->kategoriBarang->nama;
+        $normalizedCode = OfficeInventoryCatalog::normalizeCode($code);
+        $category = OfficeInventoryCatalog::categoryForCode($normalizedCode);
+
+        if ($category !== null) {
+            return $category;
         }
 
-        // Guess from code prefix
-        if (str_starts_with($code, '1010301') || str_starts_with($code, '1010302')) {
-            return 'Alat Tulis Kantor (ATK)';
-        } elseif (str_starts_with($code, '1010305')) {
-            return 'Alat/Bahan Kebersihan';
-        } elseif (str_starts_with($code, '1010304') || str_starts_with($code, '1010306')) {
-            return 'Peralatan Komputer / Elektronik';
-        }
-
-        return 'Lain-lain';
+        return OfficeInventoryCatalog::groups()['99'];
     }
 }

@@ -144,7 +144,7 @@ siperbang/
 │       └── Ocr/             # OcrServiceClient
 ├── database/
 │   ├── migrations/          # 13 migration files
-│   └── seeders/             # KategoriDanKodePersediaanSeeder
+│   └── seeders/             # OfficeActivityInventoryCodeSeeder
 ├── ocr-service/             # Python microservice (FastAPI + PaddleOCR)
 │   ├── app/                 # FastAPI app
 │   └── tests/               # Python tests
