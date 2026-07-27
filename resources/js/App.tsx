@@ -917,20 +917,31 @@ useEffect(() => {
             {officerTab === "dashboard" && (
               <div className="space-y-6">
                 {/* Task list quick peek */}
-                <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
-                        <Bell size={24} />
-                      </div>
-                      <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
+                <div className="space-y-6">
+                  {/* Banner */}
+                  <div className="relative bg-gradient-to-r from-[#f8faff] to-[#f0f4ff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center gap-5">
+                    {/* Glow effects */}
+                    <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                    <div className="absolute left-0 bottom-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+                    
+                    <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-100 text-amber-500 relative z-10">
+                      <Bell size={26} strokeWidth={2.5} />
+                    </div>
+                    <div className="relative z-10">
+                      <h3 className="text-base font-extrabold text-slate-800 uppercase tracking-wide">
                         Antrian Pengajuan BON Masuk Baru
                       </h3>
+                      <p className="text-xs font-medium text-slate-500 mt-1">
+                        Daftar pengajuan bon masuk baru yang perlu Anda proses pemeriksaan dan pengecekan.
+                      </p>
                     </div>
-                    <div className="space-y-4">
+                  </div>
+
+                  <div className="space-y-4">
                       {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => {
                         const relatedBon = bons.find(b => (b.bonNo || b.bon_no) === (r.bonNo || r.bon_no));
                         return (
-                        <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-md p-5 shadow-xs gap-4">
+                        <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-xl p-5 shadow-sm gap-4">
                           <div>
                             <span className="font-mono text-xs font-bold text-slate-400 block uppercase tracking-wider mb-1">{r.bonNo}</span>
                             <span className="font-extrabold text-slate-800 text-base block">{r.itemName}</span>
@@ -958,7 +969,7 @@ useEffect(() => {
                             onClick={() => {
                               setOfficerTab("checking");
                             }}
-                            className="bg-blue-600 text-white px-5 py-2.5 rounded font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors text-xs shadow-sm self-start sm:self-auto"
+                            className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors text-xs shadow-sm self-start sm:self-auto"
                           >
                             <Search size={14} />
                             <span>Proses Cek</span>
@@ -967,7 +978,7 @@ useEffect(() => {
                         </div>
                       );})}
                       {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).length === 0 && (
-                        <div className="text-center py-6 text-slate-400 text-xs font-semibold">
+                        <div className="text-center py-6 text-slate-400 text-xs font-semibold bg-white rounded-2xl border border-slate-200 shadow-sm">
                           Semua antrean BON digital telah diproses. Bersih!
                         </div>
                       )}

@@ -170,14 +170,19 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
-          <Package size={24} />
+    <div className="space-y-6">
+      {/* Banner */}
+      <div className="relative bg-gradient-to-r from-[#f8faff] to-[#f0f4ff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center gap-5">
+        {/* Glow effects */}
+        <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div className="absolute left-0 bottom-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+        
+        <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-100 text-amber-500 relative z-10">
+          <Package size={26} strokeWidth={2.5} />
         </div>
-        <div>
-          <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">Pengecekan Stok & Pemenuhan</h2>
-          <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
+        <div className="relative z-10">
+          <h2 className="text-base font-extrabold text-slate-800 uppercase tracking-wide">Pengecekan Stok & Pemenuhan</h2>
+          <p className="text-xs font-medium text-slate-500 mt-1">
             Periksa ketersediaan barang persediaan, alokasikan barang, atau teruskan ke pengadaan
           </p>
         </div>
@@ -201,11 +206,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
             return (
               <div
                 key={req.id}
-                className={`border bg-white rounded-lg p-5 transition-all mb-4 shadow-xs ${
-                  isPendingCheck
-                    ? "border-amber-200 border-l-[4px] border-l-amber-400 hover:border-amber-300"
-                    : "border-slate-200 border-l-[4px] border-l-slate-300 hover:border-slate-300"
-                }`}
+                className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm transition-all hover:border-slate-300"
               >
                 <div className="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
                   <div>
@@ -265,7 +266,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                           setRejectAlasan("");
                           setRejectError(null);
                         }}
-                        className="border border-rose-300 text-rose-600 hover:bg-rose-50 text-sm font-bold px-4 py-2 rounded-md transition-all flex items-center gap-1.5 shadow-sm"
+                        className="border border-rose-300 text-rose-600 hover:bg-rose-50 text-sm font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
                       >
                         <Trash2 size={14} />
                         Batalkan
@@ -275,7 +276,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                     {isPendingCheck ? (
                       <button
                         onClick={() => openChecker(req)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-md transition-all flex items-center gap-1.5 shadow-sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
                       >
                         <Play size={14} />
                         Proses Cek Stok
@@ -289,7 +290,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                           req.status === RequestStatus.DALAM_PENGADAAN) && (
                           <button
                             onClick={() => setSelectedForAction(req)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2 rounded-md transition-all flex items-center gap-1.5 shadow-sm"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
                           >
                             {req.qtyFulfilled > 0 ? <Truck size={14} /> : <ShoppingCart size={14} />}
                             Proses Pemenuhan
