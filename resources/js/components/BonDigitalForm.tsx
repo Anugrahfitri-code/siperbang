@@ -57,13 +57,15 @@ interface BonItem {
 
 export interface BonSubmitPayload {
   keperluan: string;
-  catatan:   string;
-  status:    "draft" | "menunggu_verifikasi";
+  catatan: string;
+  status: "draft" | "menunggu_verifikasi";
   requester?: string;
   items: Array<{
-    barang_id:      number;
+    barang_id: number;
+    nama_barang?: string;
+    satuan?: string;
     jumlah_diminta: number;
-    catatan:        string;
+    catatan: string;
   }>;
 }
 
@@ -235,7 +237,11 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
   }, []);
 
   const searchStock = useCallback(async (q: string) => {
-    if (q.trim().length < 2) { setSearchResults([]); setShowDropdown(false); return; }
+    if (q.trim().length < 2) { 
+      setSearchResults([]); 
+      setShowDropdown(false); 
+      return; 
+    }
     setSearchLoading(true);
     setSearchError(null);
     try {
@@ -253,11 +259,12 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
         kategori: r.kategori ?? r.category ?? "",
       }));
       setSearchResults(mapped);
-      setShowDropdown(mapped.length > 0);
+      // PERBAIKAN: Selalu tampilkan dropdown selama huruf >= 2 agar tombol "Barang Baru" bisa diklik
+      setShowDropdown(true); 
     } catch (err: any) {
       setSearchError(err.message ?? "Kesalahan saat mencari barang.");
       setSearchResults([]);
-      setShowDropdown(false);
+      setShowDropdown(true); // Tetap tampilkan dropdown meskipun error/kosong
     } finally {
       setSearchLoading(false);
     }
@@ -270,14 +277,43 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
   };
 
   const addItem = (result: SearchResult) => {
-    if (result.id === 0) { setSearchError("ID barang tidak valid."); return; }
-    if (items.some((i) => i.barang_id === result.id)) {
+    if (items.some((i) => i.barang_id === result.id && result.id !== 0)) {
       setSearchQuery(""); setShowDropdown(false); return;
     }
     setItems((prev) => [
       ...prev,
-      { barang_id: result.id, nama_barang: result.nama, satuan: result.satuan,
-        stok_tersedia: result.stok, jumlah_diminta: 1, catatan: "" },
+      {
+        barang_id: result.id,
+        nama_barang: result.nama,
+        satuan: result.satuan || "Buah",
+        stok_tersedia: result.stok,
+        jumlah_diminta: 1,
+        catatan: ""
+      },
+    ]);
+    setSearchQuery(""); setSearchResults([]); setShowDropdown(false);
+    setFieldErrors((p) => ({ ...p, items: "" }));
+  };
+
+  // FUNGSI BARU: Menambahkan barang baru yang belum terdaftar di Master Barang
+  const addCustomItem = (customName: string) => {
+    if (!customName.trim()) return;
+    
+    // Cek agar tidak duplikat dengan nama barang yang sudah ada di daftar
+    if (items.some((i) => i.nama_barang.toLowerCase() === customName.trim().toLowerCase())) {
+      setSearchQuery(""); setShowDropdown(false); return;
+    }
+
+    setItems((prev) => [
+      ...prev,
+      {
+        barang_id: 0, // 0 menandakan Barang Baru (Belum ada di Master Barang)
+        nama_barang: customName.trim(),
+        satuan: "Buah",
+        stok_tersedia: 0,
+        jumlah_diminta: 1,
+        catatan: "Barang baru (Belum ada di Master Barang)"
+      },
     ]);
     setSearchQuery(""); setSearchResults([]); setShowDropdown(false);
     setFieldErrors((p) => ({ ...p, items: "" }));
@@ -320,13 +356,15 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
 
     const payload: BonSubmitPayload = {
       keperluan: keperluan.trim(),
-      catatan:   catatan.trim(),
+      catatan: catatan.trim(),
       status,
       requester: currentUser.toLowerCase().includes("admin") ? (users.find((u) => u.username === selectedPengaju)?.name || selectedPengaju) : undefined,
       items: items.map((it) => ({
-        barang_id:      it.barang_id,
+        barang_id: it.barang_id,
+        nama_barang: it.nama_barang,
+        satuan: it.satuan,
         jumlah_diminta: it.jumlah_diminta,
-        catatan:        it.catatan.trim(),
+        catatan: it.catatan.trim(),
       })),
     };
 
@@ -557,13 +595,14 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
               
               {searchError && <p className="mt-1.5 text-xs text-rose-600 font-semibold">{searchError}</p>}
 
-              {showDropdown && searchResults.length > 0 && (
-                <div className="absolute z-50 top-[calc(100%+0.5rem)] w-[calc(100%-140px)] bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto">
+              {showDropdown && searchQuery.trim().length >= 2 && (
+                <div className="absolute z-50 top-[calc(100%+0.5rem)] w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-72 overflow-y-auto">
+                  {/* Item dari hasil pencarian stok */}
                   {searchResults.map((result) => {
-                    const alreadyAdded = items.some((i) => i.barang_id === result.id);
+                    const alreadyAdded = items.some((i) => i.barang_id === result.id && result.id !== 0);
                     return (
                       <button key={result.id} type="button"
-                        disabled={alreadyAdded || result.id === 0}
+                        disabled={alreadyAdded}
                         onClick={() => addItem(result)}
                         className={`w-full text-left px-4 py-3 hover:bg-indigo-50/50 transition-colors border-b border-slate-100 last:border-0
                           ${alreadyAdded ? "opacity-40 cursor-not-allowed bg-slate-50" : "cursor-pointer"}`}
@@ -587,6 +626,19 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
                       </button>
                     );
                   })}
+
+                  {/* Tombol Opsi Ajukan Barang Baru */}
+                  <button
+                    type="button"
+                    onClick={() => addCustomItem(searchQuery)}
+                    className="w-full text-left px-4 py-3 bg-amber-50 hover:bg-amber-100/80 text-amber-900 border-t border-amber-200 transition-colors flex items-center justify-between font-semibold text-xs cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={16} className="text-amber-600 shrink-0" />
+                      <span>Ajukan <strong>"{searchQuery}"</strong> sebagai barang baru</span>
+                    </div>
+                    <span className="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded text-[10px] uppercase shrink-0">+ Tambah</span>
+                  </button>
                 </div>
               )}
             </div>

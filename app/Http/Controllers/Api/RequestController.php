@@ -44,39 +44,32 @@ class RequestController extends Controller
             'catatan' => 'nullable|string',
             'status' => 'required|string|in:draft,menunggu_verifikasi,Draft,Menunggu Verifikasi',
             'items' => 'required|array|min:1',
-            'items.*.barang_id' => 'required|integer|exists:stock_items,id',
+            // barang_id boleh null/0 jika barang baru
+            'items.*.barang_id' => 'nullable|integer', 
+            'items.*.nama_barang' => 'required_if:items.*.barang_id,null,0|string',
+            'items.*.satuan' => 'nullable|string',
             'items.*.jumlah_diminta' => 'required|integer|min:1',
             'items.*.catatan' => 'nullable|string',
         ]);
 
-        $statusVal = $validated['status'];
-        if ($statusVal === 'draft' || $statusVal === 'Draft') {
-            $statusVal = 'Draft';
-        } else {
-            $statusVal = 'Menunggu Verifikasi';
-        }
+        $statusVal = ($validated['status'] === 'draft' || $validated['status'] === 'Draft') ? 'Draft' : 'Menunggu Verifikasi';
 
         DB::beginTransaction();
         try {
             $user      = $request->user();
             $requester = $request->input('requester') ?? $user->name;
             
-            // If admin selected another user, try to get their section
             $actualUser = \App\Models\User::where('name', $requester)->first();
             $section   = $actualUser ? ($actualUser->section ?? 'Tata Usaha') : ($user->section ?? 'Tata Usaha');
 
-            // ── Generate unique bon_no dengan retry ──────────────────────
-            // Format: BON/YYYY/MM/DD/NNN  — unik per hari, aman dari race condition
+            // Generate unique bon_no
             $bonNo    = null;
             $attempts = 0;
             do {
                 $prefix     = 'BON/' . date('Y/m/d/');
                 $countToday = \App\Models\BonHeader::where('bon_no', 'like', $prefix . '%')->count();
                 $candidate  = $prefix . str_pad($countToday + 1, 3, '0', STR_PAD_LEFT);
-
-                // Cek apakah nomor sudah dipakai (handle race condition)
-                $exists = \App\Models\BonHeader::where('bon_no', $candidate)->exists();
-                if (!$exists) {
+                if (!\App\Models\BonHeader::where('bon_no', $candidate)->exists()) {
                     $bonNo = $candidate;
                 }
                 $attempts++;
@@ -86,7 +79,6 @@ class RequestController extends Controller
                 throw new \Exception('Gagal membuat nomor BON unik. Coba lagi.');
             }
 
-            // Create BonHeader
             $bonHeader = \App\Models\BonHeader::create([
                 'bon_no' => $bonNo,
                 'user_id' => $user->id,
@@ -99,7 +91,6 @@ class RequestController extends Controller
                 'last_updated' => today(),
             ]);
 
-            // Create status history
             \App\Models\BonStatusHistory::create([
                 'bon_header_id' => $bonHeader->id,
                 'status_before' => null,
@@ -108,9 +99,13 @@ class RequestController extends Controller
                 'notes' => $statusVal === 'Draft' ? 'Draft pengajuan dibuat.' : 'Pengajuan dikirim.',
             ]);
 
-            // Create ItemRequests
+            // Create ItemRequests (Dukungan Barang Terdaftar & Barang Baru)
             foreach ($validated['items'] as $item) {
-                $stockItem = \App\Models\StockItem::findOrFail($item['barang_id']);
+                $stockItemId = !empty($item['barang_id']) && $item['barang_id'] > 0 ? $item['barang_id'] : null;
+                $stockItem   = $stockItemId ? \App\Models\StockItem::find($stockItemId) : null;
+
+                $itemName = $stockItem ? $stockItem->name : ($item['nama_barang'] ?? 'Barang Baru');
+                $unit     = $stockItem ? $stockItem->unit : ($item['satuan'] ?? 'Buah');
 
                 ItemRequest::create([
                     'bon_header_id' => $bonHeader->id,
@@ -120,10 +115,10 @@ class RequestController extends Controller
                     'requester' => $requester,
                     'date' => today(),
                     'status' => $statusVal === 'Draft' ? 'Draft' : 'Diajukan',
-                    'stock_item_id' => $stockItem->id,
-                    'item_name' => $stockItem->name,
+                    'stock_item_id' => $stockItemId,
+                    'item_name' => $itemName,
                     'qty_requested' => $item['jumlah_diminta'],
-                    'unit' => $stockItem->unit,
+                    'unit' => $unit,
                     'notes' => $item['catatan'] ?? null,
                     'qty_available' => 0,
                     'qty_fulfilled' => 0,
@@ -490,18 +485,14 @@ class RequestController extends Controller
             'catatan' => 'nullable|string',
             'status' => 'required|string|in:draft,menunggu_verifikasi,Draft,Menunggu Verifikasi',
             'items' => 'required|array|min:1',
-            'items.*.barang_id' => 'required|integer|exists:stock_items,id',
+            'items.*.barang_id' => 'nullable|integer',
+            'items.*.nama_barang' => 'nullable|string',
+            'items.*.satuan' => 'nullable|string',
             'items.*.jumlah_diminta' => 'required|integer|min:1',
             'items.*.catatan' => 'nullable|string',
         ]);
 
-        $statusVal = $validated['status'];
-        if ($statusVal === 'draft' || $statusVal === 'Draft') {
-            $statusVal = 'Draft';
-        } else {
-            $statusVal = 'Menunggu Verifikasi';
-        }
-
+        $statusVal = ($validated['status'] === 'draft' || $validated['status'] === 'Draft') ? 'Draft' : 'Menunggu Verifikasi';
         $bonHeader = \App\Models\BonHeader::findOrFail($id);
         $user = $request->user();
 
@@ -516,12 +507,10 @@ class RequestController extends Controller
         DB::beginTransaction();
         try {
             $oldStatus = $bonHeader->status;
-            
             $requester = $request->input('requester') ?? $bonHeader->requester;
             $actualUser = \App\Models\User::where('name', $requester)->first();
             $section = $actualUser ? ($actualUser->section ?? 'Tata Usaha') : $bonHeader->section;
 
-            // Update header
             $bonHeader->update([
                 'status' => $statusVal,
                 'keperluan' => $validated['keperluan'],
@@ -531,7 +520,6 @@ class RequestController extends Controller
                 'last_updated' => today(),
             ]);
 
-            // Save history
             \App\Models\BonStatusHistory::create([
                 'bon_header_id' => $bonHeader->id,
                 'status_before' => $oldStatus,
@@ -540,11 +528,14 @@ class RequestController extends Controller
                 'notes' => $statusVal === 'Draft' ? 'Draft diperbarui.' : 'Draft dikirim sebagai pengajuan.',
             ]);
 
-            // Rebuild item requests: Delete existing and recreate
             $bonHeader->items()->delete();
 
             foreach ($validated['items'] as $item) {
-                $stockItem = \App\Models\StockItem::findOrFail($item['barang_id']);
+                $stockItemId = !empty($item['barang_id']) && $item['barang_id'] > 0 ? $item['barang_id'] : null;
+                $stockItem   = $stockItemId ? \App\Models\StockItem::find($stockItemId) : null;
+
+                $itemName = $stockItem ? $stockItem->name : ($item['nama_barang'] ?? 'Barang Baru');
+                $unit     = $stockItem ? $stockItem->unit : ($item['satuan'] ?? 'Buah');
 
                 ItemRequest::create([
                     'bon_header_id' => $bonHeader->id,
@@ -554,10 +545,10 @@ class RequestController extends Controller
                     'requester' => $requester,
                     'date' => $bonHeader->date,
                     'status' => $statusVal === 'Draft' ? 'Draft' : 'Diajukan',
-                    'stock_item_id' => $stockItem->id,
-                    'item_name' => $stockItem->name,
+                    'stock_item_id' => $stockItemId,
+                    'item_name' => $itemName,
                     'qty_requested' => $item['jumlah_diminta'],
-                    'unit' => $stockItem->unit,
+                    'unit' => $unit,
                     'notes' => $item['catatan'] ?? null,
                     'qty_available' => 0,
                     'qty_fulfilled' => 0,
