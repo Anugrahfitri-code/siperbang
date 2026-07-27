@@ -55,7 +55,7 @@
                 </span>
             </a>
 
-            <a href="{{ route('stok-upload.index') }}"
+            <a href="/" onclick="localStorage.setItem('officerTab', 'stock'); localStorage.setItem('superadminTab', 'stock_manage');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
                {{ $isExcelActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
@@ -187,7 +187,7 @@
                 </span>
             </a>
 
-            <a href="{{ route('stok-upload.index') }}"
+            <a href="/" onclick="localStorage.setItem('officerTab', 'stock'); localStorage.setItem('superadminTab', 'stock_manage');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
                {{ $isExcelActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
@@ -315,7 +315,7 @@
                 </span>
             </a>
 
-            <a href="{{ route('stok-upload.index') }}"
+            <a href="/" onclick="localStorage.setItem('officerTab', 'stock'); localStorage.setItem('superadminTab', 'stock_manage');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
                {{ $isExcelActive ? 'bg-emerald-50 text-emerald-700 border-emerald-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-emerald-50/70 hover:text-emerald-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
