@@ -121,6 +121,7 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
   const [deletingId,   setDeletingId]   = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; bonNo: string } | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>("Semua");
+  const [sortOrder, setSortOrder]       = useState<string>("terbaru");
 
   const toggleExpand = (id: number) =>
     setExpandedId((prev) => (prev === id ? null : id));
@@ -136,12 +137,31 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
     }
   };
 
-  // Filter Logic
+  // Filter & Sort Logic
   const filteredBons = useMemo(() => {
-    if (activeFilter === "Semua") return bons;
-    if (activeFilter === "Diajukan") return bons.filter(b => b.status === "Diajukan" || b.status === "Menunggu Verifikasi" || b.status === "Diproses");
-    return bons.filter(b => b.status === activeFilter);
-  }, [bons, activeFilter]);
+    let result = bons;
+    if (activeFilter !== "Semua") {
+      if (activeFilter === "Diajukan") {
+        result = result.filter(b => b.status === "Diajukan" || b.status === "Menunggu Verifikasi" || b.status === "Diproses");
+      } else {
+        result = result.filter(b => b.status === activeFilter);
+      }
+    }
+
+    // Sort Logic
+    return [...result].sort((a, b) => {
+      if (sortOrder === "terbaru") {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      } else if (sortOrder === "terdahulu") {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      } else if (sortOrder === "az") {
+        return (a.bonNo || "").localeCompare(b.bonNo || "");
+      } else if (sortOrder === "za") {
+        return (b.bonNo || "").localeCompare(a.bonNo || "");
+      }
+      return 0;
+    });
+  }, [bons, activeFilter, sortOrder]);
 
   const counts = useMemo(() => ({
     Semua: bons.length,
@@ -246,11 +266,24 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
             ))}
           </div>
 
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 shadow-sm shrink-0">
-            <Filter size={14} />
-            Terbaru
-            <ChevronDown size={14} className="opacity-50 ml-1" />
-          </button>
+          <div className="relative shrink-0">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+              <Filter size={14} />
+            </div>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="pl-10 pr-9 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer w-[140px]"
+            >
+              <option value="terbaru">Terbaru</option>
+              <option value="terdahulu">Terdahulu</option>
+              <option value="az">Abjad A - Z</option>
+              <option value="za">Abjad Z - A</option>
+            </select>
+            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
+              <ChevronDown size={14} />
+            </div>
+          </div>
         </div>
 
         {/* BON list */}
