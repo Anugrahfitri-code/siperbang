@@ -214,7 +214,7 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
                 <ClipboardList size={28} strokeWidth={2.5} />
               </div>
               <div>
-                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
                   Pantau Pengajuan Saya
                 </h2>
                 <p className="text-sm font-medium text-slate-500 mt-1">

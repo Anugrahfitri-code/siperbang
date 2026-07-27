@@ -256,7 +256,7 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
           <Package size={24} />
         </div>
         <div>
-          <h2 className="text-lg font-semibold leading-7 text-slate-900">Distribusi & Pengadaan</h2>
+          <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">Distribusi & Pengadaan</h2>
           <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
             Proses distribusi barang dari stok atau pengadaan untuk {request.bonNo}
           </p>

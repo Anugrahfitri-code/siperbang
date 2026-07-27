@@ -46,92 +46,105 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
       {/* Total Belanja Kuitansi */}
-      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm flex items-center justify-between transition-all hover:border-slate-300">
-        <div>
-          <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block">
+      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm transition-all hover:border-slate-300 flex flex-col justify-between">
+        <div className="flex justify-between items-start gap-4">
+          <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block leading-snug">
             Total Belanja Terverifikasi
           </span>
-          <h3 className="text-lg font-extrabold text-slate-900 mt-1.5 tracking-tight">
+          <div className="bg-emerald-50 text-emerald-600 p-2 rounded flex-shrink-0">
+            <TrendingUp size={20} />
+          </div>
+        </div>
+        <div className="mt-4">
+          <h3 className="text-lg font-extrabold text-slate-900 tracking-tight leading-none">
             {formatIDR(totalSpend)}
           </h3>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1.5">
             Dari {verifiedReceipts.length} kuitansi valid
           </p>
-        </div>
-        <div className="bg-emerald-50 text-emerald-600 p-3.5 rounded">
-          <TrendingUp size={20} />
         </div>
       </div>
 
       {/* Total PPN Disetor */}
-      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm flex items-center justify-between transition-all hover:border-slate-300">
-        <div>
-          <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block">
+      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm transition-all hover:border-slate-300 flex flex-col justify-between">
+        <div className="flex justify-between items-start gap-4">
+          <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block leading-snug">
             Total Pajak (PPN) Disetor
           </span>
-          <h3 className="text-lg font-extrabold text-slate-900 mt-1.5 tracking-tight">
+          <div className="bg-indigo-50 text-indigo-600 p-2 rounded flex-shrink-0">
+            <Percent size={20} />
+          </div>
+        </div>
+        <div className="mt-4">
+          <h3 className="text-lg font-extrabold text-slate-900 tracking-tight leading-none">
             {formatIDR(totalTax)}
           </h3>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1.5">
             Akumulasi penyesuaian toko
           </p>
-        </div>
-        <div className="bg-indigo-50 text-indigo-600 p-3.5 rounded">
-          <Percent size={20} />
         </div>
       </div>
 
       {/* Usulan Selesai */}
-      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm flex items-center justify-between transition-all hover:border-slate-300">
-        <div>
-          <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block">
+      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm transition-all hover:border-slate-300 flex flex-col justify-between">
+        <div className="flex justify-between items-start gap-4">
+          <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block leading-snug">
             Pemenuhan Usulan Selesai
           </span>
-          <h3 className="text-lg font-extrabold text-slate-900 mt-1.5 tracking-tight">
+          <div className="bg-amber-50 text-amber-600 p-2 rounded flex-shrink-0">
+            <CheckCircle size={20} />
+          </div>
+        </div>
+        <div className="mt-4">
+          <h3 className="text-lg font-extrabold text-slate-900 tracking-tight leading-none">
             {completed} <span className="text-xs font-normal text-slate-400">/ {totalRequests}</span>
           </h3>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1.5">
             Permintaan didistribusikan
           </p>
-        </div>
-        <div className="bg-amber-50 text-amber-600 p-3.5 rounded">
-          <CheckCircle size={20} />
         </div>
       </div>
 
       {/* Status Antrean */}
-      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm flex items-center justify-between transition-all hover:border-slate-300">
-        <div>
-          <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block">
+      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm transition-all hover:border-slate-300 flex flex-col justify-between">
+        <div className="flex justify-between items-start gap-4">
+          <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block leading-snug">
             Status Tindakan Petugas
           </span>
-          <div className="flex gap-3.5 mt-2.5">
-            <div>
-              <span className="text-xs font-extrabold text-amber-600 block leading-tight">
-                {pendingCheck}
-              </span>
-              <span className="text-2xs text-slate-400 font-bold uppercase tracking-wider">Cek Stok</span>
-            </div>
-            <div className="border-r border-slate-200 h-6 self-center" />
-            <div>
-              <span className="text-xs font-extrabold text-indigo-600 block leading-tight">
-                {inProcurement}
-              </span>
-              <span className="text-2xs text-slate-400 font-bold uppercase tracking-wider">Pengadaan</span>
-            </div>
-            <div className="border-r border-slate-200 h-6 self-center" />
-            <div>
-              <span className="text-xs font-extrabold text-rose-500 block leading-tight">
-                {receipts.filter((r) => !r.isVerified).length}
-              </span>
-              <span className="text-2xs text-slate-400 font-bold uppercase tracking-wider">Verif</span>
-            </div>
+          <div className="bg-slate-50 text-slate-500 p-2 rounded flex-shrink-0">
+            <Clock size={20} />
           </div>
         </div>
-        <div className="bg-slate-50 text-slate-500 p-3.5 rounded">
-          <Clock size={20} />
+        
+        <div className="flex justify-between items-end mt-4">
+          <div>
+            <h3 className="text-lg font-extrabold text-amber-600 tracking-tight leading-none">
+              {pendingCheck}
+            </h3>
+            <p className="text-[10px] text-slate-500 mt-1.5 uppercase whitespace-nowrap">
+              Cek Stok
+            </p>
+          </div>
+          <div className="w-px h-6 bg-slate-200 self-center" />
+          <div>
+            <h3 className="text-lg font-extrabold text-indigo-600 tracking-tight leading-none">
+              {inProcurement}
+            </h3>
+            <p className="text-[10px] text-slate-500 mt-1.5 uppercase whitespace-nowrap">
+              Pengadaan
+            </p>
+          </div>
+          <div className="w-px h-6 bg-slate-200 self-center" />
+          <div>
+            <h3 className="text-lg font-extrabold text-rose-500 tracking-tight leading-none">
+              {receipts.filter((r) => !r.isVerified).length}
+            </h3>
+            <p className="text-[10px] text-slate-500 mt-1.5 uppercase whitespace-nowrap">
+              Verifikasi
+            </p>
+          </div>
         </div>
       </div>
     </div>
