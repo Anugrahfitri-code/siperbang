@@ -59,6 +59,7 @@ export interface BonSubmitPayload {
   keperluan: string;
   catatan:   string;
   status:    "draft" | "menunggu_verifikasi";
+  requester?: string;
   items: Array<{
     barang_id:      number;
     jumlah_diminta: number;
@@ -321,6 +322,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
       keperluan: keperluan.trim(),
       catatan:   catatan.trim(),
       status,
+      requester: currentUser.toLowerCase().includes("admin") ? (users.find((u) => u.username === selectedPengaju)?.name || selectedPengaju) : undefined,
       items: items.map((it) => ({
         barang_id:      it.barang_id,
         jumlah_diminta: it.jumlah_diminta,
@@ -459,27 +461,36 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                     </div>
-                    <select
-                      value={selectedPengaju}
-                      onChange={(e) => setSelectedPengaju(e.target.value)}
-                      disabled={usersLoading}
-                      className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:opacity-60"
-                    >
-                      {usersLoading ? (
-                        <option>Memuat...</option>
-                      ) : users.length === 0 ? (
-                        <option>Tidak ada user</option>
-                      ) : (
-                        users.map((user) => {
-                          const roleLabel = user.role === "Ketua Tim Kerja" ? "Ketua Tim" : "Admin";
-                          return (
-                            <option key={user.id} value={user.username}>
-                              {user.name} ({user.username}) - {roleLabel}
-                            </option>
-                          );
-                        })
-                      )}
-                    </select>
+                    {currentUser.toLowerCase().includes("admin") ? (
+                      <select
+                        value={selectedPengaju}
+                        onChange={(e) => setSelectedPengaju(e.target.value)}
+                        disabled={usersLoading}
+                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:opacity-60"
+                      >
+                        {usersLoading ? (
+                          <option>Memuat...</option>
+                        ) : users.length === 0 ? (
+                          <option>Tidak ada user</option>
+                        ) : (
+                          users.map((user) => {
+                            const roleLabel = user.role === "Ketua Tim Kerja" ? "Ketua Tim" : "Admin";
+                            return (
+                              <option key={user.id} value={user.username}>
+                                {user.name} ({user.username}) - {roleLabel}
+                              </option>
+                            );
+                          })
+                        )}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        disabled
+                        value={currentUser}
+                        className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-500 cursor-not-allowed"
+                      />
+                    )}
                   </div>
                 </div>
 
