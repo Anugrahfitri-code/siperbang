@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Barang;
 use App\Models\KategoriBarang;
+use App\Models\KodePersediaan;
 use Illuminate\Http\Request;
 
 class BarangController extends Controller
@@ -18,7 +19,7 @@ class BarangController extends Controller
         // Query HANYA dari stock_items — barang yang sudah masuk stok.
         // Kode persediaan master (yang belum pernah diupload) tidak ditampilkan
         // agar user tidak bingung melihat barang stok 0 yang tidak relevan.
-        $query = Barang::query();
+        $query = Barang::where('is_active', true);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -29,18 +30,21 @@ class BarangController extends Controller
         }
 
         if ($request->filled('kategori_id')) {
-            $query->where('category', $request->kategori_id);
+            $query->whereHas('kategori', function ($q) use ($request) {
+                $q->where('nama', $request->kategori_id);
+            });
         }
 
         $perPage = $request->input('per_page', 10);
-        $barangs   = $query->orderBy('name')->paginate($perPage)->withQueryString();
+        $barangs   = $query->with('kategori')->orderBy('name')->paginate($perPage)->withQueryString();
 
-        // Hanya tampilkan kategori yang memang ada di stock_items
-        $kategoris = KategoriBarang::orderBy('nama')
-            ->whereIn('nama', Barang::distinct()->pluck('category'))
-            ->get();
+        // Semua kategori dari database untuk dropdown filter
+        $kategoris = KategoriBarang::orderBy('nama')->get();
 
-        return view('master-barang.index', compact('barangs', 'kategoris'));
+        // Semua kode persediaan untuk dropdown (dengan relasi kategori)
+        $kodePersediaans = KodePersediaan::with('kategoriBarang')->orderBy('kode')->get();
+
+        return view('master-barang.index', compact('barangs', 'kategoris', 'kodePersediaans'));
     }
 
     /**
@@ -94,6 +98,55 @@ class BarangController extends Controller
         });
 
         return response()->json($mapped);
+    }
+
+    /**
+     * Update an existing barang.
+     */
+    public function update(Request $request, $id)
+    {
+        $this->authorizeRole('Petugas Persediaan');
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'kode_persediaan' => 'nullable|string|max:255',
+            'category' => 'nullable|string|max:255',
+            'unit' => 'nullable|string|max:50',
+        ]);
+
+        $barang = Barang::findOrFail($id);
+
+        // Cegah duplikasi nama (case-insensitive)
+        $duplicate = Barang::whereRaw('LOWER(name) = ?', [strtolower($request->name)])
+            ->where('id', '!=', $id)
+            ->exists();
+
+        if ($duplicate) {
+            return back()->withErrors(['name' => 'Nama barang sudah ada.'])->withInput()->with('edit_id', $id);
+        }
+
+        $barang->update([
+            'name' => $request->name,
+            'code' => $request->kode_persediaan ?? $barang->code,
+            'unit' => $request->unit,
+            'category' => $request->category ?? $barang->category,
+        ]);
+
+        return back()->with('success', 'Barang berhasil diperbarui.');
+    }
+
+    /**
+     * Delete a barang, only if it has no transaction history.
+     */
+    public function destroy($id)
+    {
+        $this->authorizeRole('Petugas Persediaan');
+
+        $barang = Barang::findOrFail($id);
+
+        $barang->update(['is_active' => false]);
+
+        return back()->with('success', 'Barang berhasil dihapus.');
     }
 
     /**

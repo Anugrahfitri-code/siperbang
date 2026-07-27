@@ -75,7 +75,7 @@ $iconHtml = $icon ?? $vc['icon'];
             </button>
             @endif
             @if($formAction)
-            <form action="{{ $formAction }}" method="{{ $formMethod }}" id="{{ $formId ?: $id.'_form' }}" class="inline">
+            <form action="{{ $formAction }}" method="{{ strtolower($formMethod) === 'get' ? 'GET' : 'POST' }}" id="{{ $formId ?: $id.'_form' }}" class="inline">
                 @csrf
                 @if(!in_array(strtolower($formMethod), ['get', 'post']))
                 @method($formMethod)

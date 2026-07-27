@@ -80,6 +80,8 @@ Route::middleware('auth')->group(function () {
     // Master Barang
     Route::get('/master-barang',                [\App\Http\Controllers\BarangController::class, 'index'] )->name('master-barang.index');
     Route::get('/master-barang/search',         [\App\Http\Controllers\BarangController::class, 'search'])->name('master-barang.search');
+    Route::post('/master-barang/{id}/update',   [\App\Http\Controllers\BarangController::class, 'update'])->name('master-barang.update');
+    Route::post('/master-barang/{id}/delete',   [\App\Http\Controllers\BarangController::class, 'destroy'])->name('master-barang.destroy');
 });
 
 // Protected API Routes

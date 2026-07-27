@@ -23,6 +23,16 @@ class Barang extends Model
         return $this->hasMany(StockHistory::class, 'stock_item_id');
     }
 
+    public function kategori()
+    {
+        return $this->belongsTo(KategoriBarang::class, 'category', 'nama');
+    }
+
+    public function kodePersediaan()
+    {
+        return $this->belongsTo(KodePersediaan::class, 'code', 'kode');
+    }
+
     public function lastUpload()
     {
         return $this->belongsTo(StokUpload::class, 'last_upload_id');

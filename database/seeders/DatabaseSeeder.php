@@ -45,6 +45,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             KategoriDanKodePersediaanSeeder::class,
             OfficeActivityInventoryCodeSeeder::class,
+            FullPersediaanSeeder::class,
         ]);
         
     }

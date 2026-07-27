@@ -81,7 +81,7 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-slate-100">
                     @forelse($barangs as $barang)
-                    <tr class="hover:bg-slate-50/50 transition-colors">
+                    <tr class="hover:bg-slate-50/50 transition-colors" data-id="{{ $barang->id }}" data-code="{{ $barang->code }}" data-name="{{ $barang->name }}" data-unit="{{ $barang->unit }}" data-category="{{ $barang->category }}">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-800">
                             {{ $barang->code }}
                         </td>
@@ -89,7 +89,7 @@
                             <div class="flex items-center gap-2">
                                 <span class="text-sm font-medium text-slate-700">{{ $barang->name }}</span>
                                 @php
-                                    $catName = $barang->kategori->nama ?? 'Umum';
+                                    $catName = $barang->kategori->nama ?? $barang->category ?? '';
                                     $isElektronik = stripos($catName, 'elektronik') !== false;
                                     $isKebersihan = stripos($catName, 'bersih') !== false;
                                     $isAtk = stripos($catName, 'atk') !== false;
@@ -131,13 +131,36 @@
                             {{ $barang->updated_at ? $barang->updated_at->format('d M Y') : '-' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button type="button" class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded hover:bg-slate-100">
-                                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="1" />
-                                    <circle cx="12" cy="5" r="1" />
-                                    <circle cx="12" cy="19" r="1" />
-                                </svg>
-                            </button>
+                            <div class="relative dropdown-container">
+                                <button type="button" onclick="toggleDropdown(event, this)"
+                                        class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded hover:bg-slate-100">
+                                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="1" />
+                                        <circle cx="12" cy="5" r="1" />
+                                        <circle cx="12" cy="19" r="1" />
+                                    </svg>
+                                </button>
+                                <div class="hidden absolute right-0 mt-1.5 w-44 bg-white rounded-xl border border-slate-200 shadow-lg z-50 py-1.5 origin-top-right">
+                                    <button type="button" onclick="openEditModal(this)"
+                                            class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                                        <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button type="button" onclick="confirmDelete(this)"
+                                            class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 transition-colors">
+                                        <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                            <line x1="10" y1="11" x2="10" y2="17"/>
+                                            <line x1="14" y1="11" x2="14" y2="17"/>
+                                        </svg>
+                                        Hapus
+                                    </button>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     @empty
@@ -216,4 +239,234 @@
             </div>
         </div>
 </div>
+
+{{-- ═══════════════════════════════════════════════════════════
+     EDIT MODAL
+═══════════════════════════════════════════════════════════ --}}
+<div id="editModal"
+     class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-200"
+     onclick="if(event.target===this) closeEditModal()">
+
+    <div id="editModalPanel"
+         class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden opacity-0 scale-95 translate-y-4 transition-all duration-200">
+
+        <form method="POST" id="editForm">
+            @csrf
+            <input type="hidden" name="id" id="editId">
+
+            <div class="p-6">
+                <div class="flex items-start justify-between gap-2 mb-6">
+                    <h3 class="text-lg font-extrabold text-slate-900">Edit Barang</h3>
+                    <button type="button" onclick="closeEditModal()"
+                            class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors -mr-1 -mt-1 shrink-0">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <div class="space-y-5">
+
+                    {{-- Kode Persediaan --}}
+                    <div>
+                        <label for="editKodePersediaan" class="block text-sm font-bold text-slate-700 mb-1.5">Kode Persediaan</label>
+                        <div class="relative">
+                            <select name="kode_persediaan" id="editKodePersediaan" onchange="autoFillKategori(this)"
+                                    class="block w-full pl-3.5 pr-10 py-2.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm appearance-none">
+                                <option value="">Pilih Kode Persediaan</option>
+                                @foreach($kodePersediaans->groupBy(fn($kp) => $kp->kategoriBarang->nama ?? 'Umum') as $kategori => $items)
+                                <optgroup label="{{ $kategori }}">
+                                    @foreach($items as $kp)
+                                    <option value="{{ $kp->kode }}" data-kategori="{{ $kategori }}">
+                                        {{ $kp->kode }} - {{ $kp->nama_barang }}
+                                    </option>
+                                    @endforeach
+                                </optgroup>
+                                @endforeach
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-400">Kategori akan terisi otomatis saat kode persediaan dipilih.</p>
+                    </div>
+
+                    {{-- Nama Barang --}}
+                    <div>
+                        <label for="editName" class="block text-sm font-bold text-slate-700 mb-1.5">Nama Barang</label>
+                        <input type="text" name="name" id="editName" required maxlength="255"
+                               class="block w-full px-3.5 py-2.5 text-sm font-medium text-slate-900 border border-slate-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm"
+                               placeholder="Masukkan nama barang">
+                        <p id="editErrorName" class="mt-1.5 text-xs font-medium text-rose-600 hidden"></p>
+                    </div>
+
+                    {{-- Kategori --}}
+                    <div>
+                        <label for="editCategory" class="block text-sm font-bold text-slate-700 mb-1.5">Kategori</label>
+                        <div class="relative">
+                            <select name="category" id="editCategory"
+                                    class="block w-full pl-3.5 pr-10 py-2.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm appearance-none">
+                                <option value="">Pilih Kategori</option>
+                                @foreach($kategoris as $kat)
+                                    <option value="{{ $kat->nama }}">{{ $kat->nama }}</option>
+                                @endforeach
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Satuan --}}
+                    <div>
+                        <label for="editUnit" class="block text-sm font-bold text-slate-700 mb-1.5">Satuan</label>
+                        <input type="text" name="unit" id="editUnit" maxlength="50"
+                               class="block w-full px-3.5 py-2.5 text-sm font-medium text-slate-900 border border-slate-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm"
+                               placeholder="Contoh: Unit, Buah, Box, dll">
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button type="button" onclick="closeEditModal()"
+                        class="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-white hover:border-slate-300 transition-all">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-sm bg-blue-600 hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- ═══════════════════════════════════════════════════════════
+     DELETE CONFIRMATION MODAL
+═══════════════════════════════════════════════════════════ --}}
+<x-confirm-modal
+    id="deleteModal"
+    title="Hapus Barang"
+    message='<span id="deleteMessage"></span>'
+    variant="danger"
+    confirmText="Ya, Hapus"
+    cancelText="Batal"
+    formAction="/master-barang/placeholder"
+    formMethod="POST"
+    formId="deleteForm"
+    :showCancel="true"
+/>
+
+@push('scripts')
+<script>
+// ── Dropdown toggle ─────────────────────────────────────
+function toggleDropdown(event, button) {
+    event.stopPropagation();
+    var container = button.closest('.dropdown-container');
+    var dropdown = container.querySelector('.dropdown-container > div:last-child');
+    var isOpen = !dropdown.classList.contains('hidden');
+    closeAllDropdowns();
+    if (!isOpen) {
+        dropdown.classList.remove('hidden');
+    }
+}
+
+function closeAllDropdowns() {
+    document.querySelectorAll('.dropdown-container > div:last-child').forEach(function(el) {
+        el.classList.add('hidden');
+    });
+}
+
+document.addEventListener('click', function() {
+    closeAllDropdowns();
+});
+
+// ── Auto-fill kategori dari kode persediaan ────────────
+function autoFillKategori(select) {
+    var selected = select.options[select.selectedIndex];
+    var kategori = selected ? selected.dataset.kategori : '';
+    if (kategori) {
+        document.getElementById('editCategory').value = kategori;
+    }
+}
+
+// ── Edit Modal ──────────────────────────────────────────
+function openEditModal(button) {
+    var tr = button.closest('tr');
+    var data = {
+        id: tr.dataset.id,
+        code: tr.dataset.code,
+        name: tr.dataset.name,
+        unit: tr.dataset.unit,
+        category: tr.dataset.category
+    };
+
+    document.getElementById('editId').value = data.id;
+    document.getElementById('editKodePersediaan').value = data.code;
+    document.getElementById('editName').value = data.name;
+    document.getElementById('editUnit').value = data.unit;
+    document.getElementById('editCategory').value = data.category;
+    document.getElementById('editForm').action = '/master-barang/' + data.id + '/update';
+
+    var errEl = document.getElementById('editErrorName');
+    errEl.classList.add('hidden');
+    errEl.textContent = '';
+
+    var modal = document.getElementById('editModal');
+    var panel = document.getElementById('editModalPanel');
+    modal.classList.remove('hidden');
+    requestAnimationFrame(function() {
+        panel.classList.remove('opacity-0', 'scale-95', 'translate-y-4');
+        panel.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+    });
+}
+
+function closeEditModal() {
+    var modal = document.getElementById('editModal');
+    var panel = document.getElementById('editModalPanel');
+    panel.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+    panel.classList.add('opacity-0', 'scale-95', 'translate-y-4');
+    setTimeout(function() { modal.classList.add('hidden'); }, 200);
+}
+
+// ── Delete Confirmation ────────────────────────────────
+function confirmDelete(button) {
+    var tr = button.closest('tr');
+    var id = tr.dataset.id;
+    var name = tr.dataset.name;
+
+    document.getElementById('deleteForm').action = '/master-barang/' + id + '/delete';
+    document.getElementById('deleteMessage').innerHTML = 'Apakah Anda yakin ingin menghapus barang <strong>' + name.replace(/</g, '&lt;') + '</strong>?<br><br>Data yang sudah dihapus tidak dapat dikembalikan.';
+
+    openConfirmModal('deleteModal');
+}
+
+// ── Re-open edit modal on validation error ─────────────
+@if($errors->any() && session('edit_id'))
+document.addEventListener('DOMContentLoaded', function() {
+    var editId = '{{ session('edit_id') }}';
+    document.getElementById('editId').value = editId;
+    document.getElementById('editKodePersediaan').value = '{{ old('kode_persediaan', '') }}';
+    document.getElementById('editName').value = '{{ old('name', '') }}';
+    document.getElementById('editUnit').value = '{{ old('unit', '') }}';
+    document.getElementById('editCategory').value = '{{ old('category', '') }}';
+    document.getElementById('editForm').action = '/master-barang/' + editId + '/update';
+
+    @if($errors->has('name'))
+    var errEl = document.getElementById('editErrorName');
+    errEl.textContent = '{{ $errors->first('name') }}';
+    errEl.classList.remove('hidden');
+    @endif
+
+    var modal = document.getElementById('editModal');
+    var panel = document.getElementById('editModalPanel');
+    modal.classList.remove('hidden');
+    requestAnimationFrame(function() {
+        panel.classList.remove('opacity-0', 'scale-95', 'translate-y-4');
+        panel.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+    });
+});
+@endif
+</script>
+@endpush
+
 @endsection
