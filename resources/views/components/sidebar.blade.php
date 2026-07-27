@@ -15,7 +15,7 @@
             {{-- ═══ Superadmin ═══ --}}
             <p class="px-7 pb-2 pt-5 text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Manajemen Sistem</p>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('superadminTab', 'users');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
                {{ $isTindakanActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
@@ -30,7 +30,7 @@
 
             <p class="px-7 pb-2 pt-5 text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Petugas Persediaan</p>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('officerTab', 'dashboard'); localStorage.setItem('superadminTab', 'dashboard'); localStorage.setItem('requesterTab', 'dashboard');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
                {{ $isTindakanActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
@@ -43,7 +43,7 @@
                 </span>
             </a>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('officerTab', 'checking'); localStorage.setItem('superadminTab', 'checking');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -68,7 +68,7 @@
                 </span>
             </a>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('officerTab', 'ocr'); localStorage.setItem('superadminTab', 'ocr');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -80,7 +80,7 @@
                 </span>
             </a>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('officerTab', 'report'); localStorage.setItem('superadminTab', 'report');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -107,7 +107,7 @@
 
             <p class="px-7 pb-2 pt-5 text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Ketua Tim Kerja</p>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('requesterTab', 'bon'); localStorage.setItem('superadminTab', 'bon');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -119,7 +119,7 @@
                 </span>
             </a>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('requesterTab', 'monitoring'); localStorage.setItem('superadminTab', 'monitoring');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -131,7 +131,7 @@
                 </span>
             </a>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('requesterTab', 'stock'); localStorage.setItem('superadminTab', 'stock_catalog');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -159,7 +159,7 @@
 
 @elseif($role === 'Petugas Persediaan')
             {{-- ═══ Petugas Persediaan ═══ --}}
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('officerTab', 'dashboard'); localStorage.setItem('superadminTab', 'dashboard'); localStorage.setItem('requesterTab', 'dashboard');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200
                {{ $isTindakanActive ? 'bg-blue-50 text-blue-700 border-blue-600 border-l-4' : 'border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700' }}">
                 <span class="flex min-w-0 items-center gap-3">
@@ -175,7 +175,7 @@
                 </span>
             </a>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('officerTab', 'checking'); localStorage.setItem('superadminTab', 'checking');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -200,7 +200,7 @@
                 </span>
             </a>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('officerTab', 'ocr'); localStorage.setItem('superadminTab', 'ocr');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -212,7 +212,7 @@
                 </span>
             </a>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('officerTab', 'report'); localStorage.setItem('superadminTab', 'report');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -237,7 +237,7 @@
                 </span>
             </a>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('officerTab', 'history'); localStorage.setItem('requesterTab', 'history'); localStorage.setItem('superadminTab', 'history');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-blue-50/70 hover:text-blue-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -267,7 +267,7 @@
                 </span>
             </a>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('requesterTab', 'bon'); localStorage.setItem('superadminTab', 'bon');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">
@@ -291,7 +291,7 @@
                 </span>
             </a>
 
-            <a href="/"
+            <a href="/" onclick="localStorage.setItem('requesterTab', 'stock'); localStorage.setItem('superadminTab', 'stock_catalog');"
                class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-amber-50/70 hover:text-amber-700">
                 <span class="flex min-w-0 items-center gap-3">
                     <span class="shrink-0">

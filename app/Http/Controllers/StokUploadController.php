@@ -311,6 +311,49 @@ class StokUploadController extends Controller
         return view('stok-upload.riwayat', compact('batches'));
     }
 
+    public function apiRiwayat()
+    {
+        $this->authorizeRole('Petugas Persediaan');
+        $batches = StokUpload::with('user')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return response()->json($batches);
+    }
+
+    public function apiStats()
+    {
+        $this->authorizeRole('Petugas Persediaan');
+        
+        $finalisedBatches = StokUpload::where('status', StokUpload::STATUS_SELESAI)->get();
+        
+        $totalBelanja = 0;
+        $totalPajak = 0;
+        
+        foreach ($finalisedBatches as $batch) {
+            $details = \App\Models\StokUploadDetail::where('stok_upload_id', $batch->id)
+                ->where('status_verification', 'Setuju')
+                ->get();
+                
+            foreach ($details as $detail) {
+                $totalBelanja += (float) $detail->total_calculated;
+                if ($detail->is_taxed) {
+                    $basePrice = (float) $detail->qty * (float) $detail->price_unit;
+                    $totalPajak += ((float) $detail->total_calculated - $basePrice);
+                }
+            }
+        }
+        
+        $pendingVerify = StokUpload::whereIn('status', [StokUpload::STATUS_MENUNGGU_VERIFIKASI, StokUpload::STATUS_SIAP_DIFINALISASI])->count();
+
+        return response()->json([
+            'total_belanja' => $totalBelanja,
+            'total_pajak' => $totalPajak,
+            'kuitansi_valid' => $finalisedBatches->count(),
+            'pending_verify' => $pendingVerify,
+        ]);
+    }
+
     // ──────────────────────────────────────────────────────────────
     // TRASH — soft-deleted batches (30-day holding bin)
     // ──────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ItemRequest, ReceiptData, RequestStatus } from "../types";
 import {
   FileText,
@@ -18,6 +18,19 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
   requests,
   receipts,
 }) => {
+  const [excelStats, setExcelStats] = useState({
+    total_belanja: 0,
+    total_pajak: 0,
+    kuitansi_valid: 0,
+    pending_verify: 0,
+  });
+
+  useEffect(() => {
+    fetch("/api/stok-upload/stats")
+      .then((res) => res.json())
+      .then((data) => setExcelStats(data))
+      .catch((err) => console.error("Failed to fetch excel stats", err));
+  }, []);
   // Requests stats
   const totalRequests = requests.length;
   const pendingCheck = requests.filter(
@@ -32,10 +45,9 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
     (r) => r.status === RequestStatus.SELESAI
   ).length;
 
-  // Receipts stats (only verified ones count toward official accounting)
-  const verifiedReceipts = receipts.filter((r) => r.isVerified);
-  const totalSpend = verifiedReceipts.reduce((sum, r) => sum + r.total, 0);
-  const totalTax = verifiedReceipts.reduce((sum, r) => sum + r.taxAmount, 0);
+  const totalSpend = excelStats.total_belanja;
+  const totalTax = excelStats.total_pajak;
+  const validDocsCount = excelStats.kuitansi_valid;
 
   const formatIDR = (num: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -62,7 +74,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
             {formatIDR(totalSpend)}
           </h3>
           <p className="text-xs text-slate-500 mt-1.5">
-            Dari {verifiedReceipts.length} kuitansi valid
+            Dari {validDocsCount} dokumen diverifikasi
           </p>
         </div>
       </div>
@@ -82,7 +94,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
             {formatIDR(totalTax)}
           </h3>
           <p className="text-xs text-slate-500 mt-1.5">
-            Akumulasi penyesuaian toko
+            Total PPN dari data belanja yang disetujui
           </p>
         </div>
       </div>
@@ -139,7 +151,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
           <div className="w-px h-6 bg-slate-200 self-center" />
           <div>
             <h3 className="text-lg font-extrabold text-rose-500 tracking-tight leading-none">
-              {receipts.filter((r) => !r.isVerified).length}
+              {excelStats.pending_verify}
             </h3>
             <p className="text-[10px] text-slate-500 mt-1.5 uppercase whitespace-nowrap">
               Verifikasi

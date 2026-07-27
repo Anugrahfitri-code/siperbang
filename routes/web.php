@@ -84,7 +84,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/master-barang/{id}/delete',   [\App\Http\Controllers\BarangController::class, 'destroy'])->name('master-barang.destroy');
 });
 
-// Protected API Routes
+    // Protected API Routes
 Route::middleware('auth')->prefix('api')->group(function () {
     // ---- Semua Authenticated User ----
     // Requests
@@ -98,6 +98,9 @@ Route::middleware('auth')->prefix('api')->group(function () {
 
     // Stock search — read-only, accessible by all authenticated roles
     Route::get('/stocks/search', [\App\Http\Controllers\Api\StockController::class, 'search']);
+
+    Route::get('/stok-upload/riwayat', [\App\Http\Controllers\StokUploadController::class, 'apiRiwayat'])->name('api.stok-upload.riwayat');
+    Route::get('/stok-upload/stats', [\App\Http\Controllers\StokUploadController::class, 'apiStats'])->name('api.stok-upload.stats');
 
     // ---- Ketua Tim & Superadmin ----
     Route::middleware('role:Ketua Tim,Ketua Tim Kerja,Superadmin')->group(function () {

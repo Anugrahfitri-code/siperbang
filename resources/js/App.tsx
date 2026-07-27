@@ -925,7 +925,9 @@ useEffect(() => {
 
         {/* Stats Section */}
         {currentRole !== UserRole.KETUA_TIM && (
-          <DashboardStats requests={requests} receipts={receipts} />
+          <div className="space-y-6 animate-fade-in">
+            <DashboardStats requests={requests} receipts={receipts} />
+          </div>
         )}
 
         {/* Role-Specific Workspaces */}

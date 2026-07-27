@@ -4,17 +4,21 @@
 <div class="w-full space-y-6">
     
     <!-- Title Page Header -->
-    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs flex items-center gap-4">
-        <div class="flex size-14 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
-            <svg class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <div class="relative bg-gradient-to-r from-[#f8faff] to-[#f0f4ff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center gap-5">
+        <!-- Glow effects -->
+        <div class="absolute right-0 top-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div class="absolute left-0 bottom-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+
+        <div class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-100 text-amber-500 relative z-10">
+            <svg class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                 <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
                 <line x1="12" y1="22.08" x2="12" y2="12" />
             </svg>
         </div>
-        <div>
-            <h1 class="text-xl font-bold leading-7 text-slate-900">Master Barang & Stok</h1>
-            <p class="text-sm font-normal leading-5 text-slate-500 mt-1">Kelola data master barang dan pantau stok persediaan secara real-time.</p>
+        <div class="relative z-10">
+            <h2 class="text-base font-extrabold text-slate-800 uppercase tracking-wide">MASTER BARANG & STOK</h2>
+            <p class="text-xs font-medium text-slate-500 mt-1">Kelola data master barang dan pantau stok persediaan secara real-time</p>
         </div>
     </div>
 
