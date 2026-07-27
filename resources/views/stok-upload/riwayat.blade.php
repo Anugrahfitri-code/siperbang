@@ -14,23 +14,58 @@ $statusColors = [
 ];
 @endphp
 
-{{-- ── Page header ─────────────────────────────────────────── --}}
-<div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-    <div>
-        <h1 class="text-lg font-extrabold text-slate-900 tracking-tight">Riwayat Upload Stok</h1>
-        <p class="text-xs text-slate-500 mt-0.5">Semua batch upload file Excel persediaan yang aktif.</p>
+{{-- ── Page header and module navigation ──────────────────── --}}
+<div class="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex min-w-0 items-start gap-4">
+            <div class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8m0-5v5h5m4-1v5l4 2"/></svg>
+            </div>
+            <div>
+                <div class="mb-1 flex flex-wrap items-center gap-2">
+                    <h1 class="text-lg font-extrabold tracking-tight text-slate-900">Riwayat Upload Stok</h1>
+                    <span class="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-2xs font-extrabold uppercase tracking-wider text-blue-700">
+                        {{ $batches->total() }} batch
+                    </span>
+                </div>
+                <p class="text-xs leading-5 text-slate-500">Pantau status pemeriksaan, verifikasi kode, finalisasi, dan pembatalan setiap file Excel.</p>
+            </div>
+        </div>
+
+        <div class="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
+            <a href="/?module=excel"
+               class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-extrabold text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 sm:flex-none">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+                Kembali
+            </a>
+            <a href="{{ route('stok-upload.trash') }}"
+               class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-extrabold text-slate-600 transition-colors hover:bg-slate-50 sm:flex-none">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                Sampah
+            </a>
+            <a href="/?module=excel"
+               class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-extrabold text-white shadow-sm transition-colors hover:bg-blue-700 sm:flex-none">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Upload Baru
+            </a>
+        </div>
     </div>
-    <div class="flex gap-2 flex-wrap">
-        <a href="{{ route('stok-upload.trash') }}"
-           class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-1.5">
-            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-            Sampah
-        </a>
-        <a href="{{ route('stok-upload.index') }}"
-           class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5">
-            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Upload Baru
-        </a>
+
+    <div class="border-t border-slate-200 bg-slate-50/70 px-3 sm:px-5">
+        <nav class="flex min-w-max items-center gap-1 overflow-x-auto" aria-label="Navigasi manajemen stok">
+            <a href="/?module=excel" class="flex items-center gap-2 border-b-2 border-transparent px-4 py-3 text-xs font-bold text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-800">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 14.899A7 7 0 1115.71 8h1.79a4.5 4.5 0 012.5 8.242M12 12v9m-4-5 4-4 4 4"/></svg>
+                Upload Excel
+            </a>
+            <span class="flex items-center gap-2 border-b-2 border-blue-600 px-4 py-3 text-xs font-extrabold text-blue-700">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8m0-5v5h5m4-1v5l4 2"/></svg>
+                Riwayat Upload
+            </span>
+            <a href="{{ route('master-barang.index') }}" class="flex items-center gap-2 border-b-2 border-transparent px-4 py-3 text-xs font-bold text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-800">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m7.5 4.27 9 5.15M21 8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16ZM3.3 7l8.7 5 8.7-5M12 22V12"/></svg>
+                Master Barang
+            </a>
+        </nav>
     </div>
 </div>
 
@@ -151,7 +186,7 @@ $statusColors = [
                         <div class="flex flex-col items-center gap-2 text-slate-400">
                             <svg class="h-10 w-10 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                             <p class="text-sm font-semibold">Belum ada riwayat upload.</p>
-                            <a href="{{ route('stok-upload.index') }}" class="text-xs text-indigo-600 hover:underline">Upload file Excel sekarang →</a>
+                            <a href="/?module=excel" class="text-xs text-indigo-600 hover:underline">Upload file Excel sekarang →</a>
                         </div>
                     </td>
                 </tr>
@@ -167,11 +202,6 @@ $statusColors = [
     @endif
 </div>
 
-<style>
-.btn-action {
-    @apply inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold transition-colors;
-}
-</style>
 
 {{-- Per-batch confirmation modals --}}
 @foreach($batches as $batch)

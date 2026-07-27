@@ -8,7 +8,7 @@ class UploadStokExcelRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check() && auth()->user()->role === 'Petugas Persediaan';
+        return auth()->check() && in_array(auth()->user()->role, ['Petugas Persediaan', 'Superadmin'], true);
     }
 
     public function rules(): array
@@ -16,6 +16,11 @@ class UploadStokExcelRequest extends FormRequest
         return [
             'file_excel' => 'required|file|mimes:xlsx,xls|max:10240',
         ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return route('stok-upload.index');
     }
 
     public function messages(): array

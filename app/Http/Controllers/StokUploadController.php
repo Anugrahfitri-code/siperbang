@@ -14,6 +14,7 @@ use App\Exceptions\ExcelValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class StokUploadController extends Controller
 {
@@ -37,7 +38,8 @@ class StokUploadController extends Controller
     {
         $file         = $request->file('file_excel');
         $originalName = $file->getClientOriginalName();
-        $storedName   = time() . '_' . $originalName;
+        $extension    = strtolower($file->getClientOriginalExtension());
+        $storedName   = now()->format('YmdHis') . '_' . Str::uuid() . '.' . $extension;
         $path         = $file->storeAs('private/uploads', $storedName);
         $fullPath     = Storage::path($path);
 
@@ -50,7 +52,9 @@ class StokUploadController extends Controller
             return redirect()->route('stok-upload.index')
                 ->with('upload_rejected', true);
         } catch (\Exception $e) {
-            return redirect()->back()
+            Storage::delete($path);
+
+            return redirect()->route('stok-upload.index')
                 ->withErrors(['file_excel' => 'Gagal memproses file: ' . $e->getMessage()]);
         }
     }
@@ -398,21 +402,21 @@ class StokUploadController extends Controller
     public function downloadTemplate()
     {
         $this->authorizeRole('Petugas Persediaan');
-        $sourcePath = 'D:/Belanja Persediaan 2026.xlsx';
-        $destDir    = public_path('templates');
-        $destPath   = $destDir . '/Belanja Persediaan 2026.xlsx';
 
-        if (! File::exists($destDir)) {
-            File::makeDirectory($destDir, 0755, true);
+        $templatePath = public_path('templates/Belanja Persediaan 2026.xlsx');
+
+        if (! File::exists($templatePath)) {
+            return redirect()->back()
+                ->with('error', 'Template Excel tidak tersedia. Hubungi administrator sistem.');
         }
 
-        if (File::exists($sourcePath)) {
-            File::copy($sourcePath, $destPath);
-            return response()->download($destPath, 'Belanja Persediaan 2026.xlsx');
-        }
-
-        return redirect()->back()
-            ->with('error', 'Template tidak ditemukan di D:/. Hubungi administrator.');
+        return response()->download(
+            $templatePath,
+            'Belanja Persediaan 2026.xlsx',
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ]
+        );
     }
 
     // ──────────────────────────────────────────────────────────────

@@ -111,7 +111,7 @@ $stepLabels = ['Upload File', 'Pemeriksaan Data', 'Verifikasi Kode', 'Review & F
        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors">
         Lanjut Verifikasi Kode →
     </a>
-    <a href="{{ route('stok-upload.index') }}"
+    <a href="/?module=excel"
        class="px-4 py-2 border border-amber-300 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-lg">
         ↺ Upload File Baru
     </a>

@@ -3,20 +3,45 @@
 @section('content')
 <div class="w-full space-y-6">
     
-    <!-- Title Page Header -->
-    <div class="bg-gradient-to-r from-white to-blue-50/50 rounded-xl border border-slate-200 p-6 shadow-xs flex justify-between items-center overflow-hidden relative">
-        <div class="flex items-center gap-4 relative z-10">
-            <div class="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-blue-50 text-blue-600 border-blue-100">
-                <svg class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
-                    <path d="M12 12v9" />
-                    <path d="m8 16 4-4 4 4" />
-                </svg>
+    <!-- Module Header -->
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex min-w-0 items-start gap-4">
+                <div class="flex size-14 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600">
+                    <svg class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+                        <path d="M12 12v9" />
+                        <path d="m8 16 4-4 4 4" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="mb-1 flex flex-wrap items-center gap-2">
+                        <h1 class="text-lg font-extrabold tracking-tight text-slate-900">Upload Stok & Persediaan Excel</h1>
+                        <span class="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-2xs font-extrabold uppercase tracking-wider text-emerald-700">Upload Aktif</span>
+                    </div>
+                    <p class="max-w-2xl text-xs leading-5 text-slate-500">Unggah laporan belanja persediaan untuk memeriksa data, memverifikasi kode, dan memperbarui stok gudang.</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-lg font-semibold leading-7 text-slate-900">Upload Stok & Persediaan Excel</h1>
-                <p class="text-sm font-normal leading-5 text-slate-500 mt-0.5">Unggah file laporan belanja belanja barang persediaan untuk memproses penambahan kuantiti stok gudang.</p>
-            </div>
+            <a href="/?module=excel" class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-extrabold text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+                Kembali ke Modul
+            </a>
+        </div>
+        <div class="border-t border-slate-200 bg-slate-50/70 px-3 sm:px-5">
+            <nav class="flex min-w-max items-center gap-1 overflow-x-auto" aria-label="Navigasi manajemen stok">
+                <span class="flex items-center gap-2 border-b-2 border-blue-600 px-4 py-3 text-xs font-extrabold text-blue-700">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 14.899A7 7 0 1115.71 8h1.79a4.5 4.5 0 012.5 8.242M12 12v9m-4-5 4-4 4 4"/></svg>
+                    Upload Excel
+                </span>
+                <a href="{{ route('stok-upload.riwayat') }}" class="flex items-center gap-2 border-b-2 border-transparent px-4 py-3 text-xs font-bold text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-800">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8m0-5v5h5m4-1v5l4 2"/></svg>
+                    Riwayat Upload
+                </a>
+                <a href="{{ route('master-barang.index') }}" class="flex items-center gap-2 border-b-2 border-transparent px-4 py-3 text-xs font-bold text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-800">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m7.5 4.27 9 5.15M21 8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16ZM3.3 7l8.7 5 8.7-5M12 22V12"/></svg>
+                    Master Barang
+                </a>
+            </nav>
         </div>
     </div>
 
