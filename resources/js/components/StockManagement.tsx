@@ -106,7 +106,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
             <Database size={24} />
           </div>
           <div>
-            <h2 className="text-lg font-semibold leading-7 text-slate-900">Manajemen Stok & Kode Persediaan</h2>
+            <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">Manajemen Stok & Kode Persediaan</h2>
             <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
               Unggah file Excel stok dan verifikasi kode persediaan barang masuk
             </p>

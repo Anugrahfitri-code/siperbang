@@ -333,7 +333,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
               {isEditMode ? <Edit3 size={28} strokeWidth={2.5} /> : <ClipboardList size={28} strokeWidth={2.5} />}
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+              <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
                 {isEditMode ? `Edit Draft — ${initialData?.bonNo}` : "BON Digital"}
               </h2>
               <p className="text-sm font-medium text-slate-500 mt-1">
