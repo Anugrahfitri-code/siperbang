@@ -13,8 +13,8 @@ interface StockCheckingProps {
     qtyAvailable: number,
     qtyFulfilled: number,
     logMessage: string,
-    deductStock?: { code: string; qtyToDeduct: number }
-  ) => void;
+    deductStock?: { id: string | number; qtyToDeduct: number }
+  ) => Promise<void>;
   onDistribute: (reqId: string, data: {
     stockItemId: string;
     qtyDistributed: number;
@@ -110,7 +110,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
 
     let finalStatus: RequestStatus;
     let logMessage = "";
-    let stockItemToDeduct: { code: string; qtyToDeduct: number } | undefined;
+    let stockItemToDeduct: { id: string | number; qtyToDeduct: number } | undefined;
 
     // Gunakan barang yang dipilih manual (sudah di-set di selectedStockItem)
     const stockItem = selectedStockItem;
@@ -119,13 +119,13 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
       finalStatus = RequestStatus.TERPENUHI;
       logMessage = `Pengecekan Stok: Seluruh barang tersedia (${fulfilled} ${selectedRequest.unit}). Dialokasikan untuk didistribusikan.`;
       if (stockItem) {
-        stockItemToDeduct = { code: stockItem.code, qtyToDeduct: fulfilled };
+        stockItemToDeduct = { id: stockItem.id, qtyToDeduct: fulfilled };
       }
     } else if (fulfilled > 0 && fulfilled < requested) {
       finalStatus = RequestStatus.TERPENUHI_SEBAGIAN;
       logMessage = `Pengecekan Stok: Hanya tersedia ${fulfilled} dari ${requested} ${selectedRequest.unit}. Sisanya ${unfulfilled} ${selectedRequest.unit} diteruskan ke proses pengadaan.`;
       if (stockItem) {
-        stockItemToDeduct = { code: stockItem.code, qtyToDeduct: fulfilled };
+        stockItemToDeduct = { id: stockItem.id, qtyToDeduct: fulfilled };
       }
     } else {
       finalStatus = RequestStatus.PERLU_PENGADAAN;

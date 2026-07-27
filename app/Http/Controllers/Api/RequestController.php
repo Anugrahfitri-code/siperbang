@@ -144,10 +144,10 @@ class RequestController extends Controller
             'qtyFulfilled' => 'required|integer|min:0',
             'verifier_notes' => 'nullable|string',
             'deductStock' => 'nullable|array',
-            'deductStock.code' => [
+            'deductStock.id' => [
                 'required_with:deductStock',
-                'string',
-                'exists:stock_items,code',
+                'integer',
+                'exists:stock_items,id',
             ],
             'deductStock.qtyToDeduct' => [
                 'required_with:deductStock',
@@ -160,7 +160,7 @@ class RequestController extends Controller
         try {
             $stockItem = null;
             if (isset($validated['deductStock']) && $validated['deductStock'] !== null) {
-                $stockItem = StockItem::where('code', $validated['deductStock']['code'])->first();
+                $stockItem = StockItem::find($validated['deductStock']['id']);
                 if ($stockItem && !$itemRequest->stock_allocated) {
                     $qtyToDeduct = $validated['deductStock']['qtyToDeduct'];
                     if ($stockItem->qty < $qtyToDeduct) {
