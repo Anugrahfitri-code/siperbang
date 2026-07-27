@@ -892,7 +892,7 @@ useEffect(() => {
                       <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
                         <Bell size={24} />
                       </div>
-                      <h3 className="text-sm font-extrabold text-slate-800 tracking-wide uppercase">
+                      <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
                         Antrian Pengajuan BON Masuk Baru
                       </h3>
                     </div>
@@ -1077,7 +1077,7 @@ useEffect(() => {
                       <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
                         <Bell size={24} />
                       </div>
-                      <h3 className="text-sm font-extrabold text-slate-800 tracking-wide uppercase">
+                      <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
                         Antrian Pengajuan BON Masuk Baru
                       </h3>
                     </div>
