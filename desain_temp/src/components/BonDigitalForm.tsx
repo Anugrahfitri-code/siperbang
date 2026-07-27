@@ -1,6 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ItemRequest, RequestStatus } from "../types";
 import { ClipboardList, Plus, Sparkles, Send } from "lucide-react";
+
+interface User {
+  id: number;
+  name: string;
+  username: string;
+  role: string;
+}
 
 interface BonDigitalFormProps {
   onAddRequest: (newReq: Omit<ItemRequest, "id" | "bonNo" | "status" | "qtyAvailable" | "qtyFulfilled" | "lastUpdated">) => void;
@@ -26,6 +33,33 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
   const [unit, setUnit] = useState("Rim");
   const [notes, setNotes] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [selectedPengaju, setSelectedPengaju] = useState("");
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch("/api/users");
+        if (!res.ok) throw new Error("Gagal memuat data user");
+        const json = await res.json();
+        const userList: User[] = Array.isArray(json) ? json : (json.data ?? []);
+        const filteredUsers = userList.filter(
+          (u: any) => u.role === "Ketua Tim Kerja" || u.role === "Superadmin"
+        );
+        setUsers(filteredUsers);
+        if (filteredUsers.length > 0) {
+          setSelectedPengaju(filteredUsers[0].username);
+        }
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        setUsers([]);
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,14 +131,29 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
           {/* Pengaju */}
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-              Nama Pengaju (Ketua Tim)
+              Nama Pengaju
             </label>
-            <input
-              type="text"
-              value={currentUser}
-              disabled
-              className="w-full bg-slate-100 border border-slate-200 rounded px-3 py-2 text-xs font-semibold text-slate-400 cursor-not-allowed"
-            />
+            <select
+              value={selectedPengaju}
+              onChange={(e) => setSelectedPengaju(e.target.value)}
+              disabled={usersLoading}
+              className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-60"
+            >
+              {usersLoading ? (
+                <option>Memuat...</option>
+              ) : users.length === 0 ? (
+                <option>Tidak ada user</option>
+              ) : (
+                users.map((user) => {
+                  const roleLabel = user.role === "Ketua Tim Kerja" ? "Ketua Tim" : "Admin";
+                  return (
+                    <option key={user.id} value={user.username}>
+                      {user.name} ({user.username}) - {roleLabel}
+                    </option>
+                  );
+                })
+              )}
+            </select>
           </div>
         </div>
 

@@ -22,7 +22,8 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
     username: "",
     role: UserRole.PETUGAS_PERSERDIAN,
     status: "Aktif",
-    section: ""
+    section: "",
+    password: ""
   });
 
   const filteredUsers = users.filter(u => 
@@ -44,7 +45,8 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
       username: "",
       role: UserRole.PETUGAS_PERSERDIAN,
       status: "Aktif",
-      section: ""
+      section: "",
+      password: ""
     });
   };
 
@@ -54,7 +56,8 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
       username: user.username,
       role: user.role,
       status: user.status,
-      section: user.section || ""
+      section: user.section || "",
+      password: ""
     });
     setEditingId(user.id);
     setShowAddForm(true);
@@ -98,7 +101,7 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
           <button
             onClick={() => {
               setEditingId(null);
-              setFormData({ name: "", username: "", role: UserRole.PETUGAS_PERSERDIAN, status: "Aktif", section: "" });
+              setFormData({ name: "", username: "", password: "", role: UserRole.PETUGAS_PERSERDIAN, status: "Aktif", section: "" });
               setShowAddForm(true);
             }}
             className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2"
@@ -111,7 +114,7 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
         {showAddForm && (
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 mb-6">
             <h3 className="text-sm font-extrabold text-slate-800 mb-4">{editingId ? "Edit Akun" : "Tambah Akun Baru"}</h3>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} autoComplete="off" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap</label>
                 <input
@@ -129,12 +132,28 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
                 <input
                   type="text"
                   required
+                  autoComplete="off"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   className="w-full border border-slate-200 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
                   placeholder="Contoh: budi.tu"
                 />
               </div>
+
+              {!editingId && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Password</label>
+                  <input
+                    type="password"
+                    required
+                    autoComplete="new-password"
+                    value={formData.password || ""}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full border border-slate-200 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                    placeholder="••••••••"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Peran Akses</label>
@@ -145,7 +164,6 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
                 >
                   <option value={UserRole.PETUGAS_PERSERDIAN}>Petugas Persediaan</option>
                   <option value={UserRole.KETUA_TIM}>Ketua Tim Kerja</option>
-                  <option value={UserRole.SUPERADMIN}>Superadmin</option>
                 </select>
               </div>
               
@@ -157,7 +175,6 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
                   onChange={(e) => setFormData({ ...formData, section: e.target.value })}
                   className="w-full border border-slate-200 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
                   placeholder="Contoh: Tata Usaha"
-                  disabled={formData.role === UserRole.PETUGAS_PERSERDIAN || formData.role === UserRole.SUPERADMIN}
                 />
               </div>
 

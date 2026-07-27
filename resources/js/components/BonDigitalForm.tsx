@@ -39,6 +39,13 @@ import { apiFetch } from "../api";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+interface User {
+  id: number;
+  name: string;
+  username: string;
+  role: string;
+}
+
 interface BonItem {
   barang_id:     number;
   nama_barang:   string;
@@ -106,6 +113,35 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
   const [keperluan, setKeperluan] = useState("");
   const [catatan,   setCatatan]   = useState("");
   const [items,     setItems]     = useState<BonItem[]>([]);
+  const [selectedPengaju, setSelectedPengaju] = useState("");
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+
+  // Fetch users on component mount
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await apiFetch("/api/users");
+        if (!res.ok) throw new Error("Gagal memuat data user");
+        const json = await res.json();
+        const userList: User[] = Array.isArray(json) ? json : (json.data ?? []);
+        // Filter users dengan role Ketua Tim Kerja atau Superadmin saja
+        const filteredUsers = userList.filter(
+          (u: any) => u.role === "Ketua Tim Kerja" || u.role === "Superadmin"
+        );
+        setUsers(filteredUsers);
+        if (filteredUsers.length > 0) {
+          setSelectedPengaju(filteredUsers[0].username);
+        }
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        setUsers([]);
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []);
 
   // Pre-fill when initialData changes (entering edit mode)
   useEffect(() => {
@@ -423,8 +459,27 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                     </div>
-                    <input type="text" value={`${currentUser} (Ketua Tim Kerja)`} disabled
-                      className="w-full pl-9 pr-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 cursor-not-allowed" />
+                    <select
+                      value={selectedPengaju}
+                      onChange={(e) => setSelectedPengaju(e.target.value)}
+                      disabled={usersLoading}
+                      className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:opacity-60"
+                    >
+                      {usersLoading ? (
+                        <option>Memuat...</option>
+                      ) : users.length === 0 ? (
+                        <option>Tidak ada user</option>
+                      ) : (
+                        users.map((user) => {
+                          const roleLabel = user.role === "Ketua Tim Kerja" ? "Ketua Tim" : "Admin";
+                          return (
+                            <option key={user.id} value={user.username}>
+                              {user.name} ({user.username}) - {roleLabel}
+                            </option>
+                          );
+                        })
+                      )}
+                    </select>
                   </div>
                 </div>
 

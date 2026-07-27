@@ -352,13 +352,43 @@ useEffect(() => {
   };
 
   // User Management Actions
-  const handleAddUser = (newUser: Omit<UserAccount, "id">) => {
-    const userWithId = {
-      ...newUser,
-      id: "u-" + Math.random().toString(36).substring(2, 9),
-    };
-    setUsers((prev) => [...prev, userWithId]);
-    addLog(currentUser, "Tambah Pengguna", `Menambahkan akun baru: ${newUser.name} (${newUser.role})`);
+  const handleAddUser = async (newUser: Omit<UserAccount, "id">) => {
+    try {
+      const response = await apiFetch("/api/users", {
+        method: "POST",
+        body: JSON.stringify(newUser),
+      });
+
+      if (response.ok) {
+        const createdUser = await response.json();
+        setUsers((prev) => [...prev, createdUser]);
+        addLog(currentUser, "Tambah Pengguna", `Menambahkan akun baru: ${newUser.name} (${newUser.role})`);
+        
+        // Show success alert
+        setAlertMsg({
+          title: "Berhasil",
+          message: "Akun pengguna baru berhasil ditambahkan.",
+          variant: "success",
+        });
+        setTimeout(() => setAlertMsg(null), 3000);
+      } else {
+        const data = await response.json();
+        setAlertMsg({
+          title: "Gagal Menambah Akun",
+          message: data.message || "Terjadi kesalahan saat menambah akun.",
+          variant: "danger",
+        });
+        setTimeout(() => setAlertMsg(null), 4000);
+      }
+    } catch (error) {
+      console.error("Gagal menambah pengguna:", error);
+      setAlertMsg({
+        title: "Kesalahan",
+        message: "Gagal menghubungi server.",
+        variant: "danger",
+      });
+      setTimeout(() => setAlertMsg(null), 4000);
+    }
   };
 
   const handleUpdateUser = (id: string, updates: Partial<UserAccount>) => {

@@ -124,7 +124,6 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
                 >
                   <option value={UserRole.PETUGAS_PERSERDIAN}>Petugas Persediaan</option>
                   <option value={UserRole.KETUA_TIM}>Ketua Tim Kerja</option>
-                  <option value={UserRole.SUPERADMIN}>Superadmin</option>
                 </select>
               </div>
               
