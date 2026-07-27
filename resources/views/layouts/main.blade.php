@@ -196,53 +196,7 @@
     <div id="mainContent"
          class="flex min-h-[calc(100vh-4rem)] flex-1 flex-col transition-[margin] duration-300 ease-in-out lg:ml-0">
 
-        {{-- ═══════════════════════════════════════════════════════════
-             SUB-NAVIGASI MODUL PERSEDIAAN (Upload Excel | Riwayat Upload | Master Barang)
-        ═══════════════════════════════════════════════════════════ --}}
-        @if(request()->is('stok-upload*') || request()->is('master-barang*'))
-        <div class="border-b border-slate-200 bg-white shrink-0">
-            <div class="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8">
-                <nav class="flex items-center h-10 w-full">
-                    <a href="{{ route('stok-upload.index') }}"
-                       class="h-full inline-flex gap-2 items-center justify-center flex-1 px-4 text-[13px] font-semibold border-b-2 transition-colors
-                       {{ request()->is('stok-upload') && !request()->is('stok-upload/*')
-                            ? 'border-blue-600 text-blue-700'
-                            : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300' }}">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
-                            <path d="M12 12v9" />
-                            <path d="m8 16 4-4 4 4" />
-                        </svg>
-                        Upload Excel
-                    </a>
-                    <a href="{{ route('stok-upload.riwayat') }}"
-                       class="h-full inline-flex gap-2 items-center justify-center flex-1 px-4 text-[13px] font-semibold border-b-2 transition-colors
-                       {{ request()->is('stok-upload/riwayat*') || request()->is('stok-upload/*/stepper') || request()->is('stok-upload/sampah')
-                            ? 'border-blue-600 text-blue-700'
-                            : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300' }}">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        Riwayat Upload
-                    </a>
-                    <a href="{{ route('master-barang.index') }}"
-                       class="h-full inline-flex gap-2 items-center justify-center flex-1 px-4 text-[13px] font-semibold border-b-2 transition-colors
-                       {{ request()->is('master-barang*')
-                            ? 'border-blue-600 text-blue-700'
-                            : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300' }}">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m7.5 4.27 9 5.15" />
-                            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-                            <path d="m3.3 7 8.7 5 8.7-5" />
-                            <path d="M12 22V12" />
-                        </svg>
-                        Master Barang
-                    </a>
-                </nav>
-            </div>
-        </div>
-        @endif
+
 
         <main class="mx-auto w-full max-w-[1600px] flex-1 px-4 py-7 sm:px-6 lg:px-8">
 

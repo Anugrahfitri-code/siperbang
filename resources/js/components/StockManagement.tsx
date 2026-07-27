@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { StockItem } from "../types";
-import { FileUp, FileSpreadsheet, Check, CheckCircle2, ShieldCheck, Database, RefreshCcw } from "lucide-react";
+import { FileUp, FileSpreadsheet, Check, CheckCircle2, ShieldCheck, Database, RefreshCcw, CloudUpload, Clock, Package, DownloadCloud, ArrowRight, BookOpen, AlertCircle, Filter, Search } from "lucide-react";
 
 interface StockManagementProps {
   stockList: StockItem[];
@@ -100,25 +100,34 @@ export const StockManagement: React.FC<StockManagementProps> = ({
   return (
     <div className="space-y-6">
       {/* Banner */}
-      <div className="relative bg-gradient-to-r from-[#f8faff] to-[#f0f4ff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-5">
-        {/* Glow effects */}
-        <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-        <div className="absolute left-0 bottom-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
-        
-        <div className="flex items-center gap-4 relative z-10">
-          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-100 text-indigo-600">
+      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-5 relative">
+        <div className="flex items-center gap-4">
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600">
             <Database size={26} strokeWidth={2.5} />
           </div>
           <div>
             <h2 className="text-base font-extrabold text-slate-800 uppercase tracking-wide">Manajemen Stok & Kode Persediaan</h2>
             <p className="text-xs font-medium text-slate-500 mt-1">
-              Unggah file Excel stok dan verifikasi kode persediaan barang masuk
+              Unggah file Excel stok dan persediaan, verifikasi kode barang,<br className="hidden xl:block"/> dan kelola data inventori dengan mudah.
             </p>
           </div>
         </div>
 
+        {/* Center Tabs */}
+        <div className="flex items-center gap-6 xl:absolute xl:left-1/2 xl:-translate-x-1/2 xl:bottom-0 xl:h-full mt-4 xl:mt-0">
+          <button className="flex items-center gap-2 text-blue-600 font-bold text-sm border-b-2 border-blue-600 h-full pb-2 xl:pb-0 xl:pt-1">
+            <CloudUpload size={16} /> Upload Excel
+          </button>
+          <button onClick={() => window.location.href = '/stok-upload/riwayat'} className="flex items-center gap-2 text-slate-500 font-bold text-sm h-full pb-2 xl:pb-0 xl:pt-1 hover:text-slate-700">
+            <Clock size={16} /> Riwayat Upload
+          </button>
+          <button onClick={() => window.location.href = "/master-barang"} className="flex items-center gap-2 text-slate-500 font-bold text-sm h-full pb-2 xl:pb-0 xl:pt-1 hover:text-slate-700">
+            <Package size={16} /> Master Barang
+          </button>
+        </div>
+
         {/* View Tabs */}
-        <div className="flex bg-white/60 backdrop-blur border border-slate-200/60 rounded-md overflow-hidden relative z-10 shadow-xs self-start md:self-auto">
+        <div className="flex bg-white border border-slate-200 rounded-md overflow-hidden relative z-10 shadow-xs self-start xl:self-auto">
           <button
             onClick={() => setActiveTab("current")}
             className={`px-6 py-2.5 text-xs font-bold transition-all ${
@@ -150,35 +159,95 @@ export const StockManagement: React.FC<StockManagementProps> = ({
       </div>
 
       {/* Upload Drag & Drop Area */}
-      <div className="mb-8">
+      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div className="flex items-center gap-2 mb-4 text-blue-600 font-bold text-sm">
+          <CloudUpload size={18} /> Upload Stok & Persediaan Excel
+        </div>
         <div
-          onClick={() => window.location.href = '/stok-upload'}
-          className="block border-2 border-dashed border-indigo-200 bg-indigo-50/20 rounded-xl py-12 px-6 text-center hover:bg-indigo-50/50 cursor-pointer transition-all"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={handleSimulateUpload}
+          className={`border-2 border-dashed rounded-xl py-12 px-6 text-center cursor-pointer transition-all ${
+            isDragging ? 'border-blue-400 bg-blue-100/50' : 'border-blue-200 bg-blue-50/30 hover:bg-blue-50/50'
+          }`}
         >
-          <div className="mx-auto w-12 h-12 bg-white rounded-full border border-indigo-100 flex items-center justify-center shadow-xs mb-3">
-            <FileSpreadsheet size={24} className="text-emerald-500" strokeWidth={2} />
+          <div className="mx-auto w-12 h-12 bg-white rounded-full border border-blue-100 flex items-center justify-center shadow-xs mb-3 text-blue-500">
+            <CloudUpload size={24} strokeWidth={2} />
           </div>
-          <h4 className="text-base font-extrabold text-slate-800 mb-1">
-            Buka Modul Upload File Excel Stok (Laravel)
-          </h4>
-          <p className="text-xs text-slate-500 mb-5">
-            Klik di sini untuk berpindah ke halaman khusus Upload & Verifikasi Excel yang baru dibuat.
+          <p className="text-sm font-bold text-slate-700 mb-1">
+            Seret & lepas file Anda ke sini, atau klik untuk menelusuri
           </p>
-          <div className="inline-flex items-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-lg font-bold text-xs hover:bg-emerald-700 shadow-sm transition-colors">
-            <FileUp size={14} />
-            <span>Buka Halaman Upload</span>
+          <p className="text-xs text-slate-500">
+            Hanya menerima format Excel (.xlsx, .xls) dengan ukuran maks 10MB
+          </p>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4">
+          <button className="flex items-center gap-2 text-blue-600 font-bold text-xs hover:text-blue-700">
+            <DownloadCloud size={14} /> Download Template Excel
+          </button>
+          <button onClick={handleSimulateUpload} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2">
+            Mulai Proses Upload <ArrowRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Petunjuk Area */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4 mb-8">
+        <div className="flex items-center gap-2 text-blue-600 font-bold text-sm uppercase tracking-wide">
+          <BookOpen size={16} /> PETUNJUK FORMAT DOKUMEN EXCEL
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-xs text-slate-600">
+          <div className="space-y-2">
+            <h4 className="font-bold text-blue-600">1. Struktur Dokumen</h4>
+            <ul className="list-disc pl-4 space-y-1.5 marker:text-slate-400">
+              <li>Dapat berisi banyak sheet (sistem akan membaca <strong>seluruh sheet</strong>).</li>
+              <li>Setiap sheet mewakili satu nota/transaksi (contoh nama: <code className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">020126 RP</code>).</li>
+              <li>Informasi Supplier/Nama Toko di baris 2 Kolom A (contoh: <code className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">SUPPLIER : REDZKY PLASTIK</code>).</li>
+              <li>Header tabel di baris 4 dan baris data dimulai dari baris 5.</li>
+            </ul>
           </div>
+          <div className="space-y-2">
+            <h4 className="font-bold text-blue-600">2. Layout Tabel yang Didukung</h4>
+            <ul className="list-disc pl-4 space-y-1.5 marker:text-slate-400">
+              <li><strong>Format Tanpa Pajak:</strong> A (No), B (Kode), C (Nama), D (Jumlah), E (Satuan), F (Harga Satuan), G (Total).</li>
+              <li><strong>Format Dengan Pajak:</strong> A (No), B (Kode), C (Nama), D (Jumlah), E (Satuan), F (Harga Satuan), G (Harga + Pajak), H (Total), I (Pajak).</li>
+              <li>Baris total di baris paling bawah akan dilewati secara otomatis.</li>
+            </ul>
+          </div>
+        </div>
+        <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-800 flex gap-2 mt-4">
+          <AlertCircle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+          <p>
+            <strong>Catatan Perhitungan Pajak:</strong> Jika sheet memuat kolom Pajak (bernilai 1.11 atau formula serupa) atau kolom Harga Satuan + Pajak, sistem akan otomatis melakukan perbandingan total belanja dengan menyertakan PPN 11% sesuai aturan instansi.
+          </p>
         </div>
       </div>
 
       {/* Main Tab Contents */}
-      <div className="mb-2">
-        <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-3">
-          {activeTab === "current" ? "DAFTAR BARANG STOK AKTIF" : "DAFTAR BARANG MENUNGGU VERIFIKASI KODE"}
-        </h3>
-      </div>
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-50 text-blue-600 p-1.5 rounded-lg">
+              <FileSpreadsheet size={16} />
+            </div>
+            <h3 className="text-sm font-extrabold text-slate-800">
+              {activeTab === "current" ? "Daftar Barang Stok Aktif" : "Daftar Barang Menunggu Verifikasi"}
+            </h3>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-none">
+              <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
+              <input type="text" placeholder="Cari kode atau nama barang..." className="w-full sm:w-64 pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            </div>
+            <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50">
+              <Filter size={14} /> Filter
+            </button>
+          </div>
+        </div>
       {activeTab === "current" ? (
-        <div className="overflow-x-auto border border-slate-200 rounded">
+        <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
@@ -302,6 +371,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
           )}
         </div>
       )}
+      </div>
     </div>
   );
 };
