@@ -239,6 +239,23 @@ class RequestController extends Controller
                 $stockItem->last_updated = today();
                 $stockItem->save();
                 $itemRequest->stock_allocated = true;
+            } else {
+                // Jika stok sebelumnya dialokasikan, periksa apakah yang didistribusikan melebihi yang sebelumnya dialokasikan
+                if ($validated['qtyDistributed'] > $itemRequest->qty_fulfilled) {
+                    $extraNeeded = $validated['qtyDistributed'] - $itemRequest->qty_fulfilled;
+                    if ($stockItem->qty < $extraNeeded) {
+                        throw new \Exception("Stok gudang tidak mencukupi untuk tambahan distribusi.");
+                    }
+                    $stockItem->qty -= $extraNeeded;
+                    $stockItem->last_updated = today();
+                    $stockItem->save();
+                }
+            }
+
+            // Update qty_fulfilled and qty_to_procure berdasarkan jumlah aktual yang didistribusikan
+            if ($validated['qtyDistributed'] > $itemRequest->qty_fulfilled) {
+                $itemRequest->qty_fulfilled = $validated['qtyDistributed'];
+                $itemRequest->qty_to_procure = max(0, $itemRequest->qty_requested - $itemRequest->qty_fulfilled);
             }
 
             Distribution::create([
