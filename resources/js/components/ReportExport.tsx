@@ -413,16 +413,20 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
 
   return (
     <>
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-        {/* Header Modul */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-slate-100 pb-6">
-          <div className="flex items-center gap-4">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-emerald-50 text-emerald-600 border-emerald-100">
-              <FileSpreadsheet size={24} />
+      <div className="space-y-6">
+        {/* Banner */}
+        <div className="relative bg-gradient-to-r from-[#f8faff] to-[#f0f4ff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-5">
+          {/* Glow effects */}
+          <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+          <div className="absolute left-0 bottom-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+          
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-100 text-emerald-600">
+              <FileSpreadsheet size={26} strokeWidth={2.5} />
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">Rekap Laporan & Export Excel</h2>
-              <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
+              <h2 className="text-base font-extrabold text-slate-800 uppercase tracking-wide">Rekap Laporan & Export Excel</h2>
+              <p className="text-xs font-medium text-slate-500 mt-1">
                 Saring laporan kuitansi tervalidasi dan unduh spreadsheet Excel berformat rapi
               </p>
             </div>
@@ -431,7 +435,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
           <button
             onClick={handleRealExport}
             disabled={isExporting}
-            className="px-5 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm bg-blue-600 hover:bg-blue-700 text-white"
+            className="relative z-10 px-5 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm bg-blue-600 hover:bg-blue-700 text-white"
           >
             {isExporting ? (
               <>
@@ -455,7 +459,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
         )}
 
         {/* Filter Bar */}
-        <div className="bg-white rounded-lg border border-slate-200 p-4 mb-8 space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 mb-1.5">Format Tampilan Excel</label>
@@ -512,8 +516,8 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
         </div>
 
 
-        <div className="mt-4">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-5">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-emerald-50 text-emerald-600 border-emerald-100">
               <FileSpreadsheet size={20} />
             </div>
@@ -595,8 +599,11 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
                           <FileSpreadsheet size={48} className="text-slate-300" strokeWidth={1} />
                           <Search size={24} className="text-slate-400 absolute -bottom-2 -right-2 bg-white rounded-full p-0.5" strokeWidth={2} />
                         </div>
-                        <p className="text-sm font-medium text-slate-500">
-                          Belum ada data kuitansi tervalidasi yang cocok dengan kriteria saringan Anda.
+                        <p className="text-xs font-bold text-slate-500 mb-1">
+                          Belum ada data untuk ditampilkan
+                        </p>
+                        <p className="text-xs font-medium text-slate-400">
+                          Silakan sesuaikan filter atau lakukan pencarian
                         </p>
                       </div>
                     </td>
