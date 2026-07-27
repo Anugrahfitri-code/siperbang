@@ -38,9 +38,25 @@
                 <div class="w-full md:w-56 shrink-0 relative">
                     <select name="kategori_id" class="block w-full pl-4 pr-10 py-2.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm appearance-none">
                         <option value="">Semua Kategori</option>
+                        @php
+                            $printedCategories = [];
+                        @endphp
                         @foreach($kategoris as $kat)
+                            @php
+                                $displayName = ucwords(strtolower($kat->nama));
+                                $displayName = str_replace(
+                                    ['(Atk)', ' Dan ', ' Untuk '], 
+                                    ['(ATK)', ' dan ', ' untuk '], 
+                                    $displayName
+                                );
+                                
+                                if (in_array($displayName, $printedCategories)) {
+                                    continue;
+                                }
+                                $printedCategories[] = $displayName;
+                            @endphp
                             <option value="{{ $kat->nama }}" {{ request('kategori_id') == $kat->nama ? 'selected' : '' }}>
-                                {{ $kat->nama }}
+                                {{ $displayName }}
                             </option>
                         @endforeach
                     </select>
@@ -272,7 +288,14 @@
                             <select name="kode_persediaan" id="editKodePersediaan" onchange="autoFillKategori(this)"
                                     class="block w-full pl-3.5 pr-10 py-2.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm appearance-none">
                                 <option value="">Pilih Kode Persediaan</option>
-                                @foreach($kodePersediaans->groupBy(fn($kp) => $kp->kategoriBarang->nama ?? 'Umum') as $kategori => $items)
+                                @php
+                                    $groupedKodes = $kodePersediaans->groupBy(function($kp) {
+                                        $name = $kp->kategoriBarang->nama ?? 'Umum';
+                                        $displayName = ucwords(strtolower($name));
+                                        return str_replace(['(Atk)', ' Dan ', ' Untuk '], ['(ATK)', ' dan ', ' untuk '], $displayName);
+                                    });
+                                @endphp
+                                @foreach($groupedKodes as $kategori => $items)
                                 <optgroup label="{{ $kategori }}">
                                     @foreach($items as $kp)
                                     <option value="{{ $kp->kode }}" data-kategori="{{ $kategori }}">
@@ -305,8 +328,19 @@
                             <select name="category" id="editCategory"
                                     class="block w-full pl-3.5 pr-10 py-2.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm appearance-none">
                                 <option value="">Pilih Kategori</option>
+                                @php
+                                    $printedEditCategories = [];
+                                @endphp
                                 @foreach($kategoris as $kat)
-                                    <option value="{{ $kat->nama }}">{{ $kat->nama }}</option>
+                                    @php
+                                        $displayName = ucwords(strtolower($kat->nama));
+                                        $displayName = str_replace(['(Atk)', ' Dan ', ' Untuk '], ['(ATK)', ' dan ', ' untuk '], $displayName);
+                                        if (in_array($displayName, $printedEditCategories)) {
+                                            continue;
+                                        }
+                                        $printedEditCategories[] = $displayName;
+                                    @endphp
+                                    <option value="{{ $kat->nama }}">{{ $displayName }}</option>
                                 @endforeach
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
