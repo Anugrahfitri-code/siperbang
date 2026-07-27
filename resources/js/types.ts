@@ -15,6 +15,7 @@ export interface UserAccount {
   role: UserRole;
   section?: string;
   username: string;
+  password?: string;
   status: "Aktif" | "Nonaktif";
 }
 

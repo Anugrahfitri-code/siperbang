@@ -22,9 +22,11 @@ class UserController extends Controller
             'role' => 'required|string',
             'section' => 'nullable|string',
             'status' => 'required|string',
+            'password' => 'nullable|string|min:6',
         ]);
 
-        $validated['password'] = Hash::make('password'); // Default password
+        $password = $request->input('password');
+        $validated['password'] = Hash::make($password ?: 'password'); // Default password
         $user = User::create($validated);
 
         return response()->json($user, 201);
