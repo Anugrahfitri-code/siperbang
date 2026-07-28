@@ -4,6 +4,34 @@ import { apiFetch } from "../api";
 import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Cpu, Save, FolderOpen, X, Download, TableProperties, Pencil } from "lucide-react";
 import { ConfirmDialog } from "./ConfirmDialog";
 
+function nameSimilarity(left: string, right: string): number {
+  let leftNormalised = left.toLowerCase().replace(/\s+/g, ' ').trim();
+  let rightNormalised = right.toLowerCase().replace(/\s+/g, ' ').trim();
+  if (leftNormalised === rightNormalised) return 1.0;
+  if (leftNormalised === '' || rightNormalised === '') return 0.0;
+  
+  const track = Array(rightNormalised.length + 1).fill(null).map(() =>
+    Array(leftNormalised.length + 1).fill(null));
+  for (let i = 0; i <= leftNormalised.length; i += 1) {
+    track[0][i] = i;
+  }
+  for (let j = 0; j <= rightNormalised.length; j += 1) {
+    track[j][0] = j;
+  }
+  for (let j = 1; j <= rightNormalised.length; j += 1) {
+    for (let i = 1; i <= leftNormalised.length; i += 1) {
+      const indicator = leftNormalised[i - 1] === rightNormalised[j - 1] ? 0 : 1;
+      track[j][i] = Math.min(
+        track[j][i - 1] + 1,
+        track[j - 1][i] + 1,
+        track[j - 1][i - 1] + indicator,
+      );
+    }
+  }
+  const distance = track[rightNormalised.length][leftNormalised.length];
+  const maxLen = Math.max(leftNormalised.length, rightNormalised.length);
+  return (maxLen - distance) / maxLen;
+}
 interface ReceiptOCRProcessorProps {
   receipts: ReceiptData[];
   requests: ItemRequest[];
@@ -2328,13 +2356,20 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                               );
 
                             return selectedMaster ? (
-                              <p className="mt-1 text-2xs font-semibold text-emerald-700">
-                                Terhubung ke master: {selectedMaster.code}
-                                {" • Stok "}
-                                {selectedMaster.qty}
-                                {" "}
-                                {selectedMaster.unit}
-                              </p>
+                              nameSimilarity(selectedMaster.name, it.name) < 0.60 ? (
+                                <p className="mt-1 text-2xs font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-200 flex items-center gap-1 w-max max-w-full">
+                                  <AlertTriangle size={12} className="flex-shrink-0" />
+                                  <span>Barang ada di master ({selectedMaster.code}) tapi nama tidak sesuai.</span>
+                                </p>
+                              ) : (
+                                <p className="mt-1 text-2xs font-semibold text-emerald-700">
+                                  Terhubung ke master: {selectedMaster.code}
+                                  {" • Stok "}
+                                  {selectedMaster.qty}
+                                  {" "}
+                                  {selectedMaster.unit}
+                                </p>
+                              )
                             ) : it.name.trim() ? (
                               <p className="mt-1 text-2xs font-semibold text-amber-700">
                                 Barang baru — akan dibuat di master
