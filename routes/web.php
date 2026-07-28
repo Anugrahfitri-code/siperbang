@@ -16,7 +16,14 @@ Route::get('/login', function () {
 // Authenticated User Info
 Route::get('/api/user', function (Request $request) {
     if (Auth::check()) {
-        return response()->json(Auth::user());
+        $user = Auth::user();
+        if (strtolower($user->status) === 'nonaktif') {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return response()->json(['message' => 'Akun Anda tidak aktif.'], 403);
+        }
+        return response()->json($user);
     }
     return response()->json(['message' => 'Unauthenticated'], 401);
 }); 
@@ -29,8 +36,16 @@ Route::post('/api/login', function (Request $request) {
     ]);
 
     if (Auth::attempt($credentials)) {
+        $user = Auth::user();
+        if (strtolower($user->status) === 'nonaktif') {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return response()->json(['message' => 'Akun Anda tidak aktif. Silakan hubungi Administrator.'], 403);
+        }
+
         $request->session()->regenerate();
-        return response()->json(['message' => 'Login successful', 'user' => Auth::user()]);
+        return response()->json(['message' => 'Login successful', 'user' => $user]);
     }
 
     return response()->json(['message' => 'Kredensial tidak valid'], 401);
