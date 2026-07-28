@@ -142,9 +142,7 @@ class ReceiptStockSyncService
             ) {
                 throw ValidationException::withMessages([
                     "items.{$index}.name" => [
-                        'Nama barang terlalu berbeda dari barang master '
-                        . 'yang dipilih. Pilih ulang barang atau gunakan '
-                        . 'nama baru.',
+                        'Barang ada di master barang tapi nama tidak sesuai',
                     ],
                 ]);
             }
