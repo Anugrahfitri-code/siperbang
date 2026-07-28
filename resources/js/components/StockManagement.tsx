@@ -304,57 +304,55 @@ export const StockManagement: React.FC<StockManagementProps> = ({
         </div>
       </div>
 
-      <div className="border border-slate-200 rounded-xl bg-white px-3 sm:px-5 shadow-sm">
-        <div className="flex bg-slate-100/50 p-1.5 rounded-xl border border-slate-200 shadow-inner w-full md:w-auto relative z-10 overflow-x-auto">
-          <button
-            onClick={() => setActiveNav("upload")}
-            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${
-              activeNav === "upload"
-                ? "bg-white text-indigo-700 shadow-sm border border-slate-200/50"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-            }`}
-          >
-            <CloudUpload size={18} className={activeNav === "upload" ? "text-indigo-500" : "text-slate-400"} />
-            <span className="whitespace-nowrap">Upload Excel</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveNav("verify")}
-            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${
-              activeNav === "verify"
-                ? "bg-white text-emerald-700 shadow-sm border border-slate-200/50"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-            }`}
-          >
-            <ShieldCheck size={18} className={activeNav === "verify" ? "text-emerald-500" : "text-slate-400"} />
-            <span className="whitespace-nowrap">Proses Verifikasi</span>
-          </button>
+      <div className="flex bg-slate-100/50 p-1.5 rounded-xl border border-slate-200 shadow-inner w-full md:w-auto relative z-10 overflow-x-auto">
+        <button
+          onClick={() => setActiveNav("upload")}
+          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${
+            activeNav === "upload"
+              ? "bg-white text-indigo-700 shadow-sm border border-slate-200/50"
+              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+          }`}
+        >
+          <CloudUpload size={18} className={activeNav === "upload" ? "text-indigo-500" : "text-slate-400"} />
+          <span className="whitespace-nowrap">Upload Excel</span>
+        </button>
+        
+        <button
+          onClick={() => setActiveNav("verify")}
+          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${
+            activeNav === "verify"
+              ? "bg-white text-emerald-700 shadow-sm border border-slate-200/50"
+              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+          }`}
+        >
+          <ShieldCheck size={18} className={activeNav === "verify" ? "text-emerald-500" : "text-slate-400"} />
+          <span className="whitespace-nowrap">Proses Verifikasi</span>
+        </button>
 
-          <button
-            onClick={() => {
-              setActiveNav("riwayat");
-              setActiveBatchId(null);
-            }}
-            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${
-              activeNav === "riwayat"
-                ? "bg-white text-blue-700 shadow-sm border border-slate-200/50"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-            }`}
-          >
-            <History size={18} className={activeNav === "riwayat" ? "text-blue-500" : "text-slate-400"} />
-            <span className="whitespace-nowrap">Riwayat Upload</span>
-          </button>
+        <button
+          onClick={() => {
+            setActiveNav("riwayat");
+            setActiveBatchId(null);
+          }}
+          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${
+            activeNav === "riwayat"
+              ? "bg-white text-blue-700 shadow-sm border border-slate-200/50"
+              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+          }`}
+        >
+          <History size={18} className={activeNav === "riwayat" ? "text-blue-500" : "text-slate-400"} />
+          <span className="whitespace-nowrap">Riwayat Upload</span>
+        </button>
 
-          <button
-            onClick={() => {
-              window.location.href = "/?module=master";
-            }}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 transition-all duration-300"
-          >
-            <Package size={18} className="text-slate-400" />
-            <span className="whitespace-nowrap">Master Barang</span>
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            window.location.href = "/master-barang";
+          }}
+          className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 transition-all duration-300"
+        >
+          <Package size={18} className="text-slate-400" />
+          <span className="whitespace-nowrap">Master Barang</span>
+        </button>
       </div>
 
       {activeNav === "riwayat" && <UploadHistoryReact onOpenStepper={(id) => { setActiveBatchId(id); setActiveNav("verify"); }} />}
