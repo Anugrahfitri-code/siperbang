@@ -22,8 +22,8 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
-import type { StockItem } from "../types";
 import { UploadHistoryReact } from "./UploadHistoryReact";
+import { StepperReact } from "./StepperReact";
 
 interface StockManagementProps {
   stockList: StockItem[];
@@ -77,10 +77,11 @@ export const StockManagement: React.FC<StockManagementProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [fileErrorDetails, setFileErrorDetails] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [activeTab, setActiveTab] = useState<"current" | "verify">("current");
-  const [activeNav, setActiveNav] = useState<"upload" | "riwayat">(() => {
+  const [activeNav, setActiveNav] = useState<"upload" | "riwayat" | "verify">(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("tab") === "riwayat") {
@@ -89,6 +90,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
     }
     return "upload";
   });
+  const [activeBatchId, setActiveBatchId] = useState<number | null>(null);
 
   const csrfToken = getCsrfToken();
 
@@ -142,6 +144,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
     if (!file) {
       setSelectedFile(null);
       setFileError(null);
+      setFileErrorDetails([]);
       return;
     }
 
@@ -149,6 +152,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
     if (validationError) {
       setSelectedFile(null);
       setFileError(validationError);
+      setFileErrorDetails([]);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -157,6 +161,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
 
     setSelectedFile(file);
     setFileError(null);
+    setFileErrorDetails([]);
   };
 
   const handleInputChange = (
@@ -208,17 +213,18 @@ export const StockManagement: React.FC<StockManagementProps> = ({
     }
     setSelectedFile(null);
     setFileError(null);
+    setFileErrorDetails([]);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
     if (!selectedFile) {
-      event.preventDefault();
       setFileError("Pilih file Excel terlebih dahulu.");
       return;
     }
 
     if (!csrfToken) {
-      event.preventDefault();
       setFileError(
         "Token keamanan tidak ditemukan. Muat ulang halaman lalu coba kembali."
       );
@@ -226,6 +232,40 @@ export const StockManagement: React.FC<StockManagementProps> = ({
     }
 
     setIsSubmitting(true);
+    setFileError(null);
+    setFileErrorDetails([]);
+
+    const formData = new FormData();
+    formData.append("file_excel", selectedFile);
+    formData.append("_token", csrfToken);
+
+    try {
+      const response = await fetch("/stok-upload", {
+        method: "POST",
+        body: formData,
+        headers: {
+          "Accept": "application/json",
+        },
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok && data.success) {
+        setActiveBatchId(data.batch_id);
+        setActiveNav("verify");
+        clearSelectedFile();
+      } else {
+        setFileError(data.error || "Gagal mengunggah file. Pastikan format benar.");
+        if (data.details && Array.isArray(data.details)) {
+          setFileErrorDetails(data.details);
+        }
+      }
+    } catch (error) {
+      setFileError("Terjadi kesalahan jaringan saat mengunggah file.");
+      setFileErrorDetails([]);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -265,41 +305,62 @@ export const StockManagement: React.FC<StockManagementProps> = ({
       </div>
 
       <div className="border border-slate-200 rounded-xl bg-white px-3 sm:px-5 shadow-sm">
-        <nav className="flex min-w-max items-center gap-2 overflow-x-auto" aria-label="Navigasi manajemen stok">
+        <div className="flex bg-slate-100/50 p-1.5 rounded-xl border border-slate-200 shadow-inner w-full md:w-auto relative z-10 overflow-x-auto">
           <button
-            type="button"
             onClick={() => setActiveNav("upload")}
-            className={`flex items-center gap-2 border-b-2 px-4 py-3.5 text-xs font-extrabold ${
-              activeNav === "upload" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800"
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${
+              activeNav === "upload"
+                ? "bg-white text-indigo-700 shadow-sm border border-slate-200/50"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
             }`}
           >
-            <CloudUpload size={16} />
-            Upload Excel
+            <CloudUpload size={18} className={activeNav === "upload" ? "text-indigo-500" : "text-slate-400"} />
+            <span className="whitespace-nowrap">Upload Excel</span>
           </button>
+          
           <button
-            type="button"
-            onClick={() => setActiveNav("riwayat")}
-            className={`flex items-center gap-2 border-b-2 px-4 py-3.5 text-xs font-bold transition-colors ${
-              activeNav === "riwayat" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800"
+            onClick={() => setActiveNav("verify")}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${
+              activeNav === "verify"
+                ? "bg-white text-emerald-700 shadow-sm border border-slate-200/50"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
             }`}
           >
-            <History size={16} />
-            Riwayat Upload
+            <ShieldCheck size={18} className={activeNav === "verify" ? "text-emerald-500" : "text-slate-400"} />
+            <span className="whitespace-nowrap">Proses Verifikasi</span>
           </button>
+
           <button
-            type="button"
-            onClick={() => window.location.assign("/master-barang")}
-            className="flex items-center gap-2 border-b-2 border-transparent px-4 py-3.5 text-xs font-bold text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-800"
+            onClick={() => {
+              setActiveNav("riwayat");
+              setActiveBatchId(null);
+            }}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${
+              activeNav === "riwayat"
+                ? "bg-white text-blue-700 shadow-sm border border-slate-200/50"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+            }`}
           >
-            <Package size={16} />
-            Master Barang
+            <History size={18} className={activeNav === "riwayat" ? "text-blue-500" : "text-slate-400"} />
+            <span className="whitespace-nowrap">Riwayat Upload</span>
           </button>
-        </nav>
+
+          <button
+            onClick={() => {
+              window.location.href = "/?module=master";
+            }}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 transition-all duration-300"
+          >
+            <Package size={18} className="text-slate-400" />
+            <span className="whitespace-nowrap">Master Barang</span>
+          </button>
+        </div>
       </div>
 
-      {activeNav === "riwayat" ? (
-        <UploadHistoryReact />
-      ) : (
+      {activeNav === "riwayat" && <UploadHistoryReact onOpenStepper={(id) => { setActiveBatchId(id); setActiveNav("verify"); }} />}
+      {activeNav === "verify" && <StepperReact batchId={activeBatchId} onClose={() => { setActiveNav("riwayat"); setActiveBatchId(null); }} />}
+
+      {activeNav === "upload" && (
         <>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.75fr)]">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -410,7 +471,26 @@ export const StockManagement: React.FC<StockManagementProps> = ({
             {fileError && (
               <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700">
                 <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                <span>{fileError}</span>
+                <div className="flex-1 min-w-0">
+                  <span className="block text-sm">{fileError}</span>
+                  {fileErrorDetails.length > 0 && (
+                    <div className="mt-2.5 space-y-2 border-t border-rose-200/60 pt-2.5 text-rose-600 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                      {fileErrorDetails.slice(0, 10).map((detail, idx) => (
+                        <div key={idx} className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2 bg-rose-100/50 p-2 rounded-lg">
+                          <span className="font-bold shrink-0 whitespace-nowrap bg-rose-200/50 text-rose-800 px-1.5 py-0.5 rounded text-2xs border border-rose-200">
+                            Sheet "{detail.sheet}" {detail.no_urut ? `- Baris ${detail.no_urut}` : ''}
+                          </span>
+                          <span className="font-normal leading-relaxed text-xs break-words">{detail.messages.join(", ")}</span>
+                        </div>
+                      ))}
+                      {fileErrorDetails.length > 10 && (
+                        <div className="italic text-rose-500 mt-2 pt-2 border-t border-rose-200/40 text-2xs text-center font-bold">
+                          ... dan {fileErrorDetails.length - 10} kesalahan lainnya. Silakan perbaiki file terlebih dahulu.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

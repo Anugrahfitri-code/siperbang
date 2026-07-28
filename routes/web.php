@@ -101,6 +101,9 @@ Route::middleware('auth')->prefix('api')->group(function () {
 
     Route::get('/stok-upload/riwayat', [\App\Http\Controllers\StokUploadController::class, 'apiRiwayat'])->name('api.stok-upload.riwayat');
     Route::get('/stok-upload/stats', [\App\Http\Controllers\StokUploadController::class, 'apiStats'])->name('api.stok-upload.stats');
+    Route::get('/stok-upload/{id}/stepper-api', [\App\Http\Controllers\StokUploadController::class, 'apiStepper']);
+    Route::post('/stok-upload/{id}/verifikasi-api', [\App\Http\Controllers\StokUploadController::class, 'apiSaveVerifikasi']);
+    Route::post('/stok-upload/{id}/finalisasi-api', [\App\Http\Controllers\StokUploadController::class, 'apiFinalisasi']);
 
     // ---- Ketua Tim & Superadmin ----
     Route::middleware('role:Ketua Tim,Ketua Tim Kerja,Superadmin')->group(function () {

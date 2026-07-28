@@ -45,14 +45,37 @@ class StokUploadController extends Controller
 
         try {
             $batch = $this->importService->import($fullPath, $originalName, $storedName);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success'  => true,
+                    'batch_id' => $batch->id,
+                    'message'  => 'File Excel berhasil diunggah dan valid.'
+                ]);
+            }
+
             return redirect()->route('stok-upload.stepper', $batch->id)
                 ->with('success', 'File Excel berhasil diunggah dan semua data valid. Lanjutkan ke verifikasi kode.');
         } catch (ExcelValidationException $e) {
-            // File rejected — errors already flashed to session by the service
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'error'   => 'Validasi gagal. Terdapat data yang tidak sesuai format atau hitungan pada file.',
+                    'details' => $e->getErrors()
+                ], 422);
+            }
+            // File rejected — errors flashed/logged elsewhere
             return redirect()->route('stok-upload.index')
                 ->with('upload_rejected', true);
         } catch (\Exception $e) {
             Storage::delete($path);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'error'   => 'Gagal memproses file: ' . $e->getMessage()
+                ], 500);
+            }
 
             return redirect()->route('stok-upload.index')
                 ->withErrors(['file_excel' => 'Gagal memproses file: ' . $e->getMessage()]);
@@ -196,6 +219,63 @@ class StokUploadController extends Controller
         );
     }
 
+    public function apiStepper(int $id, Request $request)
+    {
+        $this->authorizeRole('Petugas Persediaan');
+
+        $batch = StokUpload::with([
+            'details' => fn ($query) => $query
+                ->orderBy('sheet_name')
+                ->orderBy('no_urut'),
+            'user',
+        ])->findOrFail($id);
+
+        if ($batch->status === StokUpload::STATUS_DIBATALKAN) {
+            return response()->json(['error' => 'Batch sudah dibatalkan'], 400);
+        }
+
+        $step = $request->integer('step', $batch->resolveNextStep());
+        $step = max(1, min(4, $step));
+
+        $masterCodes = KodePersediaan::with('kategoriBarang')->orderBy('kode')->get();
+        $allDetails = $batch->details;
+
+        $errorRows = $allDetails->where('status_validation', 'Perlu Perbaikan')->values();
+        $validRows = $allDetails->where('status_validation', 'Menunggu Verifikasi')->values();
+        $pendingRows = $allDetails->where('status_verification', 'Pending')->values();
+        $approvedRows = $allDetails->where('status_verification', 'Setuju')->values();
+        $rejectedRows = $allDetails->where('status_verification', 'Tolak')->values();
+
+        $totalApproved = $approvedRows->count();
+        $totalValue = (float) $approvedRows->sum(fn ($d) => (float) ($d->total_calculated ?? 0));
+
+        $canFinalize = $totalApproved > 0 && $pendingRows->isEmpty() && !in_array($batch->status, [StokUpload::STATUS_SELESAI, StokUpload::STATUS_DIBATALKAN], true);
+
+        return response()->json([
+            'batch' => $batch,
+            'step' => $step,
+            'masterCodes' => $masterCodes,
+            'stats' => [
+                'total_rows' => $allDetails->count(),
+                'error_count' => $errorRows->count(),
+                'valid_count' => $validRows->count(),
+                'pending_count' => $pendingRows->count(),
+                'approved_count' => $approvedRows->count(),
+                'rejected_count' => $rejectedRows->count(),
+                'total_value' => $totalValue,
+                'can_finalize' => $canFinalize,
+            ],
+            'details' => [
+                'error' => $errorRows,
+                'valid' => $validRows,
+                'pending' => $pendingRows,
+                'approved' => $approvedRows,
+                'rejected' => $rejectedRows,
+                'all' => $allDetails,
+            ]
+        ]);
+    }
+
     // ──────────────────────────────────────────────────────────────
     // STEP 3 — Save verifikasi decisions
     // ──────────────────────────────────────────────────────────────
@@ -271,6 +351,72 @@ class StokUploadController extends Controller
                 ->with('success', "Finalisasi berhasil! {$results['inserted']} barang baru ditambahkan, {$results['updated']} diperbarui.");
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function apiSaveVerifikasi(Request $request, int $id)
+    {
+        $this->authorizeRole('Petugas Persediaan');
+        $batch = StokUpload::findOrFail($id);
+
+        $request->validate([
+            'items'               => 'required|array',
+            'items.*.detail_id'   => 'required|integer|exists:stok_upload_details,id',
+            'items.*.action'      => 'required|string|in:Setuju,Perbaiki,Tolak',
+            'items.*.kode_persediaan' => 'nullable|string|max:50',
+        ]);
+
+        foreach ($request->input('items', []) as $item) {
+            $detail = StokUploadDetail::where('stok_upload_id', $batch->id)
+                ->where('id', $item['detail_id'])
+                ->firstOrFail();
+
+            match ($item['action']) {
+                'Setuju'  => $detail->update([
+                    'status_verification'      => 'Setuju',
+                    'status_validation'        => 'Menunggu Verifikasi',
+                ]),
+                'Perbaiki' => $detail->update([
+                    'status_verification'      => 'Setuju',
+                    'verified_kode_persediaan' => $item['kode_persediaan'] ?? $detail->kode_persediaan_excel,
+                    'status_validation'        => 'Menunggu Verifikasi',
+                ]),
+                'Tolak' => $detail->update([
+                    'status_verification' => 'Tolak',
+                ]),
+            };
+        }
+
+        $this->syncBatchStats($batch);
+
+        $pendingCount = $batch->details()->where('status_verification', 'Pending')->count();
+        if ($pendingCount === 0) {
+            $batch->update([
+                'status'       => StokUpload::STATUS_SIAP_DIFINALISASI,
+                'current_step' => StokUpload::STEP_REVIEW,
+            ]);
+        }
+
+        AuditLog::create([
+            'user_id'     => auth()->id(),
+            'action'      => 'Verifikasi Kode Persediaan (API)',
+            'description' => "Menyimpan verifikasi kode untuk batch #{$batch->id}.",
+            'ip_address'  => $request->ip(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Verifikasi berhasil disimpan']);
+    }
+
+    public function apiFinalisasi(int $id)
+    {
+        $this->authorizeRole('Petugas Persediaan');
+        $batch = StokUpload::findOrFail($id);
+
+        try {
+            $results = $this->finalizationService->finalize($batch);
+            return response()->json(['success' => true, 'message' => "Finalisasi berhasil! {$results['inserted']} barang baru ditambahkan, {$results['updated']} diperbarui."]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 400);
         }
     }
 

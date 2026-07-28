@@ -91,10 +91,10 @@ class StokUpload extends Model
 
     // ── Helpers ─────────────────────────────────────────────────
 
-    /** True if this batch can be soft-deleted (not finalised) */
+    /** True if this batch can be soft-deleted */
     public function isDeletable(): bool
     {
-        return ! in_array($this->status, [self::STATUS_SELESAI, self::STATUS_DIBATALKAN]);
+        return true;
     }
 
     /** True if Batalkan Transaksi is available (only after finalisation) */
