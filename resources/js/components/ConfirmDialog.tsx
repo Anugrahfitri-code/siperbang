@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   Trash2,
@@ -104,11 +105,12 @@ export function ConfirmDialog({
 
   const cfg = variantConfig[variant];
 
-  return (
+  const portalContent = (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ${
+      className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-200 ${
         animating ? "bg-slate-900/60 backdrop-blur-sm" : "bg-transparent backdrop-blur-0"
       }`}
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
       onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
       role="dialog"
@@ -169,4 +171,6 @@ export function ConfirmDialog({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(portalContent, document.body) : null;
 }

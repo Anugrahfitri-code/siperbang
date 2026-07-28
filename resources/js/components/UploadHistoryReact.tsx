@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { FileSpreadsheet, AlertCircle, CheckCircle2, History, ArrowRight } from "lucide-react";
+import { createPortal } from "react-dom";
+import { FileSpreadsheet, AlertCircle, CheckCircle2, History, ArrowRight, Trash2 } from "lucide-react";
+import { AlertDialog } from "./AlertDialog";
 
 interface User {
   id: number;
@@ -20,9 +22,12 @@ interface StokUpload {
   cancelled_at?: string;
 }
 
-export const UploadHistoryReact: React.FC<{ filterPending?: boolean }> = ({ filterPending = false }) => {
+export const UploadHistoryReact: React.FC<{ filterPending?: boolean; onOpenStepper?: (id: number) => void }> = ({ filterPending = false, onOpenStepper }) => {
   const [batches, setBatches] = useState<StokUpload[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState<{id: number, name: string} | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [alertDialog, setAlertDialog] = useState<{ title: string; message: string; variant: "danger" | "warning" | "info" | "success" } | null>(null);
 
   useEffect(() => {
     fetch("/api/stok-upload/riwayat", {
@@ -59,9 +64,50 @@ export const UploadHistoryReact: React.FC<{ filterPending?: boolean }> = ({ filt
     }
   };
 
+  const getCsrfToken = () => document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? "";
+
+  const handleDelete = (id: number, name: string) => {
+    setDeleteConfirm({ id, name });
+  };
+
+  const confirmDelete = () => {
+    if (!deleteConfirm) return;
+    setIsDeleting(true);
+    fetch(`/stok-upload/${deleteConfirm.id}`, {
+      method: "DELETE",
+      headers: {
+        "X-CSRF-TOKEN": getCsrfToken(),
+        "Accept": "application/json"
+      }
+    }).then(res => {
+      // Re-fetch after delete
+      setLoading(true);
+      fetch("/api/stok-upload/riwayat", {
+        headers: { "Accept": "application/json" },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          let fetchedBatches = data.data || [];
+          if (filterPending) {
+            fetchedBatches = fetchedBatches.filter(
+              (b: StokUpload) => b.status === "Menunggu Verifikasi" || b.status === "Siap Difinalisasi"
+            );
+          }
+          setBatches(fetchedBatches);
+          setLoading(false);
+          setDeleteConfirm(null);
+          setIsDeleting(false);
+        });
+    }).catch(err => {
+      setAlertDialog({ title: "Gagal", message: err.message || "Gagal menghapus data.", variant: "danger" });
+      setIsDeleting(false);
+    });
+  };
+
   return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden animate-fade-in">
-      <div className="flex flex-col gap-4 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+    <>
+      <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden animate-fade-in">
+        <div className="flex flex-col gap-4 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
             <History size={18} />
@@ -83,12 +129,12 @@ export const UploadHistoryReact: React.FC<{ filterPending?: boolean }> = ({ filt
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-xs">
-              <th className="px-5 py-3">Tanggal Upload</th>
-              <th className="px-5 py-3">File</th>
-              <th className="px-5 py-3">Diupload Oleh</th>
-              <th className="px-5 py-3 text-center">Status</th>
-              <th className="px-5 py-3 text-right">Statistik</th>
-              <th className="px-5 py-3 text-right">Aksi</th>
+              <th className="px-6 py-4">Tanggal Upload</th>
+              <th className="px-6 py-4">File</th>
+              <th className="px-6 py-4">Diupload Oleh</th>
+              <th className="px-6 py-4 text-center">Status</th>
+              <th className="px-6 py-4 text-center">Statistik</th>
+              <th className="px-6 py-4 text-center">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -113,12 +159,12 @@ export const UploadHistoryReact: React.FC<{ filterPending?: boolean }> = ({ filt
             ) : (
               batches.map((batch) => (
                 <tr key={batch.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-5 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <span className="font-semibold text-slate-800">
                       {new Date(batch.upload_date || batch.created_at || "").toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </span>
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-6 py-4">
                     <span className="font-semibold text-slate-800 block max-w-[220px] truncate" title={batch.file_name_original}>
                       {batch.file_name_original}
                     </span>
@@ -126,23 +172,35 @@ export const UploadHistoryReact: React.FC<{ filterPending?: boolean }> = ({ filt
                       {batch.sheets_count} sheet &bull; {batch.rows_count} baris
                     </span>
                   </td>
-                  <td className="px-5 py-4 whitespace-nowrap text-slate-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-slate-600">
                     {batch.user?.name ?? '—'}
                   </td>
-                  <td className="px-5 py-4 text-center whitespace-nowrap">
-                    <span className={`px-2.5 py-1 inline-flex text-xs leading-4 font-bold rounded-full uppercase tracking-wider ${getStatusColor(batch.status)}`}>
+                  <td className="px-6 py-4 text-center whitespace-nowrap">
+                    <span className={`px-3 py-1.5 inline-flex text-xs leading-4 font-bold rounded-full uppercase tracking-wider ${getStatusColor(batch.status)}`}>
                       {batch.status}
                     </span>
                   </td>
-                  <td className="px-5 py-4 text-right whitespace-nowrap leading-snug">
+                  <td className="px-6 py-4 text-center whitespace-nowrap leading-snug">
                     <span className="text-emerald-600 font-semibold block">Valid: {batch.valid_rows_count}</span>
                     <span className="text-rose-600 font-semibold block">Error: {batch.error_rows_count}</span>
                   </td>
-                  <td className="px-5 py-4 whitespace-nowrap text-right">
-                    <a href={`/stok-upload/${batch.id}/stepper`} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
-                      Buka
-                      <ArrowRight size={14} />
-                    </a>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button 
+                        onClick={() => onOpenStepper ? onOpenStepper(batch.id) : window.location.href = `/stok-upload/${batch.id}/stepper`}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors shadow-sm"
+                      >
+                        Buka
+                        <ArrowRight size={14} />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(batch.id, batch.file_name_original)}
+                        className="inline-flex items-center justify-center p-2 rounded-lg text-rose-500 bg-rose-50 hover:bg-rose-100 hover:text-rose-600 transition-colors shadow-sm"
+                        title="Hapus"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -151,5 +209,51 @@ export const UploadHistoryReact: React.FC<{ filterPending?: boolean }> = ({ filt
         </table>
       </div>
     </div>
+
+      {alertDialog && (
+        <AlertDialog
+          open={!!alertDialog}
+          title={alertDialog.title}
+          message={alertDialog.message}
+          variant={alertDialog.variant}
+          onClose={() => setAlertDialog(null)}
+        />
+      )}
+
+      {deleteConfirm && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center transform animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
+              <Trash2 size={32} strokeWidth={2.5} />
+            </div>
+            <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">Hapus Riwayat?</h3>
+            <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+              Anda yakin ingin menghapus data <strong>"{deleteConfirm.name}"</strong>? 
+              Stok yang sudah berhasil masuk tidak akan terpengaruh.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button 
+                onClick={() => setDeleteConfirm(null)}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-200 active:scale-95 transition-all shadow-sm disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 bg-rose-600 text-white font-bold text-sm rounded-xl hover:bg-rose-700 active:scale-95 transition-all shadow-md disabled:opacity-70 flex items-center justify-center"
+              >
+                {isDeleting ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> : "Ya, Hapus"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 };
