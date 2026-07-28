@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronRight, CheckCircle2, AlertCircle, XCircle, ArrowLeft, Save, Search, Trash2, ShieldCheck, ChevronDown, ListChecks } from "lucide-react";
 import { AlertDialog } from "./AlertDialog";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface StepperProps {
   batchId: number | null;
@@ -16,6 +17,7 @@ export const StepperReact: React.FC<StepperProps> = ({ batchId, onClose }) => {
   const [alertDialog, setAlertDialog] = useState<{ title: string; message: string; variant: "danger" | "success"; onConfirm?: () => void } | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   
   // States for step 3 verifications
   const [verifications, setVerifications] = useState<Record<number, { action: string, kode_persediaan?: string }>>({});
@@ -124,8 +126,7 @@ export const StepperReact: React.FC<StepperProps> = ({ batchId, onClose }) => {
   };
 
   const handleFinalisasi = () => {
-    if (!confirm("Anda yakin ingin memfinalisasi batch ini? Stok akan otomatis bertambah di histori.")) return;
-    
+    setShowConfirmModal(false);
     setSubmitting(true);
     fetch(`/api/stok-upload/${batch.id}/finalisasi-api`, {
       method: "POST",
@@ -228,6 +229,17 @@ export const StepperReact: React.FC<StepperProps> = ({ batchId, onClose }) => {
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleFinalisasi}
+        title="Finalisasi Batch"
+        message="Anda yakin ingin memfinalisasi batch ini? Stok akan otomatis bertambah di histori."
+        variant="info"
+        confirmText="Ya, Finalisasi"
+        loading={submitting}
+      />
 
       {showSuccessModal && typeof document !== 'undefined' && createPortal(
         <div 
@@ -474,7 +486,7 @@ export const StepperReact: React.FC<StepperProps> = ({ batchId, onClose }) => {
 
                 <div className="mt-8">
                   <button 
-                    onClick={handleFinalisasi}
+                    onClick={() => setShowConfirmModal(true)}
                     disabled={submitting || !stats.can_finalize}
                     className="px-8 py-3.5 bg-white text-indigo-700 rounded-full font-extrabold text-sm shadow-xl hover:bg-indigo-50 transition-all active:scale-95 flex items-center gap-2 mx-auto disabled:opacity-70"
                   >
