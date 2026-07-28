@@ -169,7 +169,7 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ logs: incomingLogs }) =>
                         </div>
                         <div className="flex flex-col gap-1">
                           <span className="text-xs font-medium text-slate-500">
-                            {actorLower.includes("system") ? "Sistem" : "Petugas Persediaan"}
+                            {actorLower.includes("system") ? "Sistem" : "Pengguna"}
                           </span>
                           <p className="text-sm text-slate-600 font-medium">
                             {log.details}
