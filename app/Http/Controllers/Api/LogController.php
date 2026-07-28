@@ -16,9 +16,7 @@ class LogController extends Controller
         $query = HistoryLog::where('action', 'not like', '%Login%');
 
         if ($user && !in_array(strtolower($user->role), ['admin', 'superadmin'])) {
-            $query->whereHas('user', function ($q) use ($user) {
-                $q->where('role', $user->role);
-            });
+            $query->where('actor', $user->name);
         }
 
         return response()->json($query->orderBy('created_at', 'desc')->get());

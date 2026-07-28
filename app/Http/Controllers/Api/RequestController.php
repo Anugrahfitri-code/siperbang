@@ -123,6 +123,14 @@ class RequestController extends Controller
                 ]);
             }
 
+            \App\Models\HistoryLog::create([
+                'actor' => $user->name,
+                'action' => $statusVal === 'Draft' ? 'Buat Draft' : 'Ajukan Permintaan',
+                'details' => $statusVal === 'Draft' 
+                    ? "Menyimpan draft BON: {$bonNo}" 
+                    : "Mengajukan permintaan barang (BON: {$bonNo}) ke petugas",
+            ]);
+
             DB::commit();
             return response()->json($bonHeader->load('items'), 201);
         } catch (\Exception $e) {
@@ -199,6 +207,12 @@ class RequestController extends Controller
                 $this->syncBonHeaderStatus($bonHeader);
             }
 
+            \App\Models\HistoryLog::create([
+                'actor' => $request->user() ? $request->user()->name : 'Sistem',
+                'action' => 'Update Status Pengajuan',
+                'details' => "Memperbarui status permintaan {$itemRequest->item_name} menjadi '{$validated['status']}' (BON: {$itemRequest->bon_no})",
+            ]);
+
             DB::commit();
 
             return response()->json([
@@ -274,6 +288,12 @@ class RequestController extends Controller
                 $this->syncBonHeaderStatus($bonHeader);
             }
 
+            \App\Models\HistoryLog::create([
+                'actor' => $request->user() ? $request->user()->name : 'Sistem',
+                'action' => 'Distribusi Barang',
+                'details' => "Mendistribusikan {$validated['qtyDistributed']} unit {$stockItem->name} untuk BON {$itemRequest->bon_no}",
+            ]);
+
             DB::commit();
 
             return response()->json($itemRequest->fresh(['distribution', 'procurements']));
@@ -338,6 +358,12 @@ class RequestController extends Controller
                 $this->syncBonHeaderStatus($bonHeader);
             }
 
+            \App\Models\HistoryLog::create([
+                'actor' => $request->user() ? $request->user()->name : 'Sistem',
+                'action' => 'Proses Pengadaan',
+                'details' => "Memproses pengadaan {$validated['qtyProcured']} unit {$itemRequest->item_name} untuk BON {$itemRequest->bon_no}",
+            ]);
+
             DB::commit();
 
             return response()->json($itemRequest->fresh(['distribution', 'procurements']));
@@ -394,6 +420,12 @@ class RequestController extends Controller
                 $bonHeader->update(['last_updated' => today()]);
                 $this->syncBonHeaderStatus($bonHeader);
             }
+
+            \App\Models\HistoryLog::create([
+                'actor' => $request->user() ? $request->user()->name : 'Sistem',
+                'action' => 'Pengadaan Selesai',
+                'details' => "Menyelesaikan pengadaan {$procurement->qty_procured} unit {$itemRequest->item_name} (BON {$itemRequest->bon_no})",
+            ]);
 
             DB::commit();
 
@@ -541,6 +573,14 @@ class RequestController extends Controller
                 ]);
             }
 
+            \App\Models\HistoryLog::create([
+                'actor' => $user->name,
+                'action' => $statusVal === 'Draft' ? 'Update Draft' : 'Ajukan Draft',
+                'details' => $statusVal === 'Draft' 
+                    ? "Memperbarui draft BON: {$bonHeader->bon_no}"
+                    : "Mengirim draft BON {$bonHeader->bon_no} menjadi pengajuan ke petugas",
+            ]);
+
             DB::commit();
             return response()->json($bonHeader->load('items'));
         } catch (\Exception $e) {
@@ -565,6 +605,12 @@ class RequestController extends Controller
         try {
             $bonHeader->items()->delete();
             $bonHeader->delete();
+            \App\Models\HistoryLog::create([
+                'actor' => $request->user() ? $request->user()->name : 'Sistem',
+                'action' => 'Hapus Draft',
+                'details' => "Menghapus draft BON: {$bonHeader->bon_no}",
+            ]);
+
             DB::commit();
             return response()->json(['message' => 'Draft berhasil dihapus.']);
         } catch (\Exception $e) {
@@ -655,6 +701,12 @@ class RequestController extends Controller
                 $bonHeader->update(['last_updated' => today()]);
                 $this->syncBonHeaderStatus($bonHeader);
             }
+
+            \App\Models\HistoryLog::create([
+                'actor' => $request->user() ? $request->user()->name : 'Sistem',
+                'action' => 'Tolak Pengajuan',
+                'details' => "Membatalkan permintaan {$itemRequest->item_name} (BON {$itemRequest->bon_no}). Alasan: {$validated['alasan']}",
+            ]);
 
             DB::commit();
 
