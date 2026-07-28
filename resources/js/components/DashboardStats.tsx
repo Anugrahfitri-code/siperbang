@@ -60,7 +60,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
       {/* Total Belanja Kuitansi */}
-      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm transition-all hover:border-slate-300 flex flex-col justify-between">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-200 hover:-translate-y-1 flex flex-col justify-between">
         <div className="flex justify-between items-start gap-4">
           <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block leading-snug">
             Total Belanja Terverifikasi
@@ -80,7 +80,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       </div>
 
       {/* Total PPN Disetor */}
-      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm transition-all hover:border-slate-300 flex flex-col justify-between">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-200 hover:-translate-y-1 flex flex-col justify-between">
         <div className="flex justify-between items-start gap-4">
           <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block leading-snug">
             Total Pajak (PPN) Disetor
@@ -100,7 +100,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       </div>
 
       {/* Usulan Selesai */}
-      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm transition-all hover:border-slate-300 flex flex-col justify-between">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-200 hover:-translate-y-1 flex flex-col justify-between">
         <div className="flex justify-between items-start gap-4">
           <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block leading-snug">
             Pemenuhan Usulan Selesai
@@ -120,7 +120,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       </div>
 
       {/* Status Antrean */}
-      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm transition-all hover:border-slate-300 flex flex-col justify-between">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300 hover:-translate-y-1 flex flex-col justify-between">
         <div className="flex justify-between items-start gap-4">
           <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block leading-snug">
             Status Tindakan Petugas
