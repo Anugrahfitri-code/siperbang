@@ -17,12 +17,7 @@ class RequestController extends Controller
         $query = ItemRequest::with(['distribution', 'procurements'])->orderBy('created_at', 'desc');
         
         if ($request->user() && ($request->user()->role === 'Ketua Tim' || $request->user()->role === 'Ketua Tim Kerja')) {
-            $section = $request->user()->section;
-            if ($section === 'Tata Usaha' || $section === 'Subbagian Tata Usaha') {
-                $query->whereIn('section', ['Tata Usaha', 'Subbagian Tata Usaha']);
-            } else {
-                $query->where('section', $section);
-            }
+            $query->where('user_id', $request->user()->id);
         }
 
         // Exclude drafts unless owned by current user
@@ -421,13 +416,10 @@ class RequestController extends Controller
             ->orderBy('id', 'desc');
 
         if ($request->user() && ($request->user()->role === 'Ketua Tim' || $request->user()->role === 'Ketua Tim Kerja')) {
-            $section = $request->user()->section;
-            if ($section === 'Tata Usaha' || $section === 'Subbagian Tata Usaha') {
-                $query->whereIn('section', ['Tata Usaha', 'Subbagian Tata Usaha']);
-            } else {
-                $query->where('section', $section);
-            }
+            $query->where('user_id', $request->user()->id);
+        }
 
+        if ($request->user()) {
             $query->where(function ($sub) use ($request) {
                 $sub->where('status', '!=', 'Draft')
                     ->orWhere('user_id', $request->user()->id);
@@ -461,17 +453,8 @@ class RequestController extends Controller
         $bon = \App\Models\BonHeader::with(['items', 'statusHistories' => fn($q) => $q->orderBy('created_at', 'asc')])->findOrFail($id);
 
         if ($request->user() && ($request->user()->role === 'Ketua Tim' || $request->user()->role === 'Ketua Tim Kerja')) {
-            $section = $request->user()->section;
-            $allowedSections = ($section === 'Tata Usaha' || $section === 'Subbagian Tata Usaha') 
-                ? ['Tata Usaha', 'Subbagian Tata Usaha'] 
-                : [$section];
-
-            if (!in_array($bon->section, $allowedSections)) {
-                abort(403, 'Akses ditolak.');
-            }
-
-            if ($bon->status === 'Draft' && $bon->user_id !== $request->user()->id) {
-                abort(403, 'Akses ditolak.');
+            if ($bon->user_id !== $request->user()->id) {
+                abort(403, 'Akses ditolak. Anda bukan pemilik pengajuan ini.');
             }
         }
 

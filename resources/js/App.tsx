@@ -411,14 +411,75 @@ useEffect(() => {
     }
   };
 
-  const handleUpdateUser = (id: string, updates: Partial<UserAccount>) => {
-    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...updates } : u)));
-    addLog(currentUser, "Update Pengguna", `Memperbarui data akun ID: ${id}`);
+  const handleUpdateUser = async (id: string, updates: Partial<UserAccount>) => {
+    try {
+      const response = await apiFetch(`/api/users/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(updates),
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...updatedUser } : u)));
+        addLog(currentUser, "Update Pengguna", `Memperbarui data akun ID: ${id}`);
+        setAlertMsg({
+          title: "Berhasil",
+          message: "Data akun berhasil diperbarui.",
+          variant: "success",
+        });
+        setTimeout(() => setAlertMsg(null), 3000);
+      } else {
+        const data = await response.json();
+        setAlertMsg({
+          title: "Gagal Update",
+          message: data.message || "Terjadi kesalahan saat memperbarui akun.",
+          variant: "danger",
+        });
+        setTimeout(() => setAlertMsg(null), 4000);
+      }
+    } catch (error) {
+      console.error("Gagal update pengguna:", error);
+      setAlertMsg({
+        title: "Kesalahan",
+        message: "Gagal menghubungi server.",
+        variant: "danger",
+      });
+      setTimeout(() => setAlertMsg(null), 4000);
+    }
   };
 
-  const handleDeleteUser = (id: string) => {
-    setUsers((prev) => prev.filter((u) => u.id !== id));
-    addLog(currentUser, "Hapus Pengguna", `Menghapus akun ID: ${id}`);
+  const handleDeleteUser = async (id: string) => {
+    try {
+      const response = await apiFetch(`/api/users/${id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        setUsers((prev) => prev.filter((u) => u.id !== id));
+        addLog(currentUser, "Hapus Pengguna", `Menghapus akun ID: ${id}`);
+        setAlertMsg({
+          title: "Berhasil",
+          message: "Akun berhasil dihapus.",
+          variant: "success",
+        });
+        setTimeout(() => setAlertMsg(null), 3000);
+      } else {
+        const data = await response.json();
+        setAlertMsg({
+          title: "Gagal Hapus",
+          message: data.message || "Terjadi kesalahan saat menghapus akun.",
+          variant: "danger",
+        });
+        setTimeout(() => setAlertMsg(null), 4000);
+      }
+    } catch (error) {
+      console.error("Gagal hapus pengguna:", error);
+      setAlertMsg({
+        title: "Kesalahan",
+        message: "Gagal menghubungi server.",
+        variant: "danger",
+      });
+      setTimeout(() => setAlertMsg(null), 4000);
+    }
   };
 
   const [alertMsg, setAlertMsg] = useState<{ title: string; message: string; variant?: "danger" | "warning" | "info" | "success" } | null>(null);
