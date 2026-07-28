@@ -338,9 +338,30 @@
                     {{-- Satuan --}}
                     <div>
                         <label for="editUnit" class="block text-sm font-bold text-slate-700 mb-1.5">Satuan</label>
-                        <input type="text" name="unit" id="editUnit" maxlength="50"
-                               class="block w-full px-3.5 py-2.5 text-sm font-medium text-slate-900 border border-slate-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm"
-                               placeholder="Contoh: Unit, Buah, Box, dll">
+                        <div class="relative">
+                            <select name="unit" id="editUnit" 
+                                    class="block w-full pl-3.5 pr-10 py-2.5 text-sm font-medium text-slate-900 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm appearance-none">
+                                <option value="">Pilih Satuan</option>
+                                <option value="Buah">Buah</option>
+                                <option value="Unit">Unit</option>
+                                <option value="Rim">Rim</option>
+                                <option value="Pak">Pak</option>
+                                <option value="Box">Box</option>
+                                <option value="Set">Set</option>
+                                <option value="Lembar">Lembar</option>
+                                <option value="Buku">Buku</option>
+                                <option value="Roll">Roll</option>
+                                <option value="Dus">Dus</option>
+                                <option value="Lusin">Lusin</option>
+                                <option value="Botol">Botol</option>
+                                <option value="Pcs">Pcs</option>
+                                <option value="Bungkus">Bungkus</option>
+                                <option value="Pasang">Pasang</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
