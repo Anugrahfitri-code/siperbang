@@ -83,216 +83,221 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
           onClose={() => setConfirmDelete(null)}
         />
       )}
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-emerald-50 text-emerald-600 border-emerald-100">
-              <Users size={24} />
-            </div>
+    <div className="space-y-6 animate-fade-in">
+      <div className="relative bg-gradient-to-r from-[#f8faff] to-[#f0f4ff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-5 overflow-hidden">
+        {/* Glow effects */}
+        <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div className="absolute left-0 bottom-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-100 text-emerald-500">
+            <Users size={26} strokeWidth={2.5} />
+          </div>
+          <div>
+            <h2 className="text-base font-extrabold text-slate-800 uppercase tracking-wide">Kelola Akun Pengguna</h2>
+            <p className="text-xs font-medium text-slate-500 mt-1">
+              Atur akses untuk Petugas Persediaan dan Ketua Tim.
+            </p>
+          </div>
+        </div>
+        
+        <button
+          onClick={() => {
+            setEditingId(null);
+            setFormData({ name: "", username: "", password: "", role: UserRole.PETUGAS_PERSERDIAN, status: "Aktif", section: "" });
+            setShowAddForm(true);
+          }}
+          className="relative z-10 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2"
+        >
+          <Plus size={16} strokeWidth={2.5} />
+          <span>Tambah Akun</span>
+        </button>
+      </div>
+
+      {showAddForm ? (
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <h3 className="text-sm font-extrabold text-slate-900 mb-6">{editingId ? "Edit Akun" : "Tambah Akun Baru"}</h3>
+          <form onSubmit={handleSubmit} autoComplete="off" className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">Kelola Akun Pengguna</h2>
-              <p className="text-sm font-normal leading-5 text-slate-500 mt-0.5">
-                Atur akses untuk Petugas Persediaan dan Ketua Tim.
-              </p>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Nama Lengkap</label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all shadow-sm"
+                placeholder="Contoh: Budi Santoso"
+              />
             </div>
-          </div>
-          
-          <button
-            onClick={() => {
-              setEditingId(null);
-              setFormData({ name: "", username: "", password: "", role: UserRole.PETUGAS_PERSERDIAN, status: "Aktif", section: "" });
-              setShowAddForm(true);
-            }}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2"
-          >
-            <Plus size={16} />
-            <span>Tambah Akun</span>
-          </button>
-        </div>
+            
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Username</label>
+              <input
+                type="text"
+                required
+                autoComplete="off"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all shadow-sm"
+                placeholder="Contoh: budi.tu"
+              />
+            </div>
 
-        {showAddForm && (
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 mb-6">
-            <h3 className="text-sm font-extrabold text-slate-800 mb-4">{editingId ? "Edit Akun" : "Tambah Akun Baru"}</h3>
-            <form onSubmit={handleSubmit} autoComplete="off" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {!editingId && (
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Password</label>
                 <input
-                  type="text"
+                  type="password"
                   required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full border border-slate-200 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
-                  placeholder="Contoh: Budi Santoso"
+                  autoComplete="new-password"
+                  value={formData.password || ""}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all shadow-sm"
+                  placeholder="••••••••"
                 />
               </div>
-              
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Username</label>
-                <input
-                  type="text"
-                  required
-                  autoComplete="off"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full border border-slate-200 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
-                  placeholder="Contoh: budi.tu"
-                />
-              </div>
+            )}
 
-              {!editingId && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Password</label>
-                  <input
-                    type="password"
-                    required
-                    autoComplete="new-password"
-                    value={formData.password || ""}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full border border-slate-200 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
-                    placeholder="••••••••"
-                  />
-                </div>
-              )}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Peran Akses</label>
+              <select
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all shadow-sm appearance-none bg-white"
+              >
+                <option value={UserRole.PETUGAS_PERSERDIAN}>Petugas Persediaan</option>
+                <option value={UserRole.KETUA_TIM}>Ketua Tim Kerja</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Unit Kerja / Seksi (Opsional)</label>
+              <input
+                type="text"
+                value={formData.section}
+                onChange={(e) => setFormData({ ...formData, section: e.target.value })}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all shadow-sm"
+                placeholder="Contoh: Tata Usaha"
+              />
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Peran Akses</label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-                  className="w-full border border-slate-200 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
-                >
-                  <option value={UserRole.PETUGAS_PERSERDIAN}>Petugas Persediaan</option>
-                  <option value={UserRole.KETUA_TIM}>Ketua Tim Kerja</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Unit Kerja / Seksi (Opsional)</label>
-                <input
-                  type="text"
-                  value={formData.section}
-                  onChange={(e) => setFormData({ ...formData, section: e.target.value })}
-                  className="w-full border border-slate-200 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
-                  placeholder="Contoh: Tata Usaha"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as "Aktif" | "Nonaktif" })}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all shadow-sm appearance-none bg-white"
+              >
+                <option value="Aktif">Aktif</option>
+                <option value="Nonaktif">Nonaktif</option>
+              </select>
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as "Aktif" | "Nonaktif" })}
-                  className="w-full border border-slate-200 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
-                >
-                  <option value="Aktif">Aktif</option>
-                  <option value="Nonaktif">Nonaktif</option>
-                </select>
-              </div>
-
-              <div className="sm:col-span-2 flex justify-end gap-2 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="px-4 py-2 border border-slate-300 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-100"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-md text-xs font-bold hover:bg-indigo-700"
-                >
-                  Simpan Akun
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input
-            type="text"
-            placeholder="Cari berdasarkan nama atau username..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50"
-          />
+            <div className="sm:col-span-2 flex justify-end gap-3 mt-4 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowAddForm(false)}
+                className="px-6 py-2.5 bg-white border border-rose-200 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-50 transition-colors shadow-sm"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm"
+              >
+                Simpan Akun
+              </button>
+            </div>
+          </form>
         </div>
+      ) : (
+        <div className="space-y-4">
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-y border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                <th className="py-3 px-4">Nama & Username</th>
-                <th className="py-3 px-4">Peran</th>
-                <th className="py-3 px-4">Unit Kerja</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 px-4 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <tr key={user.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-slate-800 text-xs">{user.name}</div>
-                      <div className="text-xs text-slate-500 font-mono mt-0.5">@{user.username}</div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-extrabold ${
-                        user.role === UserRole.SUPERADMIN ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
-                        user.role === UserRole.PETUGAS_PERSERDIAN ? "bg-indigo-50 text-indigo-700 border border-indigo-200" :
-                        "bg-amber-50 text-amber-700 border border-amber-200"
-                      }`}>
-                        {user.role === UserRole.SUPERADMIN && <ShieldCheck size={10} />}
-                        {user.role === UserRole.PETUGAS_PERSERDIAN && <KeyRound size={10} />}
-                        {user.role === UserRole.KETUA_TIM && <Users size={10} />}
-                        {user.role === UserRole.SUPERADMIN ? "Superadmin" : user.role === UserRole.PETUGAS_PERSERDIAN ? "Petugas" : "Ketua Tim"}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-xs text-slate-600 font-medium">
-                      {user.section || "-"}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${
-                        user.status?.toLowerCase() === "aktif" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
-                      }`}>
-                        {user.status?.toLowerCase() === 'aktif' ? 'Aktif' : 'Nonaktif'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => startEdit(user)}
-                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          onClick={() => setConfirmDelete(user)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
-                          title="Hapus"
-                          disabled={user.role === UserRole.SUPERADMIN}
-                        >
-                          <Trash2 size={14} className={user.role === UserRole.SUPERADMIN ? "opacity-30" : ""} />
-                        </button>
-                      </div>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Cari berdasarkan nama atau username..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-11 pr-4 py-3.5 text-xs font-semibold border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white shadow-sm transition-all"
+            />
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-200 text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+                  <th className="py-4 px-6">Nama & Username</th>
+                  <th className="py-4 px-6">Peran</th>
+                  <th className="py-4 px-6">Unit Kerja</th>
+                  <th className="py-4 px-6">Status</th>
+                  <th className="py-4 px-6 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-blue-50/30 transition-colors">
+                      <td className="py-4 px-6">
+                        <div className="font-extrabold text-slate-900 text-xs">{user.name}</div>
+                        <div className="text-xs text-slate-400 font-medium mt-0.5">@{user.username}</div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-extrabold tracking-wide uppercase ${
+                          user.role === UserRole.SUPERADMIN ? "bg-emerald-50 text-emerald-700" :
+                          user.role === UserRole.PETUGAS_PERSERDIAN ? "bg-indigo-50 text-indigo-700" :
+                          "bg-amber-50 text-amber-700"
+                        }`}>
+                          {user.role === UserRole.SUPERADMIN && <ShieldCheck size={12} strokeWidth={2.5} />}
+                          {user.role === UserRole.PETUGAS_PERSERDIAN && <KeyRound size={12} strokeWidth={2.5} />}
+                          {user.role === UserRole.KETUA_TIM && <Users size={12} strokeWidth={2.5} />}
+                          {user.role === UserRole.SUPERADMIN ? "Superadmin" : user.role === UserRole.PETUGAS_PERSERDIAN ? "Petugas" : "Ketua Tim"}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-xs text-slate-600 font-semibold">
+                        {user.section || "-"}
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`text-xs font-extrabold ${
+                          user.status?.toLowerCase() === "aktif" ? "text-emerald-500" : "text-rose-500"
+                        }`}>
+                          {user.status?.toLowerCase() === 'aktif' ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => startEdit(user)}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete(user)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
+                            title="Hapus"
+                            disabled={user.role === UserRole.SUPERADMIN}
+                          >
+                            <Trash2 size={16} className={user.role === UserRole.SUPERADMIN ? "opacity-30" : ""} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-slate-500 text-xs font-medium">
+                      Tidak ada data pengguna yang sesuai.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-500 text-xs">
-                    Tidak ada data pengguna yang sesuai.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
     </>
   );

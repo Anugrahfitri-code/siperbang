@@ -1135,83 +1135,75 @@ useEffect(() => {
             {superadminTab === "dashboard" && (
               <div className="space-y-6">
                 {/* Task list quick peek */}
-                <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-amber-50 text-amber-600 border-amber-100">
-                        <Bell size={24} />
-                      </div>
-                      <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
+                <div className="space-y-6">
+                  {/* Banner */}
+                  <div className="relative bg-gradient-to-r from-[#f8faff] to-[#f0f4ff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center gap-5">
+                    {/* Glow effects */}
+                    <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                    <div className="absolute left-0 bottom-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+                    
+                    <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-100 text-amber-500 relative z-10">
+                      <Bell size={26} strokeWidth={2.5} />
+                    </div>
+                    <div className="relative z-10">
+                      <h3 className="text-base font-extrabold text-slate-800 uppercase tracking-wide">
                         Antrian Pengajuan BON Masuk Baru
                       </h3>
+                      <p className="text-xs font-medium text-slate-500 mt-1">
+                        Daftar pengajuan bon masuk baru yang perlu Anda pantau dan proses.
+                      </p>
                     </div>
-                    <div className="space-y-4">
-                      {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => {
-                        const relatedBon = bons.find(b => (b.bonNo || b.bon_no) === (r.bonNo || r.bon_no));
-                        return (
-                        <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-md p-5 shadow-xs gap-4">
-                          <div>
-                            <span className="font-mono text-xs font-bold text-slate-400 block uppercase tracking-wider mb-1">{r.bonNo}</span>
-                            <span className="font-extrabold text-slate-800 text-base block">{r.itemName}</span>
-                            
-                            {relatedBon && (relatedBon.keperluan || relatedBon.catatan) && (
-                              <div className="mt-2 mb-2 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-md border border-slate-200/60 leading-relaxed">
-                                {relatedBon.keperluan && (
-                                  <div><span className="font-bold text-slate-700">Keperluan:</span> {relatedBon.keperluan}</div>
-                                )}
-                                {relatedBon.catatan && (
-                                  <div className={relatedBon.keperluan ? "mt-1.5 pt-1.5 border-t border-slate-200/60" : ""}><span className="font-bold text-slate-700">Catatan BON:</span> {relatedBon.catatan}</div>
-                                )}
-                              </div>
-                            )}
+                  </div>
 
-                            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mt-2">
-                              <User size={12} className="text-slate-400" />
-                              <span>Diminta oleh {r.requester}</span>
-                              <span className="text-slate-300 mx-1">•</span>
-                              <FileText size={12} className="text-slate-400" />
-                              <span>{r.section}</span>
+                  <div className="space-y-4">
+                    {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => {
+                      const relatedBon = bons.find(b => (b.bonNo || b.bon_no) === (r.bonNo || r.bon_no));
+                      return (
+                      <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-xl p-5 shadow-sm gap-4 transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:border-indigo-100">
+                        <div>
+                          <span className="font-mono text-xs font-bold text-slate-400 block uppercase tracking-wider mb-1">{r.bonNo}</span>
+                          <span className="font-extrabold text-slate-800 text-base block">{r.itemName}</span>
+                          
+                          {relatedBon && (relatedBon.keperluan || relatedBon.catatan) && (
+                            <div className="mt-2 mb-2 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-md border border-slate-200/60 leading-relaxed">
+                              {relatedBon.keperluan && (
+                                <div><span className="font-bold text-slate-700">Keperluan:</span> {relatedBon.keperluan}</div>
+                              )}
+                              {relatedBon.catatan && (
+                                <div className={relatedBon.keperluan ? "mt-1.5 pt-1.5 border-t border-slate-200/60" : ""}><span className="font-bold text-slate-700">Catatan BON:</span> {relatedBon.catatan}</div>
+                              )}
                             </div>
-                          </div>
-                          <button
-                            onClick={() => {
-                              setSuperadminTab("checking");
-                            }}
-                            className="bg-blue-600 text-white px-5 py-2.5 rounded font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors text-xs shadow-sm self-start sm:self-auto"
-                          >
-                            <Search size={14} />
-                            <span>Proses Cek</span>
-                            <ChevronRight size={14} />
-                          </button>
-                        </div>
-                      );})}
-                      {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).length === 0 && (
-                        <div className="text-center py-6 text-slate-400 text-xs font-semibold">
-                          Semua antrean BON digital telah diproses. Bersih!
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                          )}
 
-                  {/* Stock quick view */}
-                  <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-sm font-extrabold text-slate-800 tracking-tight uppercase">Ringkasan Ketersediaan Stok</h3>
-                      <button onClick={() => setSuperadminTab("stock_manage")} className="text-xs text-indigo-600 font-bold hover:text-indigo-700">
-                        Lihat Semua
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {stock.slice(0, 3).map((st) => (
-                        <div key={st.id} className="bg-slate-50 border border-slate-200 rounded p-3 text-xs">
-                          <span className="font-mono text-2xs text-slate-400 font-bold block uppercase tracking-wider">{st.code}</span>
-                          <span className="font-bold text-slate-800 text-sm mt-1 block truncate">{st.name}</span>
-                          <span className={`mt-2 inline-block font-extrabold text-xs ${st.qty < 10 ? "text-rose-500" : "text-emerald-600"}`}>
-                            {st.qty} {st.unit} Tersedia
-                          </span>
+                          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mt-2">
+                            <User size={12} className="text-slate-400" />
+                            <span>Diminta oleh {r.requester}</span>
+                            <span className="text-slate-300 mx-1">•</span>
+                            <FileText size={12} className="text-slate-400" />
+                            <span>{r.section}</span>
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                        <button
+                          onClick={() => {
+                            setSuperadminTab("checking");
+                          }}
+                          className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition-colors text-xs shadow-sm self-start sm:self-auto"
+                        >
+                          <Search size={14} />
+                          <span>Proses Cek</span>
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    );})}
+                    {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).length === 0 && (
+                      <div className="text-center py-6 text-slate-400 text-xs font-semibold bg-white rounded-2xl border border-slate-200 shadow-sm">
+                        Semua antrean BON digital telah diproses. Bersih!
+                      </div>
+                    )}
                   </div>
+                </div>
+
+
                 </div>
             )}
 
