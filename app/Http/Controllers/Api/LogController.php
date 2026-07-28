@@ -9,9 +9,19 @@ use Illuminate\Http\Request;
 
 class LogController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(HistoryLog::where('action', 'not like', '%Login%')->orderBy('created_at', 'desc')->get());
+        $user = $request->user();
+        
+        $query = HistoryLog::where('action', 'not like', '%Login%');
+
+        if ($user && !in_array(strtolower($user->role), ['admin', 'superadmin'])) {
+            $query->whereHas('user', function ($q) use ($user) {
+                $q->where('role', $user->role);
+            });
+        }
+
+        return response()->json($query->orderBy('created_at', 'desc')->get());
     }
 
     public function store(Request $request)
