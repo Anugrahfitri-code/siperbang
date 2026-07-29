@@ -85,3 +85,22 @@
   animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Landing page smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Offset sections for fixed navbar (64px) */
+section[id] {
+  scroll-margin-top: 64px;
+}
+
+/* FAQ details/summary toggle arrow */
+details > summary {
+  cursor: pointer;
+  user-select: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
