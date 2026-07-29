@@ -80,6 +80,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
   Disetujui:           { label: "Disetujui",            color: "bg-blue-50 text-blue-800 border-blue-200",       icon: <CheckCircle size={12} /> },
   Ditolak:             { label: "Ditolak",              color: "bg-rose-50 text-rose-800 border-rose-200",       icon: <XCircle size={12} /> },
   Selesai:             { label: "Selesai",              color: "bg-emerald-50 text-emerald-800 border-emerald-200", icon: <CheckCircle size={12} /> },
+  "Selesai (Sebagian)":{ label: "Selesai (Sebagian)",   color: "bg-emerald-50 text-emerald-800 border-emerald-200", icon: <CheckCircle size={12} /> },
   Diajukan:            { label: "Diajukan",             color: "bg-amber-50 text-amber-800 border-amber-200",    icon: <Clock size={12} /> },
 };
 
@@ -143,6 +144,8 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
     if (activeFilter !== "Semua") {
       if (activeFilter === "Diajukan") {
         result = result.filter(b => b.status === "Diajukan" || b.status === "Menunggu Verifikasi" || b.status === "Diproses");
+      } else if (activeFilter === "Selesai") {
+        result = result.filter(b => b.status === "Selesai" || b.status === "Disetujui" || b.status === "Selesai (Sebagian)");
       } else {
         result = result.filter(b => b.status === activeFilter);
       }
@@ -168,7 +171,7 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
     Diajukan: bons.filter(b => b.status === "Diajukan" || b.status === "Menunggu Verifikasi" || b.status === "Diproses").length,
     Ditolak: bons.filter(b => b.status === "Ditolak").length,
     Draft: bons.filter(b => b.status === "Draft").length,
-    Selesai: bons.filter(b => b.status === "Selesai" || b.status === "Disetujui").length,
+    Selesai: bons.filter(b => b.status === "Selesai" || b.status === "Disetujui" || b.status === "Selesai (Sebagian)").length,
   }), [bons]);
 
   const filterTabs = [
@@ -311,7 +314,7 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
               let iconBg = "bg-orange-50 text-orange-400 border-orange-100";
               if(bon.status === "Ditolak") iconBg = "bg-rose-50 text-rose-400 border-rose-100";
               else if(bon.status === "Draft") iconBg = "bg-indigo-50 text-indigo-400 border-indigo-100";
-              else if(bon.status === "Selesai" || bon.status === "Disetujui") iconBg = "bg-emerald-50 text-emerald-400 border-emerald-100";
+              else if(bon.status === "Selesai" || bon.status === "Disetujui" || bon.status === "Selesai (Sebagian)") iconBg = "bg-emerald-50 text-emerald-400 border-emerald-100";
 
               return (
                 <div key={bon.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all hover:border-indigo-200">
@@ -325,7 +328,9 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
                     {/* Content */}
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{bon.bonNo}</span>
+                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                          {bon.keperluan ? `KEPERLUAN: ${bon.keperluan}` : "PENGAJUAN BARANG"}
+                        </span>
                         <span className="text-slate-300 text-[10px]">•</span>
                         <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
                            <Calendar size={10} />
@@ -334,15 +339,11 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
                       </div>
                       
                       <h4 className="text-sm font-extrabold text-slate-800 leading-snug truncate mb-1.5">
-                        {firstItemName || bon.keperluan || "Tanpa keperluan"} 
-                        {firstItem && <span className="text-slate-400 font-medium"> ({firstItemReq} {firstItem.unit})</span>}
-                        {bon.itemsCount > 1 && <span className="text-indigo-500 font-bold ml-1">+{bon.itemsCount - 1} Item</span>}
+                        {bon.bon_no}
                       </h4>
 
                       <div className="flex items-center gap-3 flex-wrap text-xs font-semibold">
-                         <span className="text-slate-500">Jumlah Dipenuhi: <span className="text-slate-800">{firstItemFulf} {firstItem?.unit || ''}</span></span>
-                         <span className="text-slate-300">|</span>
-                         <span className="text-slate-500">Hasil Cek Stok: <span className="text-blue-600">{firstItemStockId ? `${firstItemReq} tersedia di gudang` : "0 tersedia di gudang"}</span></span>
+                         <span className="text-slate-500">Total Pengajuan: <span className="text-slate-800">{bon.itemsCount ?? bon.items_count} Jenis Barang</span></span>
                       </div>
                     </div>
 

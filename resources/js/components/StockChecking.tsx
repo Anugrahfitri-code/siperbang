@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { ItemRequest, RequestStatus, StockItem } from "../types";
-import { SearchCode, CheckCircle, AlertTriangle, Play, HelpCircle, Package, ArrowRight, ShieldAlert, Truck, ShoppingCart, XCircle, Loader2, Search, Trash2, User, X } from "lucide-react";
+import { SearchCode, CheckCircle, AlertTriangle, Play, HelpCircle, Package, ArrowRight, ShieldAlert, Truck, ShoppingCart, XCircle, Loader2, Search, Trash2, User, X, AlertCircle } from "lucide-react";
 import { DistributionProcurement } from "./DistributionProcurement";
 
 interface StockCheckingProps {
@@ -38,6 +38,8 @@ interface StockCheckingProps {
   onCompleteProcurement: (reqId: string, procurementId: string, processedBy: string) => Promise<void>;
   /** Batalkan/tolak satu item request — berlaku untuk status apapun */
   onReject: (reqId: string, alasan: string) => Promise<void>;
+  /** Selesaikan parsial tanpa pengadaan */
+  onCompletePartial: (reqId: string) => Promise<void>;
   currentUser: string;
 }
 
@@ -50,6 +52,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
   onProcure,
   onCompleteProcurement,
   onReject,
+  onCompletePartial,
   currentUser,
 }) => {
   const [selectedRequest,   setSelectedRequest]   = useState<ItemRequest | null>(null);
@@ -66,6 +69,10 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
   const [rejectAlasan,  setRejectAlasan]  = useState("");
   const [rejectLoading, setRejectLoading] = useState(false);
   const [rejectError,   setRejectError]   = useState<string | null>(null);
+
+  // ── Selesai Parsial state ─────────────────────────────────────
+  const [completePartialTarget, setCompletePartialTarget] = useState<ItemRequest | null>(null);
+  const [completePartialLoading, setCompletePartialLoading] = useState(false);
 
   /** Cari barang yang paling mirip berdasarkan kata kunci (fuzzy keyword) */
   const findBestMatch = (itemName: string): StockItem | null => {
@@ -259,7 +266,7 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
 
                   <div className="flex items-center gap-3 justify-end flex-wrap">
                     {/* ── Tombol Batalkan — tampil untuk semua status kecuali Ditolak & Selesai ── */}
-                    {req.status !== RequestStatus.DITOLAK && req.status !== RequestStatus.SELESAI && (
+                    {req.status !== RequestStatus.DITOLAK && req.status !== RequestStatus.SELESAI && !(req.status === RequestStatus.TERPENUHI_SEBAGIAN && req.qtyToProcure === 0) && (
                       <button
                         onClick={() => {
                           setRejectTarget(req);
@@ -283,18 +290,27 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                       </button>
                     ) : (
                       <>
-                        {(req.status === RequestStatus.TERPENUHI ||
-                          req.status === RequestStatus.TERPENUHI_SEBAGIAN ||
-                          req.status === RequestStatus.SIAP_DIDISTRIBUSIKAN ||
-                          req.status === RequestStatus.PERLU_PENGADAAN ||
-                          req.status === RequestStatus.DALAM_PENGADAAN) && (
+                        {req.status === RequestStatus.TERPENUHI_SEBAGIAN && req.qtyToProcure > 0 ? (
                           <button
-                            onClick={() => setSelectedForAction(req)}
+                            onClick={() => setCompletePartialTarget(req)}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
                           >
-                            {req.qtyFulfilled > 0 ? <Truck size={14} /> : <ShoppingCart size={14} />}
-                            Proses Pemenuhan
+                            <CheckCircle size={14} />
+                            Selesai
                           </button>
+                        ) : (
+                          (req.status === RequestStatus.TERPENUHI ||
+                            req.status === RequestStatus.SIAP_DIDISTRIBUSIKAN ||
+                            req.status === RequestStatus.PERLU_PENGADAAN ||
+                            req.status === RequestStatus.DALAM_PENGADAAN) && (
+                            <button
+                              onClick={() => setSelectedForAction(req)}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+                            >
+                              {req.qtyFulfilled > 0 ? <Truck size={14} /> : <ShoppingCart size={14} />}
+                              Proses Pemenuhan
+                            </button>
+                          )
                         )}
                       </>
                     )}
@@ -551,15 +567,14 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
         </div>
       )}
 
-      {/* ── Modal Konfirmasi Batalkan ─────────────────────────── */}
+      {/* Modal Batalkan Pengajuan */}
       {rejectTarget && (
-        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6">
-
+        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 animate-slide-up">
             {/* Header */}
-            <div className="flex items-start gap-3 mb-5">
-              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-rose-50 text-rose-600 border-rose-100">
-                <XCircle size={24} />
+            <div className="flex gap-4 items-start mb-5">
+              <div className="shrink-0 flex items-center justify-center size-12 rounded-full bg-rose-100 text-rose-600">
+                <AlertCircle size={24} />
               </div>
               <div>
                 <h3 className="text-sm font-extrabold text-slate-900">Batalkan Pengajuan</h3>
@@ -652,6 +667,75 @@ export const StockChecking: React.FC<StockCheckingProps> = ({
                 {rejectLoading
                   ? <><Loader2 size={13} className="animate-spin" /> Membatalkan...</>
                   : <><XCircle size={13} /> Konfirmasi Batalkan</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Selesai Parsial */}
+      {completePartialTarget && (
+        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 animate-slide-up">
+            {/* Header */}
+            <div className="flex gap-4 items-start mb-5">
+              <div className="shrink-0 flex items-center justify-center size-12 rounded-full bg-emerald-100 text-emerald-600">
+                <CheckCircle size={24} />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900">Selesaikan Pengajuan</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Menyelesaikan pengajuan tanpa melakukan pengadaan untuk sisa barang yang belum terpenuhi.
+                </p>
+              </div>
+            </div>
+
+            {/* Info BON */}
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 mb-5 text-xs space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Nomor BON:</span>
+                <span className="font-mono font-bold text-slate-700">{completePartialTarget.bonNo}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Nama Barang:</span>
+                <span className="font-bold text-indigo-700">{completePartialTarget.itemName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Jumlah Terpenuhi:</span>
+                <span className="font-bold text-emerald-600">{completePartialTarget.qtyFulfilled} {completePartialTarget.unit}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Sisa Belum Dipenuhi:</span>
+                <span className="font-bold text-rose-500">{completePartialTarget.qtyToProcure} {completePartialTarget.unit}</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 justify-end">
+              <button
+                disabled={completePartialLoading}
+                onClick={() => setCompletePartialTarget(null)}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                disabled={completePartialLoading}
+                onClick={async () => {
+                  setCompletePartialLoading(true);
+                  try {
+                    await onCompletePartial(completePartialTarget.id);
+                  } finally {
+                    setCompletePartialLoading(false);
+                    setCompletePartialTarget(null);
+                  }
+                }}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm disabled:opacity-50 transition-colors"
+              >
+                {completePartialLoading
+                  ? <><Loader2 size={13} className="animate-spin" /> Menyelesaikan...</>
+                  : <><CheckCircle size={13} /> Selesaikan</>
                 }
               </button>
             </div>
