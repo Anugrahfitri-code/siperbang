@@ -57,15 +57,25 @@ class RequestController extends Controller
             $actualUser = \App\Models\User::where('name', $requester)->first();
             $section   = $actualUser ? ($actualUser->section ?? 'Tata Usaha') : ($user->section ?? 'Tata Usaha');
 
-            // Generate unique bon_no
-            $bonNo    = null;
+            $targetUserId = $user->id;
+            if (in_array(strtolower($user->role), ['admin', 'superadmin']) && $request->has('requester')) {
+                $targetUser = \App\Models\User::where('username', $request->input('requester'))
+                               ->orWhere('name', $request->input('requester'))
+                               ->first();
+                if ($targetUser) {
+                    $targetUserId = $targetUser->id;
+                }
+            }
+
+            // Generate BON Number
+            $prefix = 'BON/' . now()->format('Y/m/d') . '/';
+            $bonNo = null;
             $attempts = 0;
             do {
-                $prefix     = 'BON/' . date('Y/m/d/');
-                $countToday = \App\Models\BonHeader::where('bon_no', 'like', $prefix . '%')->count();
-                $candidate  = $prefix . str_pad($countToday + 1, 3, '0', STR_PAD_LEFT);
-                if (!\App\Models\BonHeader::where('bon_no', $candidate)->exists()) {
-                    $bonNo = $candidate;
+                $randomNum = str_pad(mt_rand(1, 999), 3, '0', STR_PAD_LEFT);
+                $tempNo = $prefix . $randomNum;
+                if (!\App\Models\ItemRequest::where('bon_no', $tempNo)->exists()) {
+                    $bonNo = $tempNo;
                 }
                 $attempts++;
             } while ($bonNo === null && $attempts < 10);
@@ -76,7 +86,7 @@ class RequestController extends Controller
 
             $bonHeader = \App\Models\BonHeader::create([
                 'bon_no' => $bonNo,
-                'user_id' => $user->id,
+                'user_id' => $targetUserId,
                 'section' => $section,
                 'requester' => $requester,
                 'date' => today(),
@@ -105,7 +115,7 @@ class RequestController extends Controller
                 ItemRequest::create([
                     'bon_header_id' => $bonHeader->id,
                     'bon_no' => $bonNo,
-                    'user_id' => $user->id,
+                    'user_id' => $targetUserId,
                     'section' => $section,
                     'requester' => $requester,
                     'date' => today(),
@@ -123,12 +133,22 @@ class RequestController extends Controller
                 ]);
             }
 
+            $isOnBehalf = ($user->name !== $requester);
+            
+            $actionText = $statusVal === 'Draft' ? 'Buat Draft' : 'Ajukan Permintaan';
+            $detailsText = $statusVal === 'Draft' 
+                ? "Menyimpan draft BON: {$bonNo}" 
+                : "Mengajukan permintaan barang (BON: {$bonNo}) ke petugas";
+            
+            if ($isOnBehalf) {
+                $detailsText .= " atas nama {$requester} (Ketua Tim)";
+            }
+
             \App\Models\HistoryLog::create([
+                'user_id' => $targetUserId,
                 'actor' => $user->name,
-                'action' => $statusVal === 'Draft' ? 'Buat Draft' : 'Ajukan Permintaan',
-                'details' => $statusVal === 'Draft' 
-                    ? "Menyimpan draft BON: {$bonNo}" 
-                    : "Mengajukan permintaan barang (BON: {$bonNo}) ke petugas",
+                'action' => $actionText,
+                'details' => $detailsText,
             ]);
 
             DB::commit();
@@ -631,6 +651,38 @@ class RequestController extends Controller
      *     → Jika stok sudah dialokasikan (stock_allocated = true), qty_fulfilled
      *       dikembalikan ke stok gudang.
      */
+    /**
+     * Selesaikan pengajuan yang Terpenuhi Sebagian tanpa melakukan pengadaan.
+     */
+    public function completePartial(Request $request, ItemRequest $itemRequest)
+    {
+        if ($itemRequest->status !== 'Terpenuhi Sebagian') {
+            return response()->json(['message' => 'Hanya pengajuan Terpenuhi Sebagian yang dapat diselesaikan langsung.'], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $itemRequest->update([
+                'qty_to_procure' => 0,
+                'last_updated' => today(),
+            ]);
+
+            \App\Models\HistoryLog::create([
+                'actor' => $request->user() ? $request->user()->name : 'Sistem',
+                'action' => 'Selesai Sebagian',
+                'details' => "Menandai permintaan {$itemRequest->item_name} (BON {$itemRequest->bon_no}) selesai tanpa pengadaan sisa barang.",
+            ]);
+
+            $this->syncBonHeaderStatus($itemRequest->bonHeader);
+            DB::commit();
+
+            return response()->json($itemRequest->fresh());
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Gagal menyelesaikan pengajuan.'], 500);
+        }
+    }
+
     public function rejectItem(Request $request, ItemRequest $itemRequest)
     {
         $validated = $request->validate([
@@ -760,34 +812,54 @@ class RequestController extends Controller
         }
 
         // If any is in progress (TERPENUHI SEBAGIAN, PERLU PENGADAAN, DALAM PENGADAAN)
-        if (in_array('TERPENUHI SEBAGIAN', $statuses) || 
-            in_array('PERLU PENGADAAN', $statuses) || 
-            in_array('DALAM PENGADAAN', $statuses)) {
+        $hasInProgress = false;
+        foreach ($items as $item) {
+            $status = strtoupper(trim($item->status));
+            if (in_array($status, ['PERLU PENGADAAN', 'DALAM PENGADAAN'])) {
+                $hasInProgress = true;
+                break;
+            }
+            if ($status === 'TERPENUHI SEBAGIAN' && $item->qty_to_procure > 0) {
+                $hasInProgress = true;
+                break;
+            }
+        }
+        if ($hasInProgress) {
             $bonHeader->update(['status' => 'Diproses']);
             return;
         }
 
-        // If all remaining items are either SELESAI, DITOLAK, TERPENUHI, or SIAP DIDISTRIBUSIKAN
-        // If any of them is TERPENUHI or SIAP DIDISTRIBUSIKAN, then header is Disetujui
+        // If all remaining items are either SELESAI, DITOLAK, TERPENUHI, SIAP DIDISTRIBUSIKAN, or TERPENUHI SEBAGIAN (with qty_to_procure == 0)
+        // Check if any is TERPENUHI or SIAP DIDISTRIBUSIKAN -> Disetujui
         if (in_array('TERPENUHI', $statuses) || in_array('SIAP DIDISTRIBUSIKAN', $statuses)) {
             $bonHeader->update(['status' => 'Disetujui']);
             return;
         }
 
-        // If all resolved and non-rejected items are SELESAI
-        $allSelesaiOrRejected = true;
-        foreach ($statuses as $status) {
+        // If all resolved items are either SELESAI, DITOLAK, or TERPENUHI SEBAGIAN (with qty_to_procure == 0)
+        $allResolved = true;
+        $hasPartialCompleted = false;
+        foreach ($items as $item) {
+            $status = strtoupper(trim($item->status));
             if ($status !== 'SELESAI' && $status !== 'DITOLAK') {
-                $allSelesaiOrRejected = false;
-                break;
+                if ($status === 'TERPENUHI SEBAGIAN' && $item->qty_to_procure == 0) {
+                    $hasPartialCompleted = true;
+                } else {
+                    $allResolved = false;
+                    break;
+                }
             }
         }
-        if ($allSelesaiOrRejected) {
-            $bonHeader->update(['status' => 'Selesai']);
-            return;
-        }
 
-        // Fallback
-        $bonHeader->update(['status' => 'Diproses']);
+        if ($allResolved) {
+            if ($hasPartialCompleted) {
+                $bonHeader->update(['status' => 'Selesai (Sebagian)']);
+            } else {
+                $bonHeader->update(['status' => 'Selesai']);
+            }
+        } else {
+            // Fallback
+            $bonHeader->update(['status' => 'Diproses']);
+        }
     }
 }

@@ -15,8 +15,12 @@ class LogController extends Controller
         
         $query = HistoryLog::where('action', 'not like', '%Login%');
 
-        if ($user && !in_array(strtolower($user->role), ['admin', 'superadmin'])) {
-            $query->where('actor', $user->name);
+        if ($user && !in_array(strtolower($user->role), ['admin', 'superadmin', 'petugas persediaan'])) {
+            $query->where(function ($q) use ($user) {
+                // Return if user_id explicitly matches or actor contains user's name
+                $q->where('user_id', $user->id)
+                  ->orWhere('actor', 'like', "%{$user->name}%");
+            });
         }
 
         return response()->json($query->orderBy('created_at', 'desc')->get());
@@ -28,6 +32,7 @@ class LogController extends Controller
             'actor' => 'required|string',
             'action' => 'required|string',
             'details' => 'required|string',
+            'user_id' => 'nullable|integer'
         ]);
 
         $log = HistoryLog::create($validated);

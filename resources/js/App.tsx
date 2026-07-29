@@ -486,7 +486,7 @@ useEffect(() => {
 
   // Log activity helper
   // Helper: tulis log ke frontend state DAN backend DB
-  const addLog = async (actor: string, action: string, details: string) => {
+  const addLog = async (actor: string, action: string, details: string, userId?: number) => {
     const newLog: LogType = {
       id: "log-" + Math.random().toString(36).substring(2, 9),
       timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
@@ -501,7 +501,7 @@ useEffect(() => {
     try {
       await apiFetch("/api/logs", {
         method: "POST",
-        body: JSON.stringify({ actor, action, details }),
+        body: JSON.stringify({ actor, action, details, user_id: userId }),
       });
     } catch {
       // Non-critical — log already in UI state
@@ -546,10 +546,18 @@ useEffect(() => {
     // Log: Ketua Tim kirim BON
     const statusLabel = payload.status === "draft" ? "Simpan Draft" : "Kirim Pengajuan";
     const itemCount   = payload.items.length;
+    const isOnBehalf  = currentUser.toLowerCase().includes("admin") && payload.requester;
+    
+    let detailMsg = `${statusLabel} BON berhasil. ${itemCount} jenis barang diminta. Keperluan: "${payload.keperluan}".`;
+    if (isOnBehalf) {
+      detailMsg += ` (Diajukan atas nama ${payload.requester} sebagai Ketua Tim)`;
+    }
+
     await addLog(
       currentUser,
       statusLabel === "draft" ? "Simpan Draft BON" : "Kirim BON",
-      `${statusLabel} BON berhasil. ${itemCount} jenis barang diminta. Keperluan: "${payload.keperluan}".`
+      detailMsg,
+      data.user_id
     );
   };
 
@@ -587,8 +595,14 @@ useEffect(() => {
     if (payload.status !== "draft") setEditingDraft(null);
 
     const label = payload.status === "draft" ? "Update Draft BON" : "Kirim BON (dari Draft)";
-    await addLog(currentUser, label,
-      `BON ${editingDraft?.bonNo ?? ""} ${payload.status === "draft" ? "diperbarui." : "dikirim ke verifikasi."}`);
+    const isOnBehalf = currentUser.toLowerCase().includes("admin") && payload.requester;
+    let detailMsg = `BON ${editingDraft?.bonNo ?? ""} ${payload.status === "draft" ? "diperbarui." : "dikirim ke verifikasi."}`;
+    
+    if (isOnBehalf) {
+      detailMsg += ` (Diajukan atas nama ${payload.requester} sebagai Ketua Tim)`;
+    }
+
+    await addLog(currentUser, label, detailMsg, data.user_id);
   };
 
   // 1c. Delete a draft (DELETE /api/requests/bon/{id})
@@ -598,13 +612,35 @@ useEffect(() => {
       const data: any = await response.json().catch(() => ({}));
       throw new Error(data.message ?? "Gagal menghapus draft.");
     }
+    const targetUserId = bons.find((b: any) => b.id === bonId)?.user_id;
     setBons((prev) => prev.filter((b: any) => b.id !== bonId));
     // Juga hapus dari requests state agar dashboard langsung sinkron
     setRequests((prev) => prev.filter((r) => r.bonNo !== bonNo));
-    await addLog(currentUser, "Hapus Draft BON", `Draft ${bonNo} dihapus.`);
+    await addLog(currentUser, "Hapus Draft BON", `Draft ${bonNo} dihapus.`, targetUserId);
   };
 
   // 1d. Batalkan / tolak satu item request (POST /api/requests/{id}/reject)
+  const handleCompletePartial = async (reqId: string) => {
+    try {
+      const response = await fetch(`/api/requests/${reqId}/complete-partial`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Gagal menyelesaikan pengajuan.");
+      }
+
+      await loadData();
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
+  };
+
   const handleReject = async (reqId: string, alasan: string): Promise<void> => {
     const response = await apiFetch(`/api/requests/${reqId}/reject`, {
       method: "POST",
@@ -1082,6 +1118,7 @@ useEffect(() => {
                   onProcure={handleProcure}
                   onCompleteProcurement={handleCompleteProcurement}
                   onReject={handleReject}
+                  onCompletePartial={handleCompletePartial}
                   currentUser={currentUser}
                 />
               )}

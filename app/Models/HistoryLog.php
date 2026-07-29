@@ -9,7 +9,12 @@ class HistoryLog extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'user_id',
+        'actor',
+        'action',
+        'details',
+    ];
 
     public function user(){
         

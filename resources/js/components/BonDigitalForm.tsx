@@ -380,7 +380,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
       keperluan: keperluan.trim(),
       catatan: catatan.trim(),
       status,
-      requester: currentUser.toLowerCase().includes("admin") ? (users.find((u) => u.username === selectedPengaju)?.name || selectedPengaju) : undefined,
+      requester: currentUser.toLowerCase().includes("admin") ? selectedPengaju : undefined,
       items: items.map((it) => ({
         barang_id: it.barang_id,
         nama_barang: it.nama_barang,
