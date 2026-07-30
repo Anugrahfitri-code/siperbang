@@ -782,22 +782,22 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             </h2>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-12">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-12 group">
             {[
-              { name: "Iwan Syahrir", role: "Project Manager" },
-              { name: "Muh. Fajar", role: "Backend Developer" },
-              { name: "Siti Nurhaliza", role: "Frontend Developer" },
-              { name: "Resky Ananda", role: "UI/UX Designer" },
-              { name: "Nadya Aulia", role: "QA Engineer" },
-              { name: "Dimas Pratama", role: "DevOps Engineer" },
+              { name: "Anugrah Fitri Novanda", role: "Universitas Hasanuddin", image: "/images/team/anugrah.jpg" },
+              { name: "Siti Nurfadhilah Az Zahra Syam", role: "Universitas Hasanuddin", image: "/images/team/zahra.jpg" },
+              { name: "A. Izza Syathra", role: "Universitas Hasanuddin", image: "/images/team/izza.jpg" },
+              { name: "Vina Sucitra", role: "Universitas Hasanuddin", image: "/images/team/vina.jpg" },
+              { name: "Sita Rasmi Raihana", role: "Universitas Hasanuddin", image: "/images/team/sita.jpg" },
+              { name: "Isnadia Nurfadillah", role: "Universitas Hasanuddin", image: "/images/team/isnadia.jpg" },
             ].map((member, i) => (
-              <div key={i} className="flex flex-col items-center text-center group">
-                <div className="w-28 h-28 rounded-full overflow-hidden bg-slate-100 mb-5 relative shadow-sm border border-slate-200">
-                  {/* Using generic avatar API for placeholders since actual photos aren't confirmed */}
+              <div key={i} className="flex flex-col items-center text-center group transition-transform duration-500 ease-out transform scale-100 group-hover:scale-90 group-hover:opacity-80 hover:scale-[1.35] hover:opacity-100 hover:z-20 cursor-pointer">
+                <div className="w-28 h-28 rounded-full overflow-hidden bg-slate-100 mb-5 relative shadow-sm border border-slate-200 transition-all duration-500 ease-out transform hover:-translate-y-3 hover:border-blue-300 hover:shadow-[0_32px_64px_rgba(0,85,165,0.2)]">
+                  <div className="absolute inset-0 rounded-full border border-transparent transition-all duration-500 ease-out hover:border-blue-300" />
                   <img 
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=0055A5&color=fff&size=128&font-size=0.33`} 
+                    src={member.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=0055A5&color=fff&size=128&font-size=0.33`} 
                     alt={member.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-500 ease-out hover:scale-[1.4]"
                   />
                 </div>
                 <h4 className="text-lg font-bold text-slate-900 leading-tight mb-1">{member.name}</h4>
