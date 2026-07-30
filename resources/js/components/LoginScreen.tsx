@@ -573,8 +573,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               {/* Description Card */}
               <div className="w-full rounded-2xl p-5 mb-7 flex gap-4 items-start"
                 style={{ background: "#f4f9ff", border: "1px solid #e6f0fa" }}>
-                <div className="shrink-0 flex items-center justify-center text-blue-500">
-                  <Package size={36} strokeWidth={1.5} />
+                <div className="shrink-0 flex items-center justify-center mt-1">
+                  <SiperbangLogo iconOnly />
                 </div>
                 <p className="text-[13px] text-slate-600 leading-relaxed font-medium pt-0.5">
                   <span className="font-bold text-slate-800">SIPERBANG</span> dirancang untuk membantu instansi pemerintah mengelola persediaan barang secara digital, akurat, dan real-time. Dilengkapi teknologi OCR AI untuk verifikasi otomatis, pemantauan stok, dan pelaporan yang lebih mudah.
@@ -913,8 +913,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
           </div>
 
-          <div className="pt-8 border-t border-slate-800 text-center text-sm text-slate-500 font-medium">
-            © 2024 SIPERBANG, All rights reserved.
+          <div className="pt-8 border-t border-white/10 text-center text-slate-500 text-[13px]">
+            &copy; {new Date().getFullYear()} SIPERBANG, All rights reserved.
           </div>
         </div>
       </footer>
