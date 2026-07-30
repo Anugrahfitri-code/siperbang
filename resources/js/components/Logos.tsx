@@ -18,9 +18,9 @@ export const SiperbangLogo: React.FC<SiperbangLogoProps> = ({
         Semua pemanggilan <SiperbangLogo /> akan memakai logo ini,
         termasuk halaman login dan navbar setelah login.
       */}
-      <div className="relative w-10 h-10 flex-shrink-0 mix-blend-multiply">
+      <div className="relative w-10 h-10 flex-shrink-0">
         <img
-          src="/images/icon baru.jpeg"
+          src="/images/icon baru.png"
           alt="Logo SIPERBANG"
           className="w-full h-full object-contain scale-[1.5] select-none pointer-events-none"
         />

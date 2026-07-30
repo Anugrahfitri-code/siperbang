@@ -545,7 +545,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             {/* ── Left: Illustration ── */}
             <div className="w-full lg:w-[45%] flex justify-center items-center relative">
               <img
-                src="/images/login-illustration.png"
+                src="/images/1362c635-40c4-46a0-8755-f1f10b2c5508-removebg-preview.png"
                 alt="Tentang SIPERBANG"
                 className="w-full max-w-[600px] h-auto object-contain relative z-10 -translate-x-2 scale-[1.15]"
                 style={{ filter: "drop-shadow(0 20px 40px rgba(0,85,165,0.10))" }}
@@ -877,14 +877,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             
             {/* Brand */}
             <div className="lg:col-span-2">
-              <div className="flex items-center gap-3 mb-6">
-                <SiperbangLogo iconOnly />
-                <div>
-                  <div className="font-extrabold text-xl tracking-tight leading-none text-white">SIPERBANG</div>
-                  <div className="text-[10px] text-slate-400 uppercase tracking-widest mt-1 font-semibold">
-                    Sistem Informasi Persediaan Barang
-                  </div>
-                </div>
+              <div className="mb-6">
+                <SiperbangLogo lightText />
               </div>
               <p className="text-[15px] text-slate-400 leading-relaxed mb-8 max-w-sm">
                 Sistem informasi terintegrasi untuk pengelolaan persediaan barang pemerintah yang lebih efisien, akurat, dan transparan.
