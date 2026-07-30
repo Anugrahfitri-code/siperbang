@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Receipt;
-use App\Services\InventoryCodeSuggestionService;
-use App\Services\ReceiptExcelExportService;
-use App\Services\ReceiptStockSyncService;
+use App\Services\Inventory\InventoryCodeSuggestionService;
+use App\Services\Receipt\ReceiptExcelExportService;
+use App\Services\Receipt\ReceiptStockSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -432,7 +432,7 @@ class ReceiptController extends Controller
                         'manual_draft' => $manualDraft,
                         'draft_saved_by' => auth()->id(),
                         'draft_saved_at' => now(),
-                        'status' => \App\Enums\ReceiptDocumentStatus::NEEDS_REVIEW,
+                        'status' => \App\Enums\Receipt\ReceiptDocumentStatus::NEEDS_REVIEW,
                         'verified_at' => null,
                     ]);
                 }

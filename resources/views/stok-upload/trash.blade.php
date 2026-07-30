@@ -1,4 +1,4 @@
-@extends('layouts.main')
+@extends('layouts.inventory')
 
 @section('content')
 
@@ -111,7 +111,7 @@
 
 {{-- Confirmation Modals --}}
 @foreach($batches as $batch)
-<x-confirm-modal id="restoreTrash{{ $batch->id }}"
+<x-feedback.confirm-modal id="restoreTrash{{ $batch->id }}"
     title="Pulihkan Upload"
     message="Pulihkan <strong>{{ $batch->file_name_original }}</strong> dari sampah?"
     variant="success"
@@ -120,7 +120,7 @@
     formMethod="POST"
 />
 
-<x-confirm-modal id="forceDelTrash{{ $batch->id }}"
+<x-feedback.confirm-modal id="forceDelTrash{{ $batch->id }}"
     title="Hapus Permanen"
     message="Hapus PERMANEN <strong>{{ $batch->file_name_original }}</strong>? Data tidak dapat dikembalikan."
     variant="danger"

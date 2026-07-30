@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Enums\ReceiptDocumentStatus;
+use App\Enums\Receipt\ReceiptDocumentStatus;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReceiptDocument extends Model

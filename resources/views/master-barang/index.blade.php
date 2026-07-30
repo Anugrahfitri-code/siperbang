@@ -1,4 +1,4 @@
-@extends('layouts.main')
+@extends('layouts.inventory')
 
 @section('content')
 <div class="w-full space-y-6">
@@ -384,7 +384,7 @@
 {{-- ═══════════════════════════════════════════════════════════
      DELETE CONFIRMATION MODAL
 ═══════════════════════════════════════════════════════════ --}}
-<x-confirm-modal
+<x-feedback.confirm-modal
     id="deleteModal"
     title="Hapus Barang"
     message='<span id="deleteMessage"></span>'

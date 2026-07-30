@@ -67,7 +67,7 @@ python -m venv .venv
 .venv\Scripts\activate        # Windows
 # source .venv/bin/activate   # Linux/macOS
 pip install -r requirements.txt
-.\run-server.ps1              # atau: uvicorn app.main:app --port 8001
+.\scripts\run-server.ps1              # atau: uvicorn app.main:app --port 8001
 ```
 
 ## Environment Variables Penting
@@ -86,12 +86,16 @@ OCR_SERVICE_TOKEN= # Bearer token untuk OCR service
 
 | Dokumen | Deskripsi |
 |---|---|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Diagram arsitektur & keputusan desain |
-| [FEATURES.md](FEATURES.md) | Daftar lengkap fitur per modul |
-| [API_REFERENCE.md](API_REFERENCE.md) | Semua endpoint API |
-| [DATABASE.md](DATABASE.md) | Skema database & relasi |
-| [SETUP_DEV.md](SETUP_DEV.md) | Panduan onboarding developer baru |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Panduan deploy ke staging/production |
-| [SECURITY.md](SECURITY.md) | Kebijakan keamanan |
+| [ARCHITECTURE.md](architecture/ARCHITECTURE.md) | Diagram arsitektur & keputusan desain |
+| [FEATURES.md](reference/FEATURES.md) | Daftar lengkap fitur per modul |
+| [API_REFERENCE.md](reference/API_REFERENCE.md) | Semua endpoint API |
+| [DATABASE.md](reference/DATABASE.md) | Skema database & relasi |
+| [SETUP_DEV.md](development/SETUP_DEV.md) | Panduan onboarding developer baru |
+| [DEPLOYMENT.md](operations/DEPLOYMENT.md) | Panduan deploy ke staging/production |
+| [SECURITY.md](operations/SECURITY.md) | Kebijakan keamanan |
 | [CHANGELOG.md](../CHANGELOG.md) | Riwayat perubahan |
-| [ROADMAP.md](ROADMAP.md) | Rencana pengembangan |
+| [ROADMAP.md](planning/ROADMAP.md) | Rencana pengembangan |
+| [PROJECT_STRUCTURE.md](development/PROJECT_STRUCTURE.md) | Struktur folder dan aturan penempatan file |
+| [CLEANUP_REPORT.md](development/CLEANUP_REPORT.md) | Hasil audit dan perapian struktur proyek |
+| [FOLDER_AUDIT.md](development/FOLDER_AUDIT.md) | Audit kesesuaian setiap folder dan keputusan penempatan file |
+| [maintenance/](maintenance/) | Catatan perbaikan dan pemeliharaan lama |

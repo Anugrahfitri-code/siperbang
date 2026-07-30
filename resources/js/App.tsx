@@ -4,25 +4,25 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { UserRole, UserAccount, ItemRequest, StockItem, ReceiptData, HistoryLog as LogType, RequestStatus, ProcurementMethod } from "./types";
-import { Navbar } from "./components/Navbar";
-import { DashboardStats } from "./components/DashboardStats";
-import { BonDigitalForm } from "./components/BonDigitalForm";
-import { StockManagement } from "./components/StockManagement";
-import { StockChecking } from "./components/StockChecking";
-import { ReceiptOCRProcessor } from "./components/ReceiptOCRProcessor";
-import { ReportExport } from "./components/ReportExport";
-import { HistoryLog } from "./components/HistoryLog";
-import { LoginScreen } from "./components/LoginScreen";
-import { Sidebar } from "./components/Sidebar";
-import { RequesterStockList } from "./components/RequesterStockList";
-import { UserManagement } from "./components/UserManagement";
-import { KetuaTimDashboard } from "./components/KetuaTimDashboard";
-import { BonMonitoringList, type BonHeaderRow } from "./components/BonMonitoringList";
-import type { BonDraft } from "./components/BonDigitalForm";
-import { AlertDialog } from "./components/AlertDialog";
+import { UserRole, UserAccount, ItemRequest, StockItem, ReceiptData, HistoryLog as LogType, RequestStatus, ProcurementMethod } from "./shared/types";
+import { Navbar } from "./shared/components/layout/Navbar";
+import { DashboardStats } from "./features/dashboard/components/DashboardStats";
+import { BonDigitalForm } from "./features/requests/components/BonDigitalForm";
+import { StockManagement } from "./features/inventory-upload/components/StockManagement";
+import { StockChecking } from "./features/inventory/components/StockChecking";
+import { ReceiptOCRProcessor } from "./features/receipts/components/ReceiptOCRProcessor";
+import { ReportExport } from "./features/reports/components/ReportExport";
+import { HistoryLog } from "./features/audit/components/HistoryLog";
+import { LoginScreen } from "./features/auth/components/LoginScreen";
+import { Sidebar } from "./shared/components/layout/Sidebar";
+import { RequesterStockList } from "./features/inventory/components/RequesterStockList";
+import { UserManagement } from "./features/users/components/UserManagement";
+import { KetuaTimDashboard } from "./features/dashboard/components/KetuaTimDashboard";
+import { BonMonitoringList, type BonHeaderRow } from "./features/requests/components/BonMonitoringList";
+import type { BonDraft } from "./features/requests/components/BonDigitalForm";
+import { AlertDialog } from "./shared/components/feedback/AlertDialog";
 import { LayoutDashboard, FileSpreadsheet, ClipboardList, Package, Receipt, History, AlertCircle, Info, ChevronRight, CheckSquare, Loader2, Bell, User, FileText, Search } from "lucide-react";
-import { apiFetch } from "./api";
+import { apiFetch } from "./shared/api";
 
 type AuthenticatedUser = {
   id: number | string;
@@ -512,7 +512,7 @@ useEffect(() => {
 
   // 1. Submit a new BON Digital Request
   const handleAddRequest = async (
-    payload: import("./components/BonDigitalForm").BonSubmitPayload
+    payload: import("./features/requests/components/BonDigitalForm").BonSubmitPayload
   ): Promise<void> => {
     const response = await apiFetch("/api/requests", {
       method: "POST",
@@ -564,7 +564,7 @@ useEffect(() => {
   // 1b. Update existing draft (PUT /api/requests/bon/{id})
   const handleUpdateDraft = async (
     bonId: number,
-    payload: import("./components/BonDigitalForm").BonSubmitPayload
+    payload: import("./features/requests/components/BonDigitalForm").BonSubmitPayload
   ): Promise<void> => {
     const response = await apiFetch(`/api/requests/bon/${bonId}`, {
       method: "PUT",
