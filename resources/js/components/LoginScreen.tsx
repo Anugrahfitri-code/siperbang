@@ -797,7 +797,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 image: "/images/team/anugrah.jpg",
                 linkedin: "https://www.linkedin.com/in/anugrah-fitri-817037219?utm_source=share_via&utm_content=profile&utm_medium=member_ios",
                 instagram: "https://www.instagram.com/ira.fitri4343?igsh=djJlaHk4cHZvNDM2",
-                github: "https://github.com/Anugrahfitri",
+                github: "https://github.com/Anugrahfitri-code",
               },
               {
                 name: "Siti Nurfadhilah Az Zahra Syam",
