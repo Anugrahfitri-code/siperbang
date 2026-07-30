@@ -2,7 +2,7 @@
 
 namespace App\Services\Ocr;
 
-use App\Exceptions\OcrServiceException;
+use App\Exceptions\Ocr\OcrServiceException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;

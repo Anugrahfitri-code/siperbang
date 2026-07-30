@@ -80,7 +80,7 @@ def _hard_timeout_watchdog(
     Mengakhiri proses OCR jika native inference
     tidak selesai dalam batas waktu.
 
-    run-server.ps1 akan menyalakan service kembali.
+    scripts/run-server.ps1 akan menyalakan service kembali.
     """
     timeout_seconds = max(
         30,

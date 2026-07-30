@@ -1,4 +1,4 @@
-@extends('layouts.main')
+@extends('layouts.inventory')
 
 @section('content')
 {{-- ═══════════════════════════════════════════════════════════
@@ -454,7 +454,7 @@ function applySuggestion(index, kode) {
 </script>
 
 {{-- Confirmation Modals --}}
-<x-confirm-modal id="delStepperModal"
+<x-feedback.confirm-modal id="delStepperModal"
     title="Hapus Upload"
     message="Pindahkan upload <strong>{{ $batch->file_name_original }}</strong> ke sampah?"
     variant="danger"
@@ -463,7 +463,7 @@ function applySuggestion(index, kode) {
     formMethod="DELETE"
 />
 
-<x-confirm-modal id="delReuploadModal"
+<x-feedback.confirm-modal id="delReuploadModal"
     title="Hapus & Upload Ulang"
     message="Hapus batch ini dan upload ulang file Excel yang sudah diperbaiki?"
     variant="danger"
@@ -473,7 +473,7 @@ function applySuggestion(index, kode) {
 />
 
 @if($step === 4 && $canFinalize)
-<x-confirm-modal
+<x-feedback.confirm-modal
     id="finalConfirmModal"
     title="Finalisasi Stok"
     message="Finalisasi <strong>{{ $totalApproved }} baris</strong> ke Master Barang? Stok akan diperbarui sekarang."
@@ -488,7 +488,7 @@ function applySuggestion(index, kode) {
 @endif
 
 @if($batch->status === \App\Models\StokUpload::STATUS_SELESAI)
-<x-confirm-modal id="batalkanStepperModal"
+<x-feedback.confirm-modal id="batalkanStepperModal"
     title="Batalkan Transaksi Upload"
     message="Tindakan ini akan membuat transaksi pembalik yang mengurangi stok kembali ke nilai sebelum upload. Stok tidak boleh sudah negatif."
     variant="danger"
@@ -501,7 +501,7 @@ function applySuggestion(index, kode) {
         <strong>Batch #{{ $batch->id }}</strong> — {{ $batch->file_name_original }}<br>
         Difinalisasi: {{ $batch->updated_at->format('d M Y, H:i') }} oleh {{ $batch->user?->name ?? '—' }}
     </div>
-</x-confirm-modal>
+</x-feedback.confirm-modal>
 @endif
 
 @endsection

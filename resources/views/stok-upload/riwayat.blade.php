@@ -1,4 +1,4 @@
-@extends('layouts.main')
+@extends('layouts.inventory')
 
 @section('content')
 @php
@@ -206,7 +206,7 @@ $statusColors = [
 {{-- Per-batch confirmation modals --}}
 @foreach($batches as $batch)
     @if($batch->isDeletable())
-    <x-confirm-modal id="delRiwayat{{ $batch->id }}"
+    <x-feedback.confirm-modal id="delRiwayat{{ $batch->id }}"
         title="Hapus Upload"
         message="Pindahkan <strong>{{ $batch->file_name_original }}</strong> ke sampah?"
         variant="danger"
@@ -217,7 +217,7 @@ $statusColors = [
     @endif
 
     @if($batch->status === SU::STATUS_SELESAI)
-    <x-confirm-modal id="batalkanRiwayat{{ $batch->id }}"
+    <x-feedback.confirm-modal id="batalkanRiwayat{{ $batch->id }}"
         title="Batalkan Transaksi Upload"
         message="File: <strong>{{ $batch->file_name_original }}</strong>. Stok yang sudah ditambahkan akan dikembalikan melalui transaksi pembalik."
         variant="danger"
@@ -226,7 +226,7 @@ $statusColors = [
         formMethod="POST"
     >
         <input type="hidden" name="cancellation_reason" value="Pembatalan oleh pengguna">
-    </x-confirm-modal>
+    </x-feedback.confirm-modal>
     @endif
 @endforeach
 

@@ -1,6 +1,6 @@
 <?php
 
-use App\Support\OfficeInventoryCatalog;
+use App\Support\Inventory\OfficeInventoryCatalog;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;

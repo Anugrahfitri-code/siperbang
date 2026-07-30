@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Barang;
 use App\Models\KodePersediaan;
 use App\Models\StockItem;
-use App\Support\OfficeInventoryCatalog;
+use App\Support\Inventory\OfficeInventoryCatalog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;

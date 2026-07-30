@@ -1,4 +1,4 @@
-@extends('layouts.main')
+@extends('layouts.inventory')
 
 @section('content')
 <div class="w-full space-y-6">
