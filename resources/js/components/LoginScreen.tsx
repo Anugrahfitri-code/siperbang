@@ -545,7 +545,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             {/* ── Left: Illustration ── */}
             <div className="w-full lg:w-[45%] flex justify-center items-center relative">
               <img
-                src="/images/1362c635-40c4-46a0-8755-f1f10b2c5508-removebg-preview.png"
+                src="/images/hdsklimi.png"
                 alt="Tentang SIPERBANG"
                 className="w-full max-w-[600px] h-auto object-contain relative z-10 -translate-x-2 scale-[1.15]"
                 style={{ filter: "drop-shadow(0 20px 40px rgba(0,85,165,0.10))" }}
