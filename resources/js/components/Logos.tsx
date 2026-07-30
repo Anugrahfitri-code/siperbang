@@ -41,7 +41,7 @@ export const SiperbangLogo: React.FC<SiperbangLogoProps> = ({
               lightText ? "text-indigo-200" : "text-[#7A7A7A]"
             }`}
           >
-            Sistem Informasi Penyediaan Barang
+            Sistem Informasi Persediaan Barang
           </span>
         </div>
       )}
