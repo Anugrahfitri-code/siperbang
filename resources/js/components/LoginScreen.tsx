@@ -690,12 +690,54 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-12 group">
             {[
-              { name: "Anugrah Fitri Novanda", role: "Universitas Hasanuddin", image: "/images/team/anugrah.jpg" },
-              { name: "Siti Nurfadhilah Az Zahra Syam", role: "Universitas Hasanuddin", image: "/images/team/zahra.jpg" },
-              { name: "A. Izza Syathra", role: "Universitas Hasanuddin", image: "/images/team/izza.jpg" },
-              { name: "Vina Sucitra", role: "Universitas Hasanuddin", image: "/images/team/vina.jpg" },
-              { name: "Sita Rasmi Raihana", role: "Universitas Hasanuddin", image: "/images/team/sita.jpg" },
-              { name: "Isnadia Nurfadillah", role: "Universitas Hasanuddin", image: "/images/team/isnadia.jpg" },
+              {
+                name: "Anugrah Fitri Novanda",
+                role: "Universitas Hasanuddin",
+                image: "/images/team/anugrah.jpg",
+                linkedin: "https://www.linkedin.com/in/anugrah-fitri-817037219?utm_source=share_via&utm_content=profile&utm_medium=member_ios",
+                instagram: "https://www.instagram.com/ira.fitri4343?igsh=djJlaHk4cHZvNDM2",
+                github: "https://github.com/Anugrahfitri",
+              },
+              {
+                name: "Siti Nurfadhilah Az Zahra Syam",
+                role: "Universitas Hasanuddin",
+                image: "/images/team/zahra.jpg",
+                linkedin: "https://www.linkedin.com/in/siti-nurfadhilah-az-zahra-syam-14074336b?utm_source=share_via&utm_content=profile&utm_medium=member_ios",
+                instagram: "https://www.instagram.com/fadhilahazz__?igsh=MXgyemRjdjF6MnVmdA%3D%3D&utm_source=qr",
+                github: "https://github.com/Azzahra9",
+              },
+              {
+                name: "A. Izza Syathra",
+                role: "Universitas Hasanuddin",
+                image: "/images/team/izza.jpg",
+                linkedin: "https://www.linkedin.com/in/a-izza-syathra-a98a3b3bb?utm_source=share_via&utm_content=profile&utm_medium=member_ios",
+                instagram: "https://www.instagram.com/_izzsythra?igsh=MWhqNmZ2d2d3NHh6bg==",
+                github: "https://github.com/izzasyathra", 
+              },
+              {
+                name: "Vina Sucitra",
+                role: "Universitas Hasanuddin",
+                image: "/images/team/vina.jpg",
+                linkedin: " https://www.linkedin.com/in/vina-sucitra-6804b2384?utm_source=share_via&utm_content=profile&utm_medium=member_ios",
+                instagram: "https://www.instagram.com/vina_sucitra024?igsh=MTc5Z3o0Z2JqY3I4eA==",
+                github: "https://github.com/VinaSucitra",
+              },
+              {
+                name: "Sita Rasmi Raihana",
+                role: "Universitas Hasanuddin",
+                image: "/images/team/sita.jpg",
+                linkedin: "https://www.linkedin.com/in/sita-rasmi-raihana-546987381?utm_source=share_via&utm_content=profile&utm_medium=member_ios",
+                instagram: "https://www.instagram.com/s4_rai?igsh=N3JtaTYyN2l0d2Vo",
+                github: "https://github.com/Rai-14",
+              },
+              {
+                name: "Isnadia Nurfadillah",
+                role: "Universitas Hasanuddin",
+                image: "/images/team/isnadia.jpg",
+                linkedin: "https://www.linkedin.com/in/isnadia-nurfadillah-a3973b318?utm_source=share_via&utm_content=profile&utm_medium=member_ios",
+                instagram: "https://www.instagram.com/isnadiyahh?igsh=NXFrdXJ1a3U3Zmd1",
+                github: "https://github.com/Isnadia52",
+              },
             ].map((member, i) => (
               <div key={i} className="flex flex-col items-center text-center group transition-transform duration-500 ease-out transform scale-100 group-hover:scale-90 group-hover:opacity-80 hover:scale-[1.35] hover:opacity-100 hover:z-20 cursor-pointer">
                 <div className="w-28 h-28 rounded-full overflow-hidden bg-slate-100 mb-5 relative shadow-sm border border-slate-200 transition-all duration-500 ease-out transform hover:-translate-y-3 hover:border-blue-300 hover:shadow-[0_32px_64px_rgba(0,85,165,0.2)]">
@@ -709,8 +751,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 <h4 className="text-lg font-bold text-slate-900 leading-tight mb-1">{member.name}</h4>
                 <p className="text-sm text-slate-500 font-semibold mb-4">{member.role}</p>
                 <div className="flex items-center gap-3 text-slate-400">
-                  <a href="#" className="hover:text-[#0077b5] transition-colors"><Linkedin size={20} /></a>
-                  <a href="#" className="hover:text-slate-900 transition-colors"><Github size={20} /></a>
+                  <a href={member.linkedin} target="_blank" rel="noreferrer" className="hover:text-[#0077b5] transition-colors"><Linkedin size={20} /></a>
+                  <a href={member.instagram} target="_blank" rel="noreferrer" className="hover:text-[#E1306C] transition-colors"><Instagram size={20} /></a>
+                  <a href={member.github || "#"} target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors"><Github size={20} /></a>
                 </div>
               </div>
             ))}
