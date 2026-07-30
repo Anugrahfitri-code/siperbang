@@ -19,7 +19,7 @@ interface LoginScreenProps {
   onLogin: (user: AuthenticatedUser) => void;
 }
 
-const NAV_LINKS = ["Beranda", "Tentang", "Fitur", "Panduan", "FAQ", "Kontak"] as const;
+const NAV_LINKS = ["Beranda", "Tentang", "Fitur", "Panduan", "Tim", "Kontak"] as const;
 type NavLink = (typeof NAV_LINKS)[number];
 
 /* ────────────────────────────────────────────────────────────
@@ -530,17 +530,24 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         </div>
       </section>
 
-      <Section id="section-tentang" bg="url('/images/baground%2011.png') center/cover no-repeat" className="pt-24 pb-24 relative overflow-hidden">
+      <Section id="section-tentang" bg="#ffffff" className="pt-24 pb-24 relative overflow-hidden">
         
+        {/* Background Blob/Wave */}
+        <div className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none">
+          <svg viewBox="0 0 1440 800" preserveAspectRatio="none" className="w-full h-full text-[#eff6ff]">
+            <path fill="currentColor" d="M0,0 L350,0 C150,250 650,550 350,800 L0,800 Z" />
+          </svg>
+        </div>
+
         <div className="mx-auto px-6 relative z-10" style={{ maxWidth: 1280 }}>
-          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-6">
+          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
 
             {/* ── Left: Illustration ── */}
             <div className="w-full lg:w-[45%] flex justify-center items-center relative">
               <img
                 src="/images/login-illustration.png"
                 alt="Tentang SIPERBANG"
-                className="w-full max-w-[600px] h-auto object-contain relative z-10 -translate-x-6 -translate-y-8 scale-[1.15]"
+                className="w-full max-w-[600px] h-auto object-contain relative z-10 -translate-x-2 scale-[1.15]"
                 style={{ filter: "drop-shadow(0 20px 40px rgba(0,85,165,0.10))" }}
               />
             </div>
@@ -554,23 +561,23 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               </div>
 
               {/* Title */}
-              <h2 className="text-[4rem] lg:text-[5rem] font-extrabold text-[#0055A5] leading-none mb-5 tracking-tight">
+              <h2 className="text-4xl lg:text-5xl font-extrabold text-[#0055A5] leading-none mb-4 tracking-tight">
                 SIPERBANG
               </h2>
 
               {/* Subtitle */}
-              <h3 className="text-[19px] font-bold text-slate-800 leading-snug mb-7" style={{ maxWidth: 520 }}>
+              <h3 className="text-[16px] lg:text-[18px] font-bold text-slate-800 leading-snug mb-7" style={{ maxWidth: 520 }}>
                 Platform Digital untuk Pengelolaan Persediaan Barang Pemerintah yang Efisien dan Transparan
               </h3>
 
               {/* Description Card */}
               <div className="w-full rounded-2xl p-5 mb-7 flex gap-4 items-start"
-                style={{ background: "rgba(220,234,255,0.55)", border: "1px solid rgba(255,255,255,0.7)" }}>
-                <div className="w-14 h-14 shrink-0 flex items-center justify-center">
-                  <SiperbangLogo iconOnly />
+                style={{ background: "#f4f9ff", border: "1px solid #e6f0fa" }}>
+                <div className="shrink-0 flex items-center justify-center text-blue-500">
+                  <Package size={36} strokeWidth={1.5} />
                 </div>
-                <p className="text-[14px] text-slate-700 leading-relaxed font-medium pt-1">
-                  <span className="font-bold text-slate-900">SIPERBANG</span> dirancang untuk membantu instansi pemerintah mengelola persediaan barang secara digital, akurat, dan real-time. Dilengkapi teknologi OCR AI untuk verifikasi otomatis, pemantauan stok, dan pelaporan yang lebih mudah.
+                <p className="text-[13px] text-slate-600 leading-relaxed font-medium pt-0.5">
+                  <span className="font-bold text-slate-800">SIPERBANG</span> dirancang untuk membantu instansi pemerintah mengelola persediaan barang secara digital, akurat, dan real-time. Dilengkapi teknologi OCR AI untuk verifikasi otomatis, pemantauan stok, dan pelaporan yang lebih mudah.
                 </p>
               </div>
 
@@ -840,9 +847,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 Sistem informasi terintegrasi untuk pengelolaan persediaan barang pemerintah yang lebih efisien, akurat, dan transparan.
               </p>
               <div className="flex items-center gap-4 text-slate-400">
-                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all"><Facebook size={18} /></a>
-                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition-all"><Instagram size={18} /></a>
-                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all"><Youtube size={18} /></a>
+                <a href="https://www.facebook.com/balai.kominfo.makassar" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all"><Facebook size={18} /></a>
+                <a href="https://www.instagram.com/bblsdm.komdigi.makassar?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition-all"><Instagram size={18} /></a>
+                <a href="https://www.youtube.com/channel/UCwL_s6xZlIwdVrr4uFKjfLA/about" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all"><Youtube size={18} /></a>
               </div>
             </div>
 
@@ -850,7 +857,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <div>
               <h4 className="text-white font-bold text-lg mb-6">Navigasi</h4>
               <ul className="space-y-4">
-                {["Beranda", "Tentang", "Fitur", "Panduan", "FAQ", "Kontak"].map(l => (
+                {["Beranda", "Tentang", "Fitur", "Panduan", "Tim", "Kontak"].map(l => (
                   <li key={l}>
                     <button onClick={() => handleNav(l as NavLink)} className="text-slate-400 hover:text-white transition-colors text-[15px]">
                       {l}
@@ -880,15 +887,15 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               <ul className="space-y-4 mb-10">
                 <li className="flex items-start gap-3 text-[15px] text-slate-400">
                   <MapPin size={18} className="shrink-0 mt-0.5 text-blue-400" />
-                  <span>Jl. Merdeka Barat No. 9, Jakarta Pusat<br />DKI Jakarta, Indonesia 10110</span>
+                  <span>Jl. Prof. Abdurrahman Basalamah II No.25, Karampuang<br />Kec. Panakkukang, Kota Makassar<br />Sulawesi Selatan 9023</span>
                 </li>
                 <li className="flex items-center gap-3 text-[15px] text-slate-400">
                   <Phone size={18} className="shrink-0 text-blue-400" />
-                  <span>(021) 1234 5678</span>
+                  <span>0851-1729-7705</span>
                 </li>
                 <li className="flex items-center gap-3 text-[15px] text-slate-400">
                   <Mail size={18} className="shrink-0 text-blue-400" />
-                  <span>info@siperbang.id</span>
+                  <span>bblsdm.makassar@komdigi.go.id</span>
                 </li>
               </ul>
 
