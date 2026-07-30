@@ -66,7 +66,7 @@ export const SiperbangLogo: React.FC<{ className?: string; iconOnly?: boolean }>
             <span className="text-[#4A4A4A]">NG</span>
           </div>
           <span className="text-xs text-[#7A7A7A] font-medium tracking-wide mt-1 leading-none uppercase">
-            Sistem Informasi Penyediaan Barang
+            Sistem Informasi Persediaan Barang
           </span>
         </div>
       )}

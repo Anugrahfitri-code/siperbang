@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { UserRole } from "../types";
-import { LogIn, Loader2, Eye, EyeOff, Menu, X, Shield, ArrowRight, ScanLine, FileText, CheckCircle2, Package, Monitor, Facebook, Instagram, Youtube, Twitter, Linkedin, Github, MapPin, Phone, Mail, Bell } from "lucide-react";
+import { LogIn, Loader2, Eye, EyeOff, Menu, X, Shield, ArrowRight, ScanLine, FileText, CheckCircle2, Package, Monitor, Facebook, Instagram, Youtube, Twitter, Linkedin, Github, MapPin, Phone, Mail, Bell, Target, Clock, FileSearch } from "lucide-react";
 import { SiperbangLogo, KomdigiLogo } from "./Logos";
 import { apiFetch } from "../api";
 
@@ -19,7 +19,7 @@ interface LoginScreenProps {
   onLogin: (user: AuthenticatedUser) => void;
 }
 
-const NAV_LINKS = ["Beranda", "Tentang", "Fitur", "Panduan", "FAQ", "Kontak"] as const;
+const NAV_LINKS = ["Beranda", "Tentang", "Fitur", "Panduan", "Tim", "Kontak"] as const;
 type NavLink = (typeof NAV_LINKS)[number];
 
 /* ────────────────────────────────────────────────────────────
@@ -222,10 +222,8 @@ function LoginModal({
 
         {/* Heading */}
         <div className="mb-8 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center">
-              <SiperbangLogo />
-            </div>
+          <div className="flex justify-center mb-6">
+            <SiperbangLogo />
           </div>
           <h2 className="text-2xl font-extrabold" style={{ color: "#1e293b" }}>
             Masuk ke Sistem
@@ -430,7 +428,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             {/* Left Content */}
             <div className="w-full lg:w-[50%] flex flex-col items-start text-left">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-700 font-bold text-xs uppercase tracking-wider mb-6">
-                Sistem Informasi Penyediaan Barang
+                Sistem Informasi Persediaan Barang
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold leading-[1.15] text-slate-900 mb-6">
                 Kelola Persediaan Barang Pemerintah Lebih <span className="text-[#0055A5]">Cepat</span>, <span className="text-[#0055A5]">Akurat</span>, dan <span className="text-[#0055A5]">Transparan</span>.
@@ -532,10 +530,95 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════
-          TENTANG (Hidden in design, but keeping section id for nav)
-      ══════════════════════════════════════════ */}
-      <div id="section-tentang"></div>
+      <Section id="section-tentang" bg="#ffffff" className="pt-24 pb-24 relative overflow-hidden">
+        
+        {/* Background Blob/Wave */}
+        <div className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none">
+          <svg viewBox="0 0 1440 800" preserveAspectRatio="none" className="w-full h-full text-[#eff6ff]">
+            <path fill="currentColor" d="M0,0 L350,0 C150,250 650,550 350,800 L0,800 Z" />
+          </svg>
+        </div>
+
+        <div className="mx-auto px-6 relative z-10" style={{ maxWidth: 1280 }}>
+          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+
+            {/* ── Left: Illustration ── */}
+            <div className="w-full lg:w-[45%] flex justify-center items-center relative">
+              <img
+                src="/images/login-illustration.png"
+                alt="Tentang SIPERBANG"
+                className="w-full max-w-[600px] h-auto object-contain relative z-10 -translate-x-2 scale-[1.15]"
+                style={{ filter: "drop-shadow(0 20px 40px rgba(0,85,165,0.10))" }}
+              />
+            </div>
+
+            {/* ── Right: Text + Cards ── */}
+            <div className="w-full lg:w-[55%] flex flex-col items-start text-left lg:pl-6">
+
+              {/* Badge */}
+              <div className="inline-flex items-center px-5 py-2 rounded-full bg-blue-100/90 text-[#0055A5] font-extrabold text-[11px] uppercase tracking-widest mb-5">
+                TENTANG
+              </div>
+
+              {/* Title */}
+              <h2 className="text-4xl lg:text-5xl font-extrabold text-[#0055A5] leading-none mb-4 tracking-tight">
+                SIPERBANG
+              </h2>
+
+              {/* Subtitle */}
+              <h3 className="text-[16px] lg:text-[18px] font-bold text-slate-800 leading-snug mb-7" style={{ maxWidth: 520 }}>
+                Platform Digital untuk Pengelolaan Persediaan Barang Pemerintah yang Efisien dan Transparan
+              </h3>
+
+              {/* Description Card */}
+              <div className="w-full rounded-2xl p-5 mb-7 flex gap-4 items-start"
+                style={{ background: "#f4f9ff", border: "1px solid #e6f0fa" }}>
+                <div className="shrink-0 flex items-center justify-center mt-1">
+                  <SiperbangLogo iconOnly />
+                </div>
+                <p className="text-[13px] text-slate-600 leading-relaxed font-medium pt-0.5">
+                  <span className="font-bold text-slate-800">SIPERBANG</span> dirancang untuk membantu instansi pemerintah mengelola persediaan barang secara digital, akurat, dan real-time. Dilengkapi teknologi OCR AI untuk verifikasi otomatis, pemantauan stok, dan pelaporan yang lebih mudah.
+                </p>
+              </div>
+
+              {/* 3 Feature Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+                {[
+                  {
+                    icon: <Target size={22} strokeWidth={2.5} />,
+                    title: "Akurasi\nLebih Tinggi",
+                    desc: "Verifikasi otomatis berbasis OCR AI mengurangi kesalahan manusia.",
+                  },
+                  {
+                    icon: <Clock size={22} strokeWidth={2.5} />,
+                    title: "Efisiensi\nWaktu",
+                    desc: "Proses pencatatan dan pelaporan lebih cepat dan praktis.",
+                  },
+                  {
+                    icon: <Shield size={22} strokeWidth={2.5} />,
+                    title: "Transparansi\nTerjamin",
+                    desc: "Data real-time yang akurat untuk pengambilan keputusan lebih baik.",
+                  },
+                ].map((f, i) => (
+                  <div key={i}
+                    className="bg-white rounded-[18px] p-5 transition-all duration-300 hover:-translate-y-1"
+                    style={{ boxShadow: "0 6px 30px rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.03)" }}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 shrink-0 rounded-full bg-[#eef3fb] text-[#0055A5] flex items-center justify-center">
+                        {f.icon}
+                      </div>
+                      <h4 className="text-[13px] font-bold text-slate-900 leading-tight whitespace-pre-line">{f.title}</h4>
+                    </div>
+                    <p className="text-[12px] text-slate-500 font-medium leading-relaxed">{f.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </Section>
+
 
       {/* ══════════════════════════════════════════
           FITUR UNGGULAN
@@ -646,32 +729,50 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       {/* ══════════════════════════════════════════
           DASHBOARD PREVIEW (Between Cara Kerja and Tim Pengembang)
       ══════════════════════════════════════════ */}
-      <Section id="section-dashboard-preview" bg="#f0f7ff">
-        <div className="mx-auto px-6" style={{ maxWidth: 1280 }}>
+      <Section 
+        id="section-dashboard-preview" 
+        bg="url('/images/login-bg.png') center/cover no-repeat"
+        className="relative overflow-hidden"
+      >
+        <div className="mx-auto px-6 relative z-10" style={{ maxWidth: 1280 }}>
           <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-8">
-            <div className="w-full lg:w-5/12 flex flex-col items-start">
-              <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-blue-100 text-blue-700 font-bold text-xs uppercase tracking-wider mb-6">
+            <div className="w-full lg:w-5/12 flex flex-col items-start relative">
+              
+              <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-blue-100/80 text-blue-700 font-bold text-xs uppercase tracking-wider mb-6 backdrop-blur-sm">
                 DASHBOARD INTERAKTIF
               </div>
               <h2 className="text-3xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight mb-6">
                 Semua Informasi dalam Satu Genggaman
               </h2>
-              <p className="text-[17px] text-slate-600 leading-relaxed mb-8 font-medium">
+              <p className="text-[17px] text-slate-700/90 leading-relaxed mb-8 font-medium relative z-10">
                 Dashboard SIPERBANG memberikan ringkasan informasi penting secara real-time untuk memudahkan monitoring dan pengambilan keputusan.
               </p>
               <button
                 onClick={() => setShowModal(true)}
-                className="flex items-center gap-2 bg-[#0055A5] hover:bg-[#004494] text-white px-8 py-3.5 rounded-full font-bold text-[15px] transition-all shadow-[0_4px_14px_rgba(0,85,165,0.25)]"
+                className="flex items-center gap-2 bg-[#0055A5] hover:bg-[#004494] text-white px-8 py-3.5 rounded-full font-bold text-[15px] transition-all shadow-[0_8px_20px_rgba(0,85,165,0.25)] hover:-translate-y-0.5 relative z-10"
               >
                 Lihat Preview Dashboard <ArrowRight size={18} />
               </button>
             </div>
-            <div className="w-full lg:w-7/12 relative">
-              <img
-                src="/images/foto 2 landing page.png"
-                alt="Dashboard Preview 2"
-                className="w-full h-auto object-contain drop-shadow-2xl rounded-2xl"
-              />
+            
+            <div className="w-full lg:w-7/12 relative z-10 flex justify-center items-center">
+              <div 
+                className="relative w-full transition-all duration-700 ease-out hover:scale-105"
+              >
+                {/* Glow di belakang gambar */}
+                <div className="absolute inset-0 bg-blue-500/20 blur-[60px] rounded-full"></div>
+                
+                <img
+                  src="/images/foto 2 landing page.png"
+                  alt="Dashboard Preview 2"
+                  className="w-full h-auto object-contain rounded-3xl relative z-10 bg-white"
+                  style={{ 
+                    boxShadow: "-10px 20px 40px rgba(0, 0, 0, 0.15), 0 0 15px rgba(255, 255, 255, 0.5)",
+                    border: "8px solid white",
+                    outline: "1px solid rgba(0,0,0,0.05)"
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -789,9 +890,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 Sistem informasi terintegrasi untuk pengelolaan persediaan barang pemerintah yang lebih efisien, akurat, dan transparan.
               </p>
               <div className="flex items-center gap-4 text-slate-400">
-                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all"><Facebook size={18} /></a>
-                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition-all"><Instagram size={18} /></a>
-                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all"><Youtube size={18} /></a>
+                <a href="https://www.facebook.com/balai.kominfo.makassar" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all"><Facebook size={18} /></a>
+                <a href="https://www.instagram.com/bblsdm.komdigi.makassar?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition-all"><Instagram size={18} /></a>
+                <a href="https://www.youtube.com/channel/UCwL_s6xZlIwdVrr4uFKjfLA/about" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all"><Youtube size={18} /></a>
               </div>
             </div>
 
@@ -799,7 +900,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <div>
               <h4 className="text-white font-bold text-lg mb-6">Navigasi</h4>
               <ul className="space-y-4">
-                {["Beranda", "Tentang", "Fitur", "Panduan", "FAQ", "Kontak"].map(l => (
+                {["Beranda", "Tentang", "Fitur", "Panduan", "Tim", "Kontak"].map(l => (
                   <li key={l}>
                     <button onClick={() => handleNav(l as NavLink)} className="text-slate-400 hover:text-white transition-colors text-[15px]">
                       {l}
@@ -829,15 +930,15 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               <ul className="space-y-4 mb-10">
                 <li className="flex items-start gap-3 text-[15px] text-slate-400">
                   <MapPin size={18} className="shrink-0 mt-0.5 text-blue-400" />
-                  <span>Jl. Merdeka Barat No. 9, Jakarta Pusat<br />DKI Jakarta, Indonesia 10110</span>
+                  <span>Jl. Prof. Abdurrahman Basalamah II No.25, Karampuang<br />Kec. Panakkukang, Kota Makassar<br />Sulawesi Selatan 9023</span>
                 </li>
                 <li className="flex items-center gap-3 text-[15px] text-slate-400">
                   <Phone size={18} className="shrink-0 text-blue-400" />
-                  <span>(021) 1234 5678</span>
+                  <span>0851-1729-7705</span>
                 </li>
                 <li className="flex items-center gap-3 text-[15px] text-slate-400">
                   <Mail size={18} className="shrink-0 text-blue-400" />
-                  <span>info@siperbang.id</span>
+                  <span>bblsdm.makassar@komdigi.go.id</span>
                 </li>
               </ul>
 
@@ -855,8 +956,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
           </div>
 
-          <div className="pt-8 border-t border-slate-800 text-center text-sm text-slate-500 font-medium">
-            © 2024 SIPERBANG, All rights reserved.
+          <div className="pt-8 border-t border-white/10 text-center text-slate-500 text-[13px]">
+            &copy; {new Date().getFullYear()} SIPERBANG, All rights reserved.
           </div>
         </div>
       </footer>

@@ -12,37 +12,40 @@ export const SiperbangLogo: React.FC<SiperbangLogoProps> = ({
   lightText = false,
 }) => {
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
+    <div className={`flex items-center ${className}`}>
       {/*
         Logo baru digunakan secara global.
         Semua pemanggilan <SiperbangLogo /> akan memakai logo ini,
         termasuk halaman login dan navbar setelah login.
       */}
-      <div className="relative w-12 h-12 flex-shrink-0 overflow-hidden">
+      <div className="relative w-10 h-10 flex-shrink-0 mix-blend-multiply">
         <img
-          src="/images/siperbang-logo.png"
+          src="/images/icon baru.jpeg"
           alt="Logo SIPERBANG"
-          className="w-full h-full object-contain select-none pointer-events-none"
+          className="w-full h-full object-contain scale-[1.5] select-none pointer-events-none"
         />
       </div>
 
       {!iconOnly && (
-        <div className="flex flex-col select-none">
-          <div className="text-2xl font-bold tracking-tight leading-none flex items-center">
-            <span className="text-[#0055A5]">S</span>
-            <span className="text-[#00A1E4]">I</span>
-            <span className="text-[#013A70]">PERB</span>
-            <span className="text-[#00A1E4]">A</span>
-            <span className="text-[#0055A5]">NG</span>
+        <div className="flex flex-col select-none justify-center ml-2">
+          <div className="text-sm font-extrabold tracking-wider leading-none flex items-center">
+            <span className="text-[#a0258b]">I</span>
+            <span className="text-[#1a50a1]">P</span>
+            <span className="text-[#00b5e9]">E</span>
+            <span className="text-[#2b3d88]">R</span>
+            <span className="text-[#f7941d]">B</span>
+            <span className="text-[#f26522]">A</span>
+            <span className="text-[#ef4136]">N</span>
+            <span className="text-[#d7195d]">G</span>
           </div>
 
-          <span
-            className={`text-xs font-medium tracking-wide mt-1 leading-none uppercase ${
-              lightText ? "text-indigo-200" : "text-[#7A7A7A]"
+          <div
+            className={`text-[10px] text-left font-semibold tracking-tight mt-0.5 leading-tight uppercase ${
+              lightText ? "text-white" : "text-black"
             }`}
           >
-            Sistem Informasi Penyediaan Barang
-          </span>
+            Sistem Informasi Persediaan<br />Barang
+          </div>
         </div>
       )}
     </div>
