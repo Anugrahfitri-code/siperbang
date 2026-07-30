@@ -70,7 +70,7 @@ export default function App() {
           timestamp: "2026-07-01 09:00:15",
           actor: "Sistem SIPERBANG",
           action: "Inisialisasi Sistem",
-          details: "Sistem Informasi Penyediaan Barang (SIPERBANG) berhasil diaktifkan dengan modul OCR terintegrasi.",
+          details: "Sistem Informasi Persediaan Barang (SIPERBANG) berhasil diaktifkan dengan modul OCR terintegrasi.",
         },
         {
           id: "log-init-2",
