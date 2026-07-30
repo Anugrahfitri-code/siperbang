@@ -548,43 +548,47 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             </h2>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               {
-                icon: <ScanLine size={32} />,
+                icon: <ScanLine size={28} />,
                 title: "Verifikasi Nota OCR AI",
                 desc: "Ekstraksi data otomatis dari nota menggunakan OCR AI dengan akurasi tinggi.",
-                color: "text-blue-600",
-                bg: "bg-blue-50"
+                color: "text-white",
+                bg: "bg-[#1d4ed8]", // Blue
+                shadow: "shadow-blue-500/40"
               },
               {
-                icon: <Package size={32} />,
+                icon: <Package size={28} />,
                 title: "Manajemen Barang",
                 desc: "Kelola data barang, kategori, dan stok secara terpusat dan terstruktur.",
-                color: "text-emerald-600",
-                bg: "bg-emerald-50"
+                color: "text-white",
+                bg: "bg-[#0d9488]", // Teal
+                shadow: "shadow-teal-500/40"
               },
               {
-                icon: <Monitor size={32} />,
+                icon: <Monitor size={28} />,
                 title: "Monitoring Real-Time",
                 desc: "Pantau stok dan permintaan barang secara real-time dengan dashboard interaktif.",
-                color: "text-purple-600",
-                bg: "bg-purple-50"
+                color: "text-white",
+                bg: "bg-[#6366f1]", // Indigo/Purple
+                shadow: "shadow-indigo-500/40"
               },
               {
-                icon: <FileText size={32} />,
+                icon: <FileText size={28} />,
                 title: "Laporan & Analitik",
                 desc: "Laporan lengkap dan analitik untuk mendukung pengambilan keputusan.",
-                color: "text-orange-500",
-                bg: "bg-orange-50"
+                color: "text-white",
+                bg: "bg-[#f97316]", // Orange
+                shadow: "shadow-orange-500/40"
               }
             ].map((f, i) => (
-              <div key={i} className="flex flex-col items-center text-center">
-                <div className={`w-20 h-20 rounded-2xl ${f.bg} ${f.color} flex items-center justify-center mb-6 shadow-sm`}>
+              <div key={i} className="bg-white rounded-[2rem] p-8 flex flex-col items-start text-left transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] shadow-[0_10px_30px_rgba(0,0,0,0.06)] border border-slate-100">
+                <div className={`w-14 h-14 rounded-2xl ${f.bg} ${f.color} flex items-center justify-center mb-6 shadow-lg ${f.shadow}`}>
                   {f.icon}
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3">{f.title}</h3>
-                <p className="text-[15px] text-slate-500 leading-relaxed font-medium">
+                <h3 className="text-xl font-bold text-slate-900 mb-3 leading-tight">{f.title}</h3>
+                <p className="text-[14px] text-slate-500 leading-relaxed font-medium">
                   {f.desc}
                 </p>
               </div>
@@ -604,35 +608,33 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             </h2>
           </div>
 
-          <div className="flex flex-col lg:flex-row items-start justify-between gap-8 lg:gap-2 relative">
-            
-            {/* The line connecting them (desktop) */}
-            <div className="hidden lg:block absolute top-[44px] left-[10%] right-[10%] h-[2px] bg-slate-200 z-0"></div>
-
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 relative">
             {[
-              { step: "01", icon: <FileText size={28} />, title: "Upload Nota", desc: "Unggah nota atau dokumen pengadaan barang." },
-              { step: "02", icon: <ScanLine size={28} />, title: "OCR AI", desc: "Sistem membaca dan mengekstrak data dari nota secara otomatis." },
-              { step: "03", icon: <CheckCircle2 size={28} />, title: "Verifikasi Data", desc: "Data diverifikasi sebelum disimpan ke sistem." },
-              { step: "04", icon: <Package size={28} />, title: "Barang Masuk", desc: "Data tersimpan dan stok barang otomatis bertambah." },
-              { step: "05", icon: <Monitor size={28} />, title: "Monitoring & Laporan", desc: "Pantau stok dan buat laporan kapan saja." },
+              { step: "01", icon: <FileText size={32} strokeWidth={1.5} />, title: "Upload Nota", desc: "Unggah nota atau dokumen pengadaan barang.", iconBg: "bg-blue-50/80", iconColor: "text-blue-600" },
+              { step: "02", icon: <ScanLine size={32} strokeWidth={1.5} />, title: "OCR AI", desc: "Sistem membaca dan mengekstrak data dari nota secara otomatis.", iconBg: "bg-emerald-50/80", iconColor: "text-emerald-600" },
+              { step: "03", icon: <CheckCircle2 size={32} strokeWidth={1.5} />, title: "Verifikasi Data", desc: "Data diverifikasi sebelum disimpan ke sistem.", iconBg: "bg-amber-50/80", iconColor: "text-amber-500" },
+              { step: "04", icon: <Package size={32} strokeWidth={1.5} />, title: "Barang Masuk", desc: "Data tersimpan dan stok barang otomatis bertambah.", iconBg: "bg-blue-50/80", iconColor: "text-blue-600" },
+              { step: "05", icon: <Monitor size={32} strokeWidth={1.5} />, title: "Monitoring & Laporan", desc: "Pantau stok dan buat laporan kapan saja.", iconBg: "bg-purple-50/80", iconColor: "text-purple-600" },
             ].map((s, i, arr) => (
               <React.Fragment key={s.step}>
-                <div className="flex flex-col items-center text-center relative z-10 flex-1">
-                  <div className="w-8 h-8 bg-[#0055A5] text-white rounded-full flex items-center justify-center font-bold text-xs mb-4 shadow-md">
+                <div className="bg-white rounded-[1.5rem] p-6 pt-8 pb-8 flex flex-col items-center text-center relative z-10 flex-1 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-100/50 w-full lg:w-auto h-full">
+                  <div className="absolute -top-3 -left-3 w-8 h-8 bg-[#0055A5] text-white rounded-full flex items-center justify-center font-bold text-[13px] shadow-lg ring-4 ring-[#fafafa]">
                     {s.step}
                   </div>
-                  <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center text-[#0055A5] mb-6 shadow-sm border border-slate-100">
+                  
+                  <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-5 ${s.iconBg} ${s.iconColor}`}>
                     {s.icon}
                   </div>
-                  <h4 className="text-lg font-bold text-slate-900 mb-2">{s.title}</h4>
-                  <p className="text-sm text-slate-500 font-medium max-w-[200px] leading-relaxed">
+                  
+                  <h4 className="text-[16px] font-bold text-slate-900 mb-2 leading-tight">{s.title}</h4>
+                  <p className="text-[13px] text-slate-500 font-medium leading-relaxed">
                     {s.desc}
                   </p>
                 </div>
                 {/* Arrow (desktop) */}
                 {i < arr.length - 1 && (
-                  <div className="hidden lg:flex items-center justify-center text-slate-300 mt-20">
-                    <ArrowRight size={24} />
+                  <div className="hidden lg:flex items-center justify-center text-slate-600 shrink-0 mx-1">
+                    <ArrowRight size={18} strokeWidth={2.5} />
                   </div>
                 )}
               </React.Fragment>
