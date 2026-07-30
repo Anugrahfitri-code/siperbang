@@ -49,7 +49,7 @@
                                 <span class="text-[#0055A5]">NG</span>
                           </div>
                           <span class="text-xs font-medium tracking-wide mt-1 leading-none uppercase text-[#7A7A7A]">
-                            Sistem Informasi Penyediaan Barang
+                            Sistem Informasi Persediaan Barang
                           </span>
                         </div>
                     </a>

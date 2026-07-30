@@ -27,7 +27,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               </div>
               <div>
                 <h1 className="text-xl font-extrabold tracking-tight">SIPERBANG</h1>
-                <p className="text-xs font-medium text-indigo-200 uppercase tracking-widest">Sistem Penyediaan Barang</p>
+                <p className="text-xs font-medium text-indigo-200 uppercase tracking-widest">Sistem Persediaan Barang</p>
               </div>
             </div>
 
