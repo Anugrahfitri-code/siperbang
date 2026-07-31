@@ -13,6 +13,8 @@ Route::get('/login', function () {
     return view('welcome');
 })->name('login');
 
+Route::get('/api/settings', [\App\Http\Controllers\Api\SiteSettingController::class, 'index']);
+
 // Authenticated User Info
 Route::get('/api/user', function (Request $request) {
     if (Auth::check()) {
@@ -58,6 +60,9 @@ Route::post('/api/logout', function (Request $request) {
     return response()->json(['message' => 'Logout successful']);
 });
 
+// ==========================================
+// WEB ROUTES (Page Views / Controller Web)
+// ==========================================
 Route::middleware('auth')->group(function () {
     $ctrl = \App\Http\Controllers\StokUploadController::class;
 
@@ -68,11 +73,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/stok-upload/riwayat',           [$ctrl, 'riwayat']        )->name('stok-upload.riwayat');
     Route::get('/stok-upload/sampah',            [$ctrl, 'trash']          )->name('stok-upload.trash');
 
-    // Unified stepper (replaces preview + verifikasi + perbaiki pages)
+    // Unified stepper
     Route::get('/stok-upload/{id}/stepper',      [$ctrl, 'stepper']        )->name('stok-upload.stepper');
-
-    // Step 2 — Pemeriksaan Data (read-only, no inline editing)
-    // errors are shown on the upload page (index), not the stepper
 
     // Step 3 — Verifikasi Kode
     Route::post('/stok-upload/{id}/verifikasi',  [$ctrl, 'saveVerifikasi'] )->name('stok-upload.verifikasi.store');
@@ -86,39 +88,32 @@ Route::middleware('auth')->group(function () {
     Route::post('/stok-upload/{id}/restore',     [$ctrl, 'restore']        )->name('stok-upload.restore');
     Route::delete('/stok-upload/{id}/force',     [$ctrl, 'forceDelete']    )->name('stok-upload.force-delete');
 
-    // Backward-compat aliases (redirect old URLs to stepper)
-    Route::get('/stok-upload/{id}/preview',     fn ($id) => redirect()->route('stok-upload.stepper', $id))->name('stok-upload.preview');
+    // Backward-compat aliases
+    Route::get('/stok-upload/{id}/preview',    fn ($id) => redirect()->route('stok-upload.stepper', $id))->name('stok-upload.preview');
     Route::get('/stok-upload/{id}/verifikasi',  fn ($id) => redirect()->route('stok-upload.stepper', ['id' => $id, 'step' => 3]))->name('stok-upload.verifikasi.index');
     Route::get('/stok-upload/{id}/perbaiki',    fn ($id) => redirect()->route('stok-upload.stepper', ['id' => $id, 'step' => 2]))->name('stok-upload.perbaiki.index');
     Route::post('/stok-upload/{id}/perbaiki',   [$ctrl, 'saveFixes'])->name('stok-upload.perbaiki.store');
 
     // Master Barang
-    Route::get('/master-barang',                [\App\Http\Controllers\BarangController::class, 'index'] )->name('master-barang.index');
-    Route::get('/master-barang/search',         [\App\Http\Controllers\BarangController::class, 'search'])->name('master-barang.search');
-    Route::post('/master-barang/{id}/update',   [\App\Http\Controllers\BarangController::class, 'update'])->name('master-barang.update');
-    Route::post('/master-barang/{id}/delete',   [\App\Http\Controllers\BarangController::class, 'destroy'])->name('master-barang.destroy');
+    Route::get('/master-barang',        [\App\Http\Controllers\BarangController::class, 'index'] )->name('master-barang.index');
+    Route::get('/master-barang/search', [\App\Http\Controllers\BarangController::class, 'search'])->name('master-barang.search');
+    Route::post('/master-barang/{id}/update', [\App\Http\Controllers\BarangController::class, 'update'])->name('master-barang.update');
+    Route::post('/master-barang/{id}/delete', [\App\Http\Controllers\BarangController::class, 'destroy'])->name('master-barang.destroy');
 });
 
-    // Protected API Routes
+// ==========================================
+// API ROUTES (JSON Responses)
+// ==========================================
 Route::middleware('auth')->prefix('api')->group(function () {
     // ---- Semua Authenticated User ----
-    // Requests
     Route::get('/requests', [\App\Http\Controllers\Api\RequestController::class, 'index']);
     Route::get('/requests/bon', [\App\Http\Controllers\Api\RequestController::class, 'indexBons']);
     Route::get('/requests/bon/{id}', [\App\Http\Controllers\Api\RequestController::class, 'showBon']);
     
-    // Logs
     Route::get('/logs', [\App\Http\Controllers\Api\LogController::class, 'index']);
     Route::post('/logs', [\App\Http\Controllers\Api\LogController::class, 'store']);
 
-    // Stock search — read-only, accessible by all authenticated roles
     Route::get('/stocks/search', [\App\Http\Controllers\Api\StockController::class, 'search']);
-
-    Route::get('/stok-upload/riwayat', [\App\Http\Controllers\StokUploadController::class, 'apiRiwayat'])->name('api.stok-upload.riwayat');
-    Route::get('/stok-upload/stats', [\App\Http\Controllers\StokUploadController::class, 'apiStats'])->name('api.stok-upload.stats');
-    Route::get('/stok-upload/{id}/stepper-api', [\App\Http\Controllers\StokUploadController::class, 'apiStepper']);
-    Route::post('/stok-upload/{id}/verifikasi-api', [\App\Http\Controllers\StokUploadController::class, 'apiSaveVerifikasi']);
-    Route::post('/stok-upload/{id}/finalisasi-api', [\App\Http\Controllers\StokUploadController::class, 'apiFinalisasi']);
 
     // ---- Ketua Tim & Superadmin ----
     Route::middleware('role:Ketua Tim,Ketua Tim Kerja,Superadmin')->group(function () {
@@ -129,6 +124,13 @@ Route::middleware('auth')->prefix('api')->group(function () {
 
     // ---- Petugas Persediaan & Superadmin ----
     Route::middleware('role:Petugas Persediaan,Superadmin')->group(function () {
+        // API Stok Upload dipindahkan ke sini agar aman & terorganisir
+        Route::get('/stok-upload/riwayat', [\App\Http\Controllers\StokUploadController::class, 'apiRiwayat'])->name('api.stok-upload.riwayat');
+        Route::get('/stok-upload/stats', [\App\Http\Controllers\StokUploadController::class, 'apiStats'])->name('api.stok-upload.stats');
+        Route::get('/stok-upload/{id}/stepper-api', [\App\Http\Controllers\StokUploadController::class, 'apiStepper']);
+        Route::post('/stok-upload/{id}/verifikasi-api', [\App\Http\Controllers\StokUploadController::class, 'apiSaveVerifikasi']);
+        Route::post('/stok-upload/{id}/finalisasi-api', [\App\Http\Controllers\StokUploadController::class, 'apiFinalisasi']);
+
         // Stocks
         Route::get('/stocks', [\App\Http\Controllers\Api\StockController::class, 'index']);
         Route::post('/stocks/bulk', [\App\Http\Controllers\Api\StockController::class, 'bulkStore']);
@@ -141,75 +143,23 @@ Route::middleware('auth')->prefix('api')->group(function () {
         Route::post('/requests/{itemRequest}/reject', [\App\Http\Controllers\Api\RequestController::class, 'rejectItem']);
         Route::post('/requests/{itemRequest}/complete-partial', [\App\Http\Controllers\Api\RequestController::class, 'completePartial']);
         
-        // Official inventory codes: only category 1.01.03
-        Route::get(
-            '/inventory-codes',
-            [
-                \App\Http\Controllers\Api\InventoryCodeController::class,
-                'index',
-            ]
-        );
+        // Official inventory codes
+        Route::get('/inventory-codes', [\App\Http\Controllers\Api\InventoryCodeController::class, 'index']);
 
         // Receipts
-        Route::get(
-            '/receipts',
-            [
-                \App\Http\Controllers\Api\ReceiptController::class,
-                'index',
-            ]
-        );
-
-        Route::post(
-            '/receipts',
-            [
-                \App\Http\Controllers\Api\ReceiptController::class,
-                'store',
-            ]
-        );
-
-        Route::post(
-            '/receipts/export-excel',
-            [
-                \App\Http\Controllers\Api\ReceiptController::class,
-                'exportExcel',
-            ]
-        );
+        Route::get('/receipts', [\App\Http\Controllers\Api\ReceiptController::class, 'index']);
+        Route::post('/receipts', [\App\Http\Controllers\Api\ReceiptController::class, 'store']);
+        Route::post('/receipts/export-excel', [\App\Http\Controllers\Api\ReceiptController::class, 'exportExcel']);
+        
         Route::get('/receipt-documents', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'index']);
         Route::post('/receipt-documents', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'store']);
-        Route::get(
-            '/receipt-documents/{receiptDocument}',
-            [
-                \App\Http\Controllers\Api\ReceiptDocumentController::class,
-                'show',
-            ]
-        );
-
-        Route::get(
-            '/receipt-documents/{receiptDocument}/file',
-            [
-                \App\Http\Controllers\Api\ReceiptDocumentController::class,
-                'file',
-            ]
-        );
-
-        Route::put(
-            '/receipt-documents/{receiptDocument}/draft',
-            [
-                \App\Http\Controllers\Api\ReceiptDocumentController::class,
-                'saveDraft',
-            ]
-        );
-
-        Route::put(
-            '/receipt-documents/{receiptDocument}/verify',
-            [
-                \App\Http\Controllers\Api\ReceiptDocumentController::class,
-                'verify',
-            ]
-        );
+        Route::get('/receipt-documents/{receiptDocument}', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'show']);
+        Route::get('/receipt-documents/{receiptDocument}/file', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'file']);
+        Route::put('/receipt-documents/{receiptDocument}/draft', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'saveDraft']);
+        Route::put('/receipt-documents/{receiptDocument}/verify', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'verify']);
+        
         Route::put('/receipts/{receipt}/unverify', [\App\Http\Controllers\Api\ReceiptController::class, 'unverify']);
         Route::put('/receipts/{receipt}/items', [\App\Http\Controllers\Api\ReceiptController::class, 'updateItems']);
-
         Route::post('/receipt-documents/{receiptDocument}/retry', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'retry']);
         Route::delete('/receipt-documents/{receiptDocument}', [\App\Http\Controllers\Api\ReceiptDocumentController::class, 'destroy']);
         
@@ -219,15 +169,15 @@ Route::middleware('auth')->prefix('api')->group(function () {
 
     // ---- Superadmin Only ----
     Route::middleware('role:Superadmin')->group(function () {
-        // Users
         Route::get('/users', [\App\Http\Controllers\Api\UserController::class, 'index']);
         Route::post('/users', [\App\Http\Controllers\Api\UserController::class, 'store']);
         Route::put('/users/{user}', [\App\Http\Controllers\Api\UserController::class, 'update']);
         Route::delete('/users/{user}', [\App\Http\Controllers\Api\UserController::class, 'destroy']);
+        Route::post('/settings', [\App\Http\Controllers\Api\SiteSettingController::class, 'update']);
     });
 });
 
-// Fallback for React Router (if using client-side routing)
+// Fallback for React Router
 Route::get('/{any}', function () {
     return view('welcome');
 })->where('any', '.*');

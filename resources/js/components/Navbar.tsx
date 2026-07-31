@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { SiperbangLogo, KomdigiLogo } from "./Logos";
+import { useSettings } from "../context/SettingsContext";
 import { UserRole } from "../types";
 import { Shield, User, RefreshCw, Menu, LogOut, ChevronDown } from "lucide-react";
 
@@ -18,6 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   onToggleSidebar,
 }) => {
+  const { settings } = useSettings();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +49,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             <SiperbangLogo />
             <div className="hidden md:block h-8 w-px bg-slate-200" />
             <KomdigiLogo className="hidden md:flex" />
+            <div className="hidden lg:flex flex-col text-right text-xs text-slate-500">
+              <span className="font-bold text-slate-800">{settings.app_name || "SIPERBANG"} v1.1.0</span>
+            </div>
           </div>
 
           {/* Quick Actions & Role Switcher */}
