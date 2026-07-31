@@ -5,6 +5,7 @@ import {
   ClipboardList,
   FileBarChart2,
   FileSpreadsheet,
+  Globe,
   History,
   LayoutDashboard,
   Package,
@@ -22,6 +23,7 @@ import {
   RequestStatus,
   UserRole,
 } from "../../types";
+import { useSettings } from "../../context/SettingsContext";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -53,6 +55,7 @@ interface SidebarProps {
   setSuperadminTab: (
     tab:
       | "users"
+      | "site_settings"
       | "dashboard"
       | "checking"
       | "stock_manage"
@@ -222,6 +225,7 @@ export function Sidebar({
   const handleSuperadminTab = (
     tab:
       | "users"
+      | "site_settings"
       | "dashboard"
       | "checking"
       | "stock_manage"
@@ -237,6 +241,8 @@ export function Sidebar({
       onClose();
     }
   };
+
+  const { settings } = useSettings();
 
   return (
     <>
@@ -293,6 +299,15 @@ export function Sidebar({
                 onClick={() =>
                   handleSuperadminTab("users")
                 }
+              />
+
+              {/* 🎯 MENU BARU KELOLA SITUS */}
+              <SidebarItem
+                active={superadminTab === "site_settings"}
+                color="emerald"
+                icon={<Globe size={19} strokeWidth={1.9} />}
+                label="Kelola Identitas Situs"
+                onClick={() => handleSuperadminTab("site_settings")}
               />
 
               <SectionTitle>
@@ -697,15 +712,11 @@ export function Sidebar({
 
             <div>
               <p className="text-xs font-extrabold text-slate-800">
-                SIPERBANG
-              </p>
-
-              <p className="mt-0.5 text-xs font-semibold text-slate-400">
-                v1.1.0
+                {settings.app_name || "SIPERBANG"} v1.1.0
               </p>
 
               <p className="mt-1 text-xs font-semibold text-slate-400">
-                © 2026 KOMDIGI
+                © {new Date().getFullYear()} {settings.instansi_name || "KOMDIGI"}
               </p>
             </div>
           </div>

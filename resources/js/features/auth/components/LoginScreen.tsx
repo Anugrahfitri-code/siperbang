@@ -3,6 +3,8 @@ import { UserRole } from "../../../shared/types";
 import { LogIn, Loader2, Eye, EyeOff, Menu, X, Shield, ArrowRight, ScanLine, FileText, CheckCircle2, Package, Monitor, Facebook, Instagram, Youtube, Twitter, Linkedin, Github, MapPin, Phone, Mail, Bell, Target, Clock, FileSearch } from "lucide-react";
 import { SiperbangLogo, KomdigiLogo } from "../../../shared/components/branding/Logos";
 import { apiFetch } from "../../../shared/api";
+import { useSettings } from "../../../shared/context/SettingsContext";
+import { sanitizeHtml } from "../../../shared/utils/sanitizeHtml";
 
 /* ────────────────────────────────────────────────────────────
    TYPES
@@ -369,8 +371,21 @@ function Section({ id, bg, children, className = "" }: { id: string; bg: string;
    MAIN EXPORT
 ──────────────────────────────────────────────────────────── */
 export function LoginScreen({ onLogin }: LoginScreenProps) {
+  const { settings } = useSettings();
+  const appName = settings.app_name || "SIPERBANG";
+  const instansiName = settings.instansi_name || "KOMDIGI";
+  const instansiSub = settings.instansi_sub || "Kementerian Komunikasi dan Digital Republik Indonesia";
   const [active, setActive] = useState<NavLink>("Beranda");
   const [showModal, setShowModal] = useState(false);
+
+  const headingHtml = sanitizeHtml(
+    settings.login_heading ||
+      "Kelola Persediaan Barang Pemerintah Lebih Cepat, Akurat, dan Transparan."
+  );
+  const descriptionHtml = sanitizeHtml(
+    settings.login_description ||
+      `${appName} membantu instansi pemerintah dalam mengelola persediaan barang secara digital, dilengkapi verifikasi nota otomatis menggunakan OCR AI dan pemantauan stok real-time.`
+  );
 
   /* Scroll-spy: update active nav when scrolling */
   useEffect(() => {
@@ -380,9 +395,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         const el = document.getElementById(id);
         if (el && window.scrollY >= el.offsetTop - 200) {
           const label = id.replace("section-", "");
-          const matched = NAV_LINKS.find(
-            (l) => l.toLowerCase() === label
-          );
+          const matched = NAV_LINKS.find((l) => l.toLowerCase() === label);
           if (matched) setActive(matched);
           break;
         }
@@ -391,6 +404,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
   }, []);
+
 
   const scrollTo = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -430,12 +444,17 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-700 font-bold text-xs uppercase tracking-wider mb-6">
                 Sistem Informasi Persediaan Barang
               </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold leading-[1.15] text-slate-900 mb-6">
-                Kelola Persediaan Barang Pemerintah Lebih <span className="text-[#0055A5]">Cepat</span>, <span className="text-[#0055A5]">Akurat</span>, dan <span className="text-[#0055A5]">Transparan</span>.
-              </h1>
-              <p className="text-[17px] text-slate-600 leading-relaxed mb-10 max-w-[90%] font-medium">
-                SIPERBANG membantu instansi pemerintah dalam mengelola persediaan barang secara digital, dilengkapi verifikasi nota otomatis menggunakan OCR AI dan pemantauan stok real-time.
-              </p>
+              {/* Judul Utama */}
+              <h1
+                className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold leading-[1.15] text-slate-900 mb-6"
+                dangerouslySetInnerHTML={{ __html: headingHtml }}
+              />
+
+              {/* Deskripsi */}
+              <p
+                className="text-[17px] text-slate-600 leading-relaxed mb-10 max-w-[90%] font-medium"
+                dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+              />
               
               <div className="flex flex-wrap items-center gap-4 mb-10">
                 <button
@@ -546,7 +565,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <div className="w-full lg:w-[45%] flex justify-center items-center relative">
               <img
                 src="/images/landing/about-illustration.png"
-                alt="Tentang SIPERBANG"
+                alt={`Tentang ${appName}`}
                 className="w-full max-w-[600px] h-auto object-contain relative z-10 -translate-x-2 scale-[1.15]"
                 style={{ filter: "drop-shadow(0 20px 40px rgba(0,85,165,0.10))" }}
               />
@@ -562,7 +581,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
               {/* Title */}
               <h2 className="text-4xl lg:text-5xl font-extrabold text-[#0055A5] leading-none mb-4 tracking-tight">
-                SIPERBANG
+                {appName}
               </h2>
 
               {/* Subtitle */}
@@ -577,7 +596,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   <SiperbangLogo iconOnly />
                 </div>
                 <p className="text-[13px] text-slate-600 leading-relaxed font-medium pt-0.5">
-                  <span className="font-bold text-slate-800">SIPERBANG</span> dirancang untuk membantu instansi pemerintah mengelola persediaan barang secara digital, akurat, dan real-time. Dilengkapi teknologi OCR AI untuk verifikasi otomatis, pemantauan stok, dan pelaporan yang lebih mudah.
+                  <span className="font-bold text-slate-800">{appName}</span> dirancang untuk membantu instansi pemerintah mengelola persediaan barang secara digital, akurat, dan real-time. Dilengkapi teknologi OCR AI untuk verifikasi otomatis, pemantauan stok, dan pelaporan yang lebih mudah.
                 </p>
               </div>
 
@@ -627,7 +646,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         <div className="mx-auto px-6" style={{ maxWidth: 1280 }}>
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900">
-              Fitur Unggulan SIPERBANG
+              Fitur Unggulan {appName}
             </h2>
           </div>
           
@@ -687,7 +706,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         <div className="mx-auto px-6" style={{ maxWidth: 1280 }}>
           <div className="text-center mb-20">
             <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900">
-              Cara Kerja SIPERBANG
+              Cara Kerja {appName}
             </h2>
           </div>
 
@@ -745,7 +764,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 Semua Informasi dalam Satu Genggaman
               </h2>
               <p className="text-[17px] text-slate-700/90 leading-relaxed mb-8 font-medium relative z-10">
-                Dashboard SIPERBANG memberikan ringkasan informasi penting secara real-time untuk memudahkan monitoring dan pengambilan keputusan.
+                Dashboard {appName} memberikan ringkasan informasi penting secara real-time untuk memudahkan monitoring dan pengambilan keputusan.
               </p>
               <button
                 onClick={() => setShowModal(true)}
@@ -893,13 +912,13 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 </li>
               </ul>
 
-              <h4 className="text-white font-bold text-lg mb-4">Didukung oleh</h4>
+              <h4 className="text-white font-bold text-lg mb-4">Didukung oleh {instansiName}</h4>
               <div className="flex items-center gap-3">
                 <KomdigiLogo iconOnly />
                 <div>
-                  <div className="font-bold text-sm text-white leading-tight">KOMDIGI</div>
+                  <div className="font-bold text-sm text-white leading-tight">{instansiName}</div>
                   <div className="text-[10px] text-slate-400 leading-tight">
-                    Kementerian Komunikasi<br/>dan Digital<br />Republik Indonesia
+                    {instansiSub}
                   </div>
                 </div>
               </div>
@@ -908,7 +927,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           </div>
 
           <div className="pt-8 border-t border-white/10 text-center text-slate-500 text-[13px]">
-            &copy; {new Date().getFullYear()} SIPERBANG, All rights reserved.
+            {settings.footer_copyright || `© ${new Date().getFullYear()} ${appName}, All rights reserved.`}
           </div>
         </div>
       </footer>

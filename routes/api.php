@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+Route::get('/api/settings', [\App\Http\Controllers\Api\SiteSettingController::class, 'index']);
+
 // Authenticated User Info
 Route::get('/api/user', function (Request $request) {
     if (Auth::check()) {
