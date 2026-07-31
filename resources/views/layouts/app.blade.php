@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIPERBANG - Modul Stok & Persediaan</title>
+    <title>{{ $siteSettings['app_name'] ?? 'SIPERBANG' }} - Modul Stok & Persediaan</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,50 +30,47 @@
         <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
 
             <div class="flex justify-between h-16">
-                <!-- Logo & Brand -->
+                <!-- Logo & Brand Dinamis -->
                 <div class="flex items-center gap-8">
                     <a href="/" class="flex items-center gap-2">
                         <div class="relative w-12 h-12 flex-shrink-0">
                             <img
-                                src="{{ asset('images/siperbang-logo.png') }}"
-                                alt="Logo SIPERBANG"
+                                src="{{ $siteSettings['app_logo_url'] ?? asset('images/siperbang-logo.png') }}"
+                                alt="Logo Aplikasi"
                                 class="w-full h-full object-contain select-none pointer-events-none"
                             >
                         </div>
                         <div class="flex flex-col select-none text-left">
-                          <div class="text-2xl font-bold tracking-tight leading-none flex items-center">
-                            <span class="text-[#0055A5]">S</span>
-                                <span class="text-[#00A1E4]">I</span>
-                                <span class="text-[#013A70]">PERB</span>
-                                <span class="text-[#00A1E4]">A</span>
-                                <span class="text-[#0055A5]">NG</span>
+                          <div class="text-2xl font-bold tracking-tight leading-none text-[#0055A5]">
+                            {{ $siteSettings['app_name'] ?? 'SIPERBANG' }}
                           </div>
                           <span class="text-xs font-medium tracking-wide mt-1 leading-none uppercase text-[#7A7A7A]">
-                            Sistem Informasi Persediaan Barang
+                            {{ $siteSettings['app_subtitle'] ?? 'Sistem Informasi Persediaan Barang' }}
                           </span>
                         </div>
                     </a>
 
                     <div class="hidden md:block h-8 w-px bg-slate-200"></div>
 
+                    {{-- Logo & Nama Instansi Dinamis --}}
                     <div class="hidden md:flex items-center gap-2">
                         <div class="relative w-9 h-9 flex-shrink-0">
-                            <img src="{{ asset('images/komdigi-logo.png') }}" alt="Logo KOMDIGI" class="w-full h-full object-contain select-none pointer-events-none">
+                            <img 
+                                src="{{ $siteSettings['instansi_logo_url'] ?? asset('images/komdigi-logo.png') }}" 
+                                alt="Logo Instansi" 
+                                class="w-full h-full object-contain select-none pointer-events-none"
+                            >
                         </div>
-                      <div class="flex flex-col select-none text-left">
-                        <span class="text-sm font-extrabold text-[#4A4A4A] tracking-wider leading-none">
-                          KOMDIGI
-                        </span>
-                        <span class="text-[10px] text-[#7A7A7A] font-semibold tracking-tight leading-tight mt-0.5">
-                          Kementerian Komunikasi dan Digital<br />Republik Indonesia
-                        </span>
-                      </div>
+                        <div class="flex flex-col select-none text-left">
+                            <span class="text-sm font-extrabold text-[#4A4A4A] tracking-wider leading-none">
+                              {{ $siteSettings['instansi_name'] ?? 'KOMDIGI' }}
+                            </span>
+                            <span class="text-[10px] text-[#7A7A7A] font-semibold tracking-tight leading-tight mt-0.5">
+                              {!! nl2br(e($siteSettings['instansi_sub'] ?? 'Kementerian Komunikasi dan Digital')) !!}
+                            </span>
+                        </div>
                     </div>
-                    
-                    <!-- Top small nav links removed (duplicate of lower nav) -->
                 </div>
-
-
 
                 {{-- Kanan: User info + Tombol kembali --}}
                 <div class="flex items-center gap-3 shrink-0">
@@ -128,7 +125,6 @@
 
     </header>
 
-
     <!-- Main Content Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
@@ -150,9 +146,9 @@
         @yield('content')
     </main>
 
-    <!-- Footer -->
+    <!-- Footer Dinamis -->
     <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400 mt-auto">
-        <p>&copy; 2026 SIPERBANG - Kementerian Komunikasi dan Digital. All Rights Reserved.</p>
+        <p>{{ $siteSettings['footer_copyright'] ?? '© 2026 SIPERBANG - Kementerian Komunikasi dan Digital. All Rights Reserved.' }}</p>
     </footer>
 
 </body>

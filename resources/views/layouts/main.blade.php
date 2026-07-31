@@ -54,21 +54,17 @@
                     <a href="/" class="flex items-center gap-2">
                         <div class="relative w-12 h-12 flex-shrink-0">
                             <img
-                                src="{{ asset('images/siperbang-logo.png') }}"
-                                alt="Logo SIPERBANG"
+                                src="{{ $siteSettings['app_logo_url'] ?? asset('images/siperbang-logo.png') }}"
+                                alt="Logo Aplikasi"
                                 class="w-full h-full object-contain select-none pointer-events-none"
                             >
                         </div>
                         <div class="flex-col select-none hidden sm:flex">
-                            <div class="text-2xl font-bold tracking-tight leading-none flex items-center">
-                                <span class="text-[#0055A5]">S</span>
-                                <span class="text-[#00A1E4]">I</span>
-                                <span class="text-[#013A70]">PERB</span>
-                                <span class="text-[#00A1E4]">A</span>
-                                <span class="text-[#0055A5]">NG</span>
+                            <div class="text-2xl font-bold tracking-tight leading-none text-[#0055A5] font-bold">
+                                {{ $siteSettings['app_name'] ?? 'SIPERBANG' }}
                             </div>
                             <span class="text-xs font-medium tracking-wide mt-1 leading-none uppercase text-[#7A7A7A]">
-                                Sistem Informasi Persediaan Barang
+                                {{ $siteSettings['app_subtitle'] ?? 'Sistem Informasi Persediaan Barang' }}
                             </span>
                         </div>
                     </a>
@@ -78,14 +74,14 @@
                     {{-- KomdigiLogo --}}
                     <div class="items-center gap-4 hidden md:flex">
                         <div class="relative w-9 h-9 flex-shrink-0">
-                            <img src="{{ asset('images/komdigi-logo.png') }}" alt="Logo KOMDIGI" class="w-full h-full object-contain select-none pointer-events-none">
+                            <img src="{{ $siteSettings['instansi_logo_url'] ?? asset('images/komdigi-logo.png') }}" alt="Logo Instansi" class="w-full h-full object-contain select-none pointer-events-none">
                         </div>
                         <div class="flex-col select-none hidden md:flex text-left">
                             <span class="text-sm font-extrabold text-[#4A4A4A] tracking-wider leading-none">
-                                KOMDIGI
+                                {{ $siteSettings['instansi_name'] ?? 'KOMDIGI' }}
                             </span>
                             <span class="text-[10px] text-[#7A7A7A] font-semibold tracking-tight leading-tight mt-0.5">
-                                Kementerian Komunikasi dan Digital<br>Republik Indonesia
+                                {!! nl2br(e($siteSettings['instansi_sub'] ?? 'Kementerian Komunikasi dan Digital')) !!}
                             </span>
                         </div>
                     </div>
@@ -225,7 +221,7 @@
 
         {{-- Footer --}}
         <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400 mt-auto">
-            <p>&copy; 2026 SIPERBANG - Kementerian Komunikasi dan Digital. All Rights Reserved.</p>
+            <p>{{ $siteSettings['footer_copyright'] ?? '© 2026 SIPERBANG - Kementerian Komunikasi dan Digital. All Rights Reserved.' }}</p>
         </footer>
     </div>
 </div>
