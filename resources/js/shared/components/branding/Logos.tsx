@@ -20,7 +20,7 @@ export const SiperbangLogo: React.FC<SiperbangLogoProps> = ({
       */}
       <div className="relative w-10 h-10 flex-shrink-0">
         <img
-          src="/images/icon baru.png"
+          src="/images/brand/siperbang-symbol.png"
           alt="Logo SIPERBANG"
           className="w-full h-full object-contain scale-[1.5] select-none pointer-events-none"
         />
@@ -28,23 +28,8 @@ export const SiperbangLogo: React.FC<SiperbangLogoProps> = ({
 
       {!iconOnly && (
         <div className="flex flex-col select-none justify-center ml-2">
-          <div className="text-sm font-extrabold tracking-wider leading-none flex items-center">
-            <span className="text-[#a0258b]">I</span>
-            <span className="text-[#1a50a1]">P</span>
-            <span className="text-[#00b5e9]">E</span>
-            <span className="text-[#2b3d88]">R</span>
-            <span className="text-[#f7941d]">B</span>
-            <span className="text-[#f26522]">A</span>
-            <span className="text-[#ef4136]">N</span>
-            <span className="text-[#d7195d]">G</span>
-          </div>
-
-          <div
-            className={`text-[10px] text-left font-semibold tracking-tight mt-0.5 leading-tight uppercase ${
-              lightText ? "text-white" : "text-black"
-            }`}
-          >
-            Sistem Informasi Persediaan<br />Barang
+          <div className={`text-xl font-medium tracking-wide ${lightText ? "text-white" : "text-slate-700"}`}>
+            SIPERBANG
           </div>
         </div>
       )}

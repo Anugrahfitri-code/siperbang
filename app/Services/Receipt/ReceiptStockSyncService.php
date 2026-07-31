@@ -122,43 +122,8 @@ class ReceiptStockSyncService
                 ]);
             }
 
-            if (
-                $this->normaliseCode($selected->code)
-                !== $this->normaliseCode($item['inventory_code'])
-            ) {
-                throw ValidationException::withMessages([
-                    "items.{$index}.inventoryCode" => [
-                        'Kode persediaan tidak sesuai dengan barang master '
-                        . 'yang dipilih.',
-                    ],
-                ]);
-            }
-
-            if (
-                $this->nameSimilarity(
-                    $selected->name,
-                    $item['name'],
-                ) < 0.60
-            ) {
-                throw ValidationException::withMessages([
-                    "items.{$index}.name" => [
-                        'Barang ada di master barang tapi nama tidak sesuai',
-                    ],
-                ]);
-            }
-
-            if (
-                $this->normaliseUnit($selected->unit)
-                !== $this->normaliseUnit($item['unit'])
-            ) {
-                throw ValidationException::withMessages([
-                    "items.{$index}.unit" => [
-                        'Satuan tidak sesuai dengan barang master yang '
-                        . 'dipilih. Pilih ulang barang atau gunakan barang baru.',
-                    ],
-                ]);
-            }
-
+            // Validasi dihapus: Jika pengguna secara manual memilih stock_item_id dari dropdown,
+            // kita asumsikan mereka tahu apa yang mereka lakukan meskipun satuan/nama berbeda.
             return $selected;
         }
 
