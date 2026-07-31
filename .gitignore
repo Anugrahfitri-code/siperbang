@@ -37,3 +37,4 @@ _ide_helper.php
 *.py[cod]
 
 /*.zip
+/opencode.json

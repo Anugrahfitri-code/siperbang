@@ -228,27 +228,21 @@ if ($UsesLocalOcr) {
     & $DockerCommand compose version
 
     if ($LASTEXITCODE -ne 0) {
-        throw (
-            "Docker Compose tidak tersedia atau " +
-            "Docker Desktop belum aktif."
-        )
+        Write-Host "WARNING: Docker Compose tidak tersedia atau Docker Desktop belum aktif. Fitur OCR lokal mungkin tidak jalan." -ForegroundColor Yellow
     }
+    else {
+        Write-Host (
+            "Menjalankan OCR Docker..."
+        ) -ForegroundColor Yellow
 
+        & $DockerCommand compose up `
+            -d `
+            --build `
+            ocr
 
-    Write-Host (
-        "Menjalankan OCR Docker..."
-    ) -ForegroundColor Yellow
-
-
-    & $DockerCommand compose up `
-        -d `
-        --build `
-        ocr
-
-    if ($LASTEXITCODE -ne 0) {
-        throw (
-            "Container OCR gagal dijalankan."
-        )
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "WARNING: Container OCR gagal dijalankan. Pastikan Docker Engine aktif." -ForegroundColor Yellow
+        }
     }
 }
 

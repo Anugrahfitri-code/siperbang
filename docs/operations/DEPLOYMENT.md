@@ -73,7 +73,7 @@ CACHE_STORE=database
 
 ```bash
 php artisan migrate --force
-php artisan db:seed --class=OfficeActivityInventoryCodeSeeder
+php artisan db:seed --class="Database\\Seeders\\Inventory\\OfficeActivityInventoryCodeSeeder"
 ```
 
 ### 5. Optimasi Cache

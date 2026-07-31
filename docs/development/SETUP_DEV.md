@@ -78,7 +78,7 @@ QUEUE_CONNECTION=database
 
 ```bash
 # Seed kategori dan kode persediaan (master data wajib)
-php artisan db:seed --class=OfficeActivityInventoryCodeSeeder
+php artisan db:seed --class="Database\\Seeders\\Inventory\\OfficeActivityInventoryCodeSeeder"
 
 # Seed semua (termasuk user dummy)
 php artisan db:seed
