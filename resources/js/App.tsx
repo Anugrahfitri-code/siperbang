@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { UserRole, UserAccount, ItemRequest, StockItem, ReceiptData, HistoryLog as LogType, RequestStatus, ProcurementMethod } from "./types";
+import { useSettings } from "./context/SettingsContext";
 import { Navbar } from "./components/Navbar";
 import { DashboardStats } from "./components/DashboardStats";
 import { BonDigitalForm } from "./components/BonDigitalForm";
@@ -23,6 +24,7 @@ import type { BonDraft } from "./components/BonDigitalForm";
 import { AlertDialog } from "./components/AlertDialog";
 import { LayoutDashboard, FileSpreadsheet, ClipboardList, Package, Receipt, History, AlertCircle, Info, ChevronRight, CheckSquare, Loader2, Bell, User, FileText, Search } from "lucide-react";
 import { apiFetch } from "./api";
+import { SiteSettings } from "./components/SiteSettings";
 
 type AuthenticatedUser = {
   id: number | string;
@@ -137,7 +139,7 @@ export default function App() {
   const [requesterTab, setRequesterTab] = useState<"dashboard" | "bon" | "monitoring" | "history" | "stock">(
     () => (localStorage.getItem("requesterTab") as any) || "dashboard"
   );
-  const [superadminTab, setSuperadminTab] = useState<"users" | "dashboard" | "checking" | "stock_manage" | "ocr" | "report" | "bon" | "monitoring" | "stock_catalog" | "history">(
+  const [superadminTab, setSuperadminTab] = useState<"users" | "site_settings" | "dashboard" | "checking" | "stock_manage" | "ocr" | "report" | "bon" | "monitoring" | "stock_catalog" | "history">(
     () => {
       const requestedModule = new URLSearchParams(window.location.search).get("module");
       if (requestedModule === "excel") {
@@ -364,6 +366,7 @@ useEffect(() => {
     setCurrentRole(role);
     if (role === UserRole.SUPERADMIN) {
       setCurrentUser("Admin Utama (Superadmin)");
+      setSuperadminTab("site_settings");
     } else if (role === UserRole.KETUA_TIM) {
       setCurrentUser("Budi Santoso (Ketua Tim TU)");
     } else {
@@ -953,6 +956,12 @@ useEffect(() => {
     }).format(num);
   };
 
+  const { settings } = useSettings();
+
+  useEffect(() => {
+    document.title = `${settings.app_name || "SIPERBANG"} - Modul Stok & Persediaan`;
+  }, [settings.app_name]);
+
   if (!authChecked) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-600">
@@ -1229,6 +1238,11 @@ useEffect(() => {
                 onDeleteUser={handleDeleteUser}
               />
             )}
+
+            {/* 🎯 TAMPILKAN KELOLA SITUS DI SUPERADMIN */}
+            {superadminTab === "site_settings" && (
+              <SiteSettings onSettingsUpdated={() => loadData()} />
+            )}
             
             {superadminTab === "dashboard" && (
               <div className="space-y-6">
@@ -1364,8 +1378,8 @@ useEffect(() => {
       {/* Footer */}
       <footer className="mt-12 border-t border-slate-200 bg-white py-6 text-center text-xs font-medium text-slate-500 lg:pl-72">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p>© 2026 BBPSDM Komunikasi dan Digital Makassar. Seluruh hak cipta dilindungi.</p>
-          <p className="mt-1 text-2xs text-slate-400 font-bold uppercase tracking-wider">SIPERBANG v1.1</p>
+          <p>{settings.footer_copyright || `© ${new Date().getFullYear()} BBPSDM Komunikasi dan Digital Makassar. Seluruh hak cipta dilindungi.`}</p>
+          <p className="mt-1 text-2xs text-slate-400 font-bold uppercase tracking-wider">{settings.app_name || "SIPERBANG"} v1.1.0</p>
         </div>
       </footer>
     </div>
