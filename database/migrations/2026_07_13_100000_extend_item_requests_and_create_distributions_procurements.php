@@ -12,10 +12,10 @@ return new class extends Migration
         Schema::table('item_requests', function (Blueprint $table) {
             // FK to stock_items (nullable — item may not exist in stock yet)
             $table->foreignId('stock_item_id')
-                  ->nullable()
-                  ->constrained('stock_items')
-                  ->nullOnDelete()
-                  ->after('requester');
+                ->nullable()
+                ->constrained('stock_items')
+                ->nullOnDelete()
+                ->after('requester');
 
             // Qty that still needs procurement after partial stock fulfillment
             $table->integer('qty_to_procure')->default(0)->after('qty_fulfilled');
@@ -29,7 +29,6 @@ return new class extends Migration
             // Vendor name (only for Pengadaan Vendor)
             $table->string('vendor_name')->nullable()->after('procurement_method');
         });
-        
 
         // ── 2. distributions ────────────────────────────────────────────────
         // Records each time stock is physically distributed for a request.
@@ -37,11 +36,11 @@ return new class extends Migration
         Schema::create('distributions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('item_request_id')
-                  ->constrained('item_requests')
-                  ->cascadeOnDelete();
+                ->constrained('item_requests')
+                ->cascadeOnDelete();
             $table->foreignId('stock_item_id')
-                  ->constrained('stock_items')
-                  ->restrictOnDelete();
+                ->constrained('stock_items')
+                ->restrictOnDelete();
             $table->integer('qty_distributed');
             $table->string('distributed_by');   // username / name of petugas
             $table->date('distributed_at');
@@ -54,8 +53,8 @@ return new class extends Migration
         Schema::create('procurements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('item_request_id')
-                  ->constrained('item_requests')
-                  ->cascadeOnDelete();
+                ->constrained('item_requests')
+                ->cascadeOnDelete();
 
             // 'Pengadaan Vendor' | 'Pengadaan Sendiri (Toko)'
             $table->string('method');

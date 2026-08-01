@@ -12,9 +12,9 @@ class StockItem extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'qty'          => 'integer',
+        'qty' => 'integer',
         'last_updated' => 'date',
-        'is_active'    => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     public function distributions()

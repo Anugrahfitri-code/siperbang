@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Enums\Receipt\ReceiptDocumentStatus;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReceiptDocument extends Model
@@ -17,29 +17,21 @@ class ReceiptDocument extends Model
     ];
 
     protected $casts = [
-        'status' =>
-            ReceiptDocumentStatus::class,
+        'status' => ReceiptDocumentStatus::class,
 
-        'raw_result' =>
-            'array',
+        'raw_result' => 'array',
 
-        'parsed_result' =>
-            'array',
+        'parsed_result' => 'array',
 
-        'manual_draft' =>
-            'array',
+        'manual_draft' => 'array',
 
-        'processed_at' =>
-            'datetime',
+        'processed_at' => 'datetime',
 
-        'verified_at' =>
-            'datetime',
+        'verified_at' => 'datetime',
 
-        'draft_saved_at' =>
-            'datetime',
+        'draft_saved_at' => 'datetime',
 
-        'overall_confidence' =>
-            'float',
+        'overall_confidence' => 'float',
     ];
 
     public function receipt(): BelongsTo

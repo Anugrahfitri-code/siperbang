@@ -697,7 +697,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
                 </div>
                 <h4 className="text-sm font-extrabold text-slate-800 mb-1">Belum ada barang yang dipilih</h4>
                 <p className="text-xs font-medium text-slate-500 mb-5">Gunakan kotak pencarian di atas untuk menambah barang</p>
-                <button type="button" onClick={() => document.querySelector('input[placeholder*="Ketik nama"]')?.focus()} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm flex items-center gap-2 transition-colors">
+                <button type="button" onClick={() => (document.querySelector('input[placeholder*="Ketik nama"]') as HTMLInputElement)?.focus()} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm flex items-center gap-2 transition-colors">
                   <Search size={14} />
                   Cari Barang Sekarang
                 </button>

@@ -18,13 +18,13 @@ class KodePersediaanService
         $group = OfficeInventoryCatalog::groupForCategory($canonicalCategory);
 
         $query = KodePersediaan::query()
-            ->where('kode', 'like', OfficeInventoryCatalog::codePrefix() . '%');
+            ->where('kode', 'like', OfficeInventoryCatalog::codePrefix().'%');
 
         if ($group !== null) {
             $query->where(
                 'kode',
                 'like',
-                OfficeInventoryCatalog::codePrefix() . $group . '%',
+                OfficeInventoryCatalog::codePrefix().$group.'%',
             );
         }
 

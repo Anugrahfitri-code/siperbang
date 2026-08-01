@@ -10,6 +10,7 @@ class Barang extends Model
     use HasFactory;
 
     protected $table = 'stock_items';
+
     protected $guarded = [];
 
     protected $casts = [

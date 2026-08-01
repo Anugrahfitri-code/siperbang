@@ -9,13 +9,13 @@ use App\Models\SiteBrandingVersion;
 use App\Services\SiteBrandingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 
 class SiteSettingController extends Controller
 {
     public function __construct(
         private readonly SiteBrandingService $branding,
-    ) {
-    }
+    ) {}
 
     public function index(): JsonResponse
     {
@@ -140,7 +140,7 @@ class SiteSettingController extends Controller
         ]);
     }
 
-    /** @return array<string, \Illuminate\Http\UploadedFile|null> */
+    /** @return array<string, UploadedFile|null> */
     private function uploadedFiles(SaveSiteBrandingRequest $request): array
     {
         return [

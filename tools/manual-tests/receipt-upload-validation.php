@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 $baseUrl = rtrim($argv[1] ?? 'http://127.0.0.1:8000', '/');
-$handle = curl_init($baseUrl . '/api/receipt-documents');
+$handle = curl_init($baseUrl.'/api/receipt-documents');
 
 if ($handle === false) {
     fwrite(STDERR, "Gagal membuat sesi cURL.\n");

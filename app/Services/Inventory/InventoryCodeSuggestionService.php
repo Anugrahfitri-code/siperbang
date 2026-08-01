@@ -152,7 +152,7 @@ class InventoryCodeSuggestionService
         if ($this->officeCodesCache === null) {
             $this->officeCodesCache = KodePersediaan::query()
                 ->with('kategoriBarang:id,nama')
-                ->where('kode', 'like', self::OFFICE_PREFIX . '%')
+                ->where('kode', 'like', self::OFFICE_PREFIX.'%')
                 ->orderBy('kode')
                 ->get();
         }
@@ -321,7 +321,7 @@ class InventoryCodeSuggestionService
     {
         if ($this->stockItemsCache === null) {
             $this->stockItemsCache = StockItem::query()
-                ->where('code', 'like', self::OFFICE_PREFIX . '%')
+                ->where('code', 'like', self::OFFICE_PREFIX.'%')
                 ->where(function ($query) {
                     $query->whereNull('is_active')
                         ->orWhere('is_active', true);
@@ -418,8 +418,7 @@ class InventoryCodeSuggestionService
 
         $tokens = array_filter(
             explode(' ', $value),
-            static fn (string $token): bool =>
-                strlen($token) >= 2
+            static fn (string $token): bool => strlen($token) >= 2
                 && ! in_array($token, $stopWords, true),
         );
 

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { UploadHistoryReact } from "./UploadHistoryReact";
 import { StepperReact } from "./StepperReact";
+import type { StockItem } from "../../../shared/types";
 
 interface StockManagementProps {
   stockList: StockItem[];

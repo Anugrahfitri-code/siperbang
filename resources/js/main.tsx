@@ -2,7 +2,7 @@ declare const __FRONTEND_SOURCE_HASH__: string;
 
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
-import App from './App.tsx';
+import App from './App';
 import { SettingsProvider } from './shared/context/SettingsContext';
 import '../css/app.css';
 

@@ -1,9 +1,10 @@
 <?php
 
 declare(strict_types=1);
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 $projectRoot = dirname(__DIR__, 2);
-$autoload = $projectRoot . '/vendor/autoload.php';
+$autoload = $projectRoot.'/vendor/autoload.php';
 
 if (! is_file($autoload)) {
     fwrite(STDERR, "Dependensi Composer belum terpasang. Jalankan composer install.\n");
@@ -15,7 +16,7 @@ require $autoload;
 $input = $argv[1] ?? null;
 
 if ($input === null) {
-    $uploadRoot = $projectRoot . '/storage/app/private';
+    $uploadRoot = $projectRoot.'/storage/app/private';
 
     if (is_dir($uploadRoot)) {
         $iterator = new RecursiveIteratorIterator(
@@ -36,7 +37,7 @@ if ($input === null || ! is_file($input)) {
     exit(1);
 }
 
-$spreadsheet = PhpOffice\PhpSpreadsheet\IOFactory::load($input);
+$spreadsheet = IOFactory::load($input);
 $sheet = $spreadsheet->getActiveSheet();
 
 fwrite(STDOUT, "File: {$input}\n");
@@ -45,7 +46,7 @@ for ($row = 1; $row <= 5; $row++) {
     fwrite(STDOUT, "Baris {$row}:\n");
 
     foreach (range('A', 'I') as $column) {
-        $value = $sheet->getCell($column . $row)->getValue();
+        $value = $sheet->getCell($column.$row)->getValue();
         fwrite(STDOUT, "{$column}{$row}: {$value} | ");
     }
 

@@ -10,6 +10,7 @@ class KodePersediaan extends Model
     use HasFactory;
 
     protected $table = 'kode_persediaan';
+
     protected $guarded = [];
 
     public function kategoriBarang()

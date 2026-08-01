@@ -1,10 +1,11 @@
 <?php
 
 declare(strict_types=1);
+use Illuminate\Support\Facades\DB;
 
-require dirname(__DIR__) . '/bootstrap.php';
+require dirname(__DIR__).'/bootstrap.php';
 
-$job = Illuminate\Support\Facades\DB::table('failed_jobs')
+$job = DB::table('failed_jobs')
     ->orderByDesc('id')
     ->first();
 
@@ -13,4 +14,4 @@ if ($job === null) {
     exit(0);
 }
 
-fwrite(STDOUT, (string) $job->exception . PHP_EOL);
+fwrite(STDOUT, (string) $job->exception.PHP_EOL);

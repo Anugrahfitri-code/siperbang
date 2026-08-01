@@ -1,4 +1,5 @@
 <?php
+
 $items = DB::table('stock_items')->whereRaw("unit ~ '^[0-9]+(\.[0-9]+)?$'")->get();
 $count = 0;
 foreach ($items as $item) {

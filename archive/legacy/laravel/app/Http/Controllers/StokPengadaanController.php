@@ -29,35 +29,35 @@ class StokPengadaanController extends Controller
     private function mapRequest(ItemRequest $r): array
     {
         return [
-            'id'                => $r->id,
-            'bonNo'             => $r->bon_no,
-            'section'           => $r->section,
-            'itemName'          => $r->item_name,
-            'qtyRequested'      => $r->qty_requested,
-            'qtyAvailable'      => $r->qty_available,
-            'qtyFulfilled'      => $r->qty_fulfilled,
-            'qtyToProcure'      => $r->qty_to_procure,
-            'qtyUnfulfilled'    => $r->qty_unfulfilled,   // accessor
-            'stockAllocated'    => $r->stock_allocated,
-            'unit'              => $r->unit,
-            'status'            => $r->status,
-            'notes'             => $r->notes,
-            'date'              => $r->date?->toDateString(),
-            'requester'         => $r->requester,
-            'lastUpdated'       => $r->last_updated?->toDateString(),
-            'stockItemId'       => $r->stock_item_id,
+            'id' => $r->id,
+            'bonNo' => $r->bon_no,
+            'section' => $r->section,
+            'itemName' => $r->item_name,
+            'qtyRequested' => $r->qty_requested,
+            'qtyAvailable' => $r->qty_available,
+            'qtyFulfilled' => $r->qty_fulfilled,
+            'qtyToProcure' => $r->qty_to_procure,
+            'qtyUnfulfilled' => $r->qty_unfulfilled,   // accessor
+            'stockAllocated' => $r->stock_allocated,
+            'unit' => $r->unit,
+            'status' => $r->status,
+            'notes' => $r->notes,
+            'date' => $r->date?->toDateString(),
+            'requester' => $r->requester,
+            'lastUpdated' => $r->last_updated?->toDateString(),
+            'stockItemId' => $r->stock_item_id,
             'procurementMethod' => $r->procurement_method,
-            'vendorName'        => $r->vendor_name,
-            'distribution'      => $r->distribution,
-            'procurements'      => $r->procurements,
+            'vendorName' => $r->vendor_name,
+            'distribution' => $r->distribution,
+            'procurements' => $r->procurements,
         ];
     }
 
     private function log(string $actor, string $action, string $details): void
     {
         HistoryLog::create([
-            'actor'   => $actor,
-            'action'  => $action,
+            'actor' => $actor,
+            'action' => $action,
             'details' => $details,
         ]);
     }
@@ -97,9 +97,9 @@ class StokPengadaanController extends Controller
         }
 
         return response()->json([
-            'request'   => $this->mapRequest($req),
+            'request' => $this->mapRequest($req),
             'stockItem' => $stock,
-            'stockQty'  => $stock?->qty ?? 0,
+            'stockQty' => $stock?->qty ?? 0,
         ]);
     }
 
@@ -113,10 +113,10 @@ class StokPengadaanController extends Controller
         $itemRequest = ItemRequest::with(['distribution', 'procurements'])->findOrFail($id);
 
         $validated = $request->validate([
-            'stockItemId'    => 'required|integer|exists:stock_items,id',
+            'stockItemId' => 'required|integer|exists:stock_items,id',
             'qtyDistributed' => 'required|integer|min:1',
-            'distributedBy'  => 'required|string|max:255',
-            'notes'          => 'nullable|string|max:500',
+            'distributedBy' => 'required|string|max:255',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         // Guard: already distributed
@@ -128,7 +128,7 @@ class StokPengadaanController extends Controller
         $allowedStatuses = ['Terpenuhi', 'Terpenuhi Sebagian', 'Siap Didistribusikan'];
         if (! in_array($itemRequest->status, $allowedStatuses)) {
             return response()->json([
-                'message' => 'Distribusi tidak dapat dilakukan pada status saat ini: ' . $itemRequest->status,
+                'message' => 'Distribusi tidak dapat dilakukan pada status saat ini: '.$itemRequest->status,
             ], 422);
         }
 
@@ -142,17 +142,17 @@ class StokPengadaanController extends Controller
         DB::transaction(function () use ($validated, $itemRequest) {
             Distribution::create([
                 'item_request_id' => $itemRequest->id,
-                'stock_item_id'   => $validated['stockItemId'],
+                'stock_item_id' => $validated['stockItemId'],
                 'qty_distributed' => $validated['qtyDistributed'],
-                'distributed_by'  => $validated['distributedBy'],
-                'distributed_at'  => today(),
-                'notes'           => $validated['notes'] ?? null,
+                'distributed_by' => $validated['distributedBy'],
+                'distributed_at' => today(),
+                'notes' => $validated['notes'] ?? null,
             ]);
 
             $newStatus = $itemRequest->qty_to_procure > 0 ? 'Dalam Pengadaan' : 'Selesai';
 
             $itemRequest->update([
-                'status'       => $newStatus,
+                'status' => $newStatus,
                 'last_updated' => today(),
             ]);
         });
@@ -178,17 +178,17 @@ class StokPengadaanController extends Controller
         $itemRequest = ItemRequest::with(['distribution', 'procurements'])->findOrFail($id);
 
         $validated = $request->validate([
-            'method'      => 'required|string|in:Pengadaan Vendor,Pengadaan Sendiri (Toko)',
-            'vendorName'  => 'required_if:method,Pengadaan Vendor|nullable|string|max:255',
-            'storeName'   => 'required_if:method,Pengadaan Sendiri (Toko)|nullable|string|max:255',
+            'method' => 'required|string|in:Pengadaan Vendor,Pengadaan Sendiri (Toko)',
+            'vendorName' => 'required_if:method,Pengadaan Vendor|nullable|string|max:255',
+            'storeName' => 'required_if:method,Pengadaan Sendiri (Toko)|nullable|string|max:255',
             'qtyProcured' => 'required|integer|min:1',
-            'unitPrice'   => 'required|numeric|min:0',
-            'isTaxed'     => 'required|boolean',
-            'taxRate'     => 'nullable|numeric|min:0|max:100',
-            'invoiceNo'   => 'nullable|string|max:100',
-            'bastName'    => 'nullable|string|max:255',
-            'bastDate'    => 'nullable|date',
-            'contractNo'  => 'nullable|string|max:100',
+            'unitPrice' => 'required|numeric|min:0',
+            'isTaxed' => 'required|boolean',
+            'taxRate' => 'nullable|numeric|min:0|max:100',
+            'invoiceNo' => 'nullable|string|max:100',
+            'bastName' => 'nullable|string|max:255',
+            'bastDate' => 'nullable|date',
+            'contractNo' => 'nullable|string|max:100',
             'processedBy' => 'required|string|max:255',
         ]);
 
@@ -196,7 +196,7 @@ class StokPengadaanController extends Controller
         $procurableStatuses = ['Perlu Pengadaan', 'Terpenuhi Sebagian', 'Dalam Pengadaan'];
         if (! in_array($itemRequest->status, $procurableStatuses)) {
             return response()->json([
-                'message' => 'Pengadaan tidak dapat dilakukan pada status saat ini: ' . $itemRequest->status,
+                'message' => 'Pengadaan tidak dapat dilakukan pada status saat ini: '.$itemRequest->status,
             ], 422);
         }
 
@@ -211,35 +211,35 @@ class StokPengadaanController extends Controller
             ], 422);
         }
 
-        $taxRate   = $validated['isTaxed'] ? ($validated['taxRate'] ?? 11) : 0;
+        $taxRate = $validated['isTaxed'] ? ($validated['taxRate'] ?? 11) : 0;
         $taxFactor = 1 + ($taxRate / 100);
-        $total     = round($validated['unitPrice'] * $taxFactor * $validated['qtyProcured'], 2);
+        $total = round($validated['unitPrice'] * $taxFactor * $validated['qtyProcured'], 2);
 
         DB::transaction(function () use ($validated, $itemRequest, $taxRate, $total) {
             Procurement::create([
-                'item_request_id'  => $itemRequest->id,
-                'method'           => $validated['method'],
-                'vendor_name'      => $validated['vendorName'] ?? null,
-                'store_name'       => $validated['storeName'] ?? null,
-                'qty_procured'     => $validated['qtyProcured'],
-                'unit_price'       => $validated['unitPrice'],
-                'total_price'      => $total,
-                'is_taxed'         => $validated['isTaxed'],
-                'tax_rate'         => $taxRate,
-                'status'           => 'Diproses',
-                'invoice_no'       => $validated['invoiceNo'] ?? null,
-                'bast_name'        => $validated['bastName'] ?? null,
-                'bast_date'        => $validated['bastDate'] ?? null,
-                'contract_no'      => $validated['contractNo'] ?? null,
-                'processed_by'     => $validated['processedBy'],
+                'item_request_id' => $itemRequest->id,
+                'method' => $validated['method'],
+                'vendor_name' => $validated['vendorName'] ?? null,
+                'store_name' => $validated['storeName'] ?? null,
+                'qty_procured' => $validated['qtyProcured'],
+                'unit_price' => $validated['unitPrice'],
+                'total_price' => $total,
+                'is_taxed' => $validated['isTaxed'],
+                'tax_rate' => $taxRate,
+                'status' => 'Diproses',
+                'invoice_no' => $validated['invoiceNo'] ?? null,
+                'bast_name' => $validated['bastName'] ?? null,
+                'bast_date' => $validated['bastDate'] ?? null,
+                'contract_no' => $validated['contractNo'] ?? null,
+                'processed_by' => $validated['processedBy'],
                 'procurement_date' => today(),
             ]);
 
             $itemRequest->update([
-                'status'             => 'Dalam Pengadaan',
+                'status' => 'Dalam Pengadaan',
                 'procurement_method' => $validated['method'],
-                'vendor_name'        => $validated['vendorName'] ?? null,
-                'last_updated'       => today(),
+                'vendor_name' => $validated['vendorName'] ?? null,
+                'last_updated' => today(),
             ]);
         });
 

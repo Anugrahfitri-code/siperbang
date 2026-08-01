@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ItemRequest;
-use App\Models\StockItem;
+use App\Models\BonHeader;
+use App\Models\BonStatusHistory;
 use App\Models\Distribution;
+use App\Models\HistoryLog;
+use App\Models\ItemRequest;
 use App\Models\Procurement;
+use App\Models\StockItem;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +19,7 @@ class RequestController extends Controller
     public function index(Request $request)
     {
         $query = ItemRequest::with(['distribution', 'procurements'])->orderBy('created_at', 'desc');
-        
+
         if ($request->user() && ($request->user()->role === 'Ketua Tim' || $request->user()->role === 'Ketua Tim Kerja')) {
             $query->where('user_id', $request->user()->id);
         }
@@ -27,8 +31,9 @@ class RequestController extends Controller
                     ->orWhere('user_id', $request->user()->id);
             });
         }
-        
+
         $requests = $query->get();
+
         return response()->json($requests);
     }
 
@@ -40,7 +45,7 @@ class RequestController extends Controller
             'status' => 'required|string|in:draft,menunggu_verifikasi,Draft,Menunggu Verifikasi',
             'items' => 'required|array|min:1',
             // barang_id boleh null/0 jika barang baru
-            'items.*.barang_id' => 'nullable|integer', 
+            'items.*.barang_id' => 'nullable|integer',
             'items.*.nama_barang' => 'required_if:items.*.barang_id,null,0|string',
             'items.*.satuan' => 'nullable|string',
             'items.*.jumlah_diminta' => 'required|integer|min:1',
@@ -51,30 +56,30 @@ class RequestController extends Controller
 
         DB::beginTransaction();
         try {
-            $user      = $request->user();
+            $user = $request->user();
             $requester = $request->input('requester') ?? $user->name;
-            
-            $actualUser = \App\Models\User::where('name', $requester)->first();
-            $section   = $actualUser ? ($actualUser->section ?? 'Tata Usaha') : ($user->section ?? 'Tata Usaha');
+
+            $actualUser = User::where('name', $requester)->first();
+            $section = $actualUser ? ($actualUser->section ?? 'Tata Usaha') : ($user->section ?? 'Tata Usaha');
 
             $targetUserId = $user->id;
             if (in_array(strtolower($user->role), ['admin', 'superadmin']) && $request->has('requester')) {
-                $targetUser = \App\Models\User::where('username', $request->input('requester'))
-                               ->orWhere('name', $request->input('requester'))
-                               ->first();
+                $targetUser = User::where('username', $request->input('requester'))
+                    ->orWhere('name', $request->input('requester'))
+                    ->first();
                 if ($targetUser) {
                     $targetUserId = $targetUser->id;
                 }
             }
 
             // Generate BON Number
-            $prefix = 'BON/' . now()->format('Y/m/d') . '/';
+            $prefix = 'BON/'.now()->format('Y/m/d').'/';
             $bonNo = null;
             $attempts = 0;
             do {
                 $randomNum = str_pad(mt_rand(1, 999), 3, '0', STR_PAD_LEFT);
-                $tempNo = $prefix . $randomNum;
-                if (!\App\Models\ItemRequest::where('bon_no', $tempNo)->exists()) {
+                $tempNo = $prefix.$randomNum;
+                if (! ItemRequest::where('bon_no', $tempNo)->exists()) {
                     $bonNo = $tempNo;
                 }
                 $attempts++;
@@ -84,7 +89,7 @@ class RequestController extends Controller
                 throw new \Exception('Gagal membuat nomor BON unik. Coba lagi.');
             }
 
-            $bonHeader = \App\Models\BonHeader::create([
+            $bonHeader = BonHeader::create([
                 'bon_no' => $bonNo,
                 'user_id' => $targetUserId,
                 'section' => $section,
@@ -96,7 +101,7 @@ class RequestController extends Controller
                 'last_updated' => today(),
             ]);
 
-            \App\Models\BonStatusHistory::create([
+            BonStatusHistory::create([
                 'bon_header_id' => $bonHeader->id,
                 'status_before' => null,
                 'status_after' => $statusVal,
@@ -106,11 +111,11 @@ class RequestController extends Controller
 
             // Create ItemRequests (Dukungan Barang Terdaftar & Barang Baru)
             foreach ($validated['items'] as $item) {
-                $stockItemId = !empty($item['barang_id']) && $item['barang_id'] > 0 ? $item['barang_id'] : null;
-                $stockItem   = $stockItemId ? \App\Models\StockItem::find($stockItemId) : null;
+                $stockItemId = ! empty($item['barang_id']) && $item['barang_id'] > 0 ? $item['barang_id'] : null;
+                $stockItem = $stockItemId ? StockItem::find($stockItemId) : null;
 
                 $itemName = $stockItem ? $stockItem->name : ($item['nama_barang'] ?? 'Barang Baru');
-                $unit     = $stockItem ? $stockItem->unit : ($item['satuan'] ?? 'Buah');
+                $unit = $stockItem ? $stockItem->unit : ($item['satuan'] ?? 'Buah');
 
                 ItemRequest::create([
                     'bon_header_id' => $bonHeader->id,
@@ -134,17 +139,17 @@ class RequestController extends Controller
             }
 
             $isOnBehalf = ($user->name !== $requester);
-            
+
             $actionText = $statusVal === 'Draft' ? 'Buat Draft' : 'Ajukan Permintaan';
-            $detailsText = $statusVal === 'Draft' 
-                ? "Menyimpan draft BON: {$bonNo}" 
+            $detailsText = $statusVal === 'Draft'
+                ? "Menyimpan draft BON: {$bonNo}"
                 : "Mengajukan permintaan barang (BON: {$bonNo}) ke petugas";
-            
+
             if ($isOnBehalf) {
                 $detailsText .= " atas nama {$requester} (Ketua Tim)";
             }
 
-            \App\Models\HistoryLog::create([
+            HistoryLog::create([
                 'user_id' => $targetUserId,
                 'actor' => $user->name,
                 'action' => $actionText,
@@ -152,10 +157,12 @@ class RequestController extends Controller
             ]);
 
             DB::commit();
+
             return response()->json($bonHeader->load('items'), 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Gagal menyimpan pengajuan: ' . $e->getMessage()], 422);
+
+            return response()->json(['message' => 'Gagal menyimpan pengajuan: '.$e->getMessage()], 422);
         }
     }
 
@@ -184,15 +191,15 @@ class RequestController extends Controller
             $stockItem = null;
             if (isset($validated['deductStock']) && $validated['deductStock'] !== null) {
                 $stockItem = StockItem::find($validated['deductStock']['id']);
-                if ($stockItem && !$itemRequest->stock_allocated) {
+                if ($stockItem && ! $itemRequest->stock_allocated) {
                     $qtyToDeduct = $validated['deductStock']['qtyToDeduct'];
                     if ($stockItem->qty < $qtyToDeduct) {
-                        throw new \Exception("Stok gudang tidak mencukupi untuk pemenuhan ini.");
+                        throw new \Exception('Stok gudang tidak mencukupi untuk pemenuhan ini.');
                     }
                     $stockItem->qty -= $qtyToDeduct;
                     $stockItem->last_updated = today();
                     $stockItem->save();
-                    
+
                     $itemRequest->stock_allocated = true;
                     $itemRequest->stock_item_id = $stockItem->id;
                 }
@@ -213,13 +220,13 @@ class RequestController extends Controller
             // Save status history to BonHeader
             $bonHeader = $itemRequest->bonHeader;
             if ($bonHeader) {
-                \App\Models\BonStatusHistory::create([
+                BonStatusHistory::create([
                     'bon_header_id' => $bonHeader->id,
                     'status_before' => $oldStatus,
                     'status_after' => $validated['status'],
                     'changed_by' => $request->user() ? $request->user()->name : 'Sistem',
-                    'notes' => "Barang '{$itemRequest->item_name}' diperbarui ke status '{$validated['status']}'." . 
-                               (isset($validated['verifier_notes']) && $validated['verifier_notes'] !== '' ? " Catatan verifikator: {$validated['verifier_notes']}" : ""),
+                    'notes' => "Barang '{$itemRequest->item_name}' diperbarui ke status '{$validated['status']}'.".
+                               (isset($validated['verifier_notes']) && $validated['verifier_notes'] !== '' ? " Catatan verifikator: {$validated['verifier_notes']}" : ''),
                 ]);
 
                 // Update parent BON header status based on items
@@ -227,7 +234,7 @@ class RequestController extends Controller
                 $this->syncBonHeaderStatus($bonHeader);
             }
 
-            \App\Models\HistoryLog::create([
+            HistoryLog::create([
                 'actor' => $request->user() ? $request->user()->name : 'Sistem',
                 'action' => 'Update Status Pengajuan',
                 'details' => "Memperbarui status permintaan {$itemRequest->item_name} menjadi '{$validated['status']}' (BON: {$itemRequest->bon_no})",
@@ -241,6 +248,7 @@ class RequestController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['message' => $e->getMessage()], 422);
         }
     }
@@ -251,16 +259,16 @@ class RequestController extends Controller
             'stockItemId' => 'required|exists:stock_items,id',
             'qtyDistributed' => 'required|integer|min:1',
             'distributedBy' => 'required|string',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
         try {
             $stockItem = StockItem::findOrFail($validated['stockItemId']);
-            
-            if (!$itemRequest->stock_allocated) {
+
+            if (! $itemRequest->stock_allocated) {
                 if ($stockItem->qty < $validated['qtyDistributed']) {
-                    throw new \Exception("Stok gudang tidak mencukupi untuk distribusi.");
+                    throw new \Exception('Stok gudang tidak mencukupi untuk distribusi.');
                 }
                 $stockItem->qty -= $validated['qtyDistributed'];
                 $stockItem->last_updated = today();
@@ -271,7 +279,7 @@ class RequestController extends Controller
                 if ($validated['qtyDistributed'] > $itemRequest->qty_fulfilled) {
                     $extraNeeded = $validated['qtyDistributed'] - $itemRequest->qty_fulfilled;
                     if ($stockItem->qty < $extraNeeded) {
-                        throw new \Exception("Stok gudang tidak mencukupi untuk tambahan distribusi.");
+                        throw new \Exception('Stok gudang tidak mencukupi untuk tambahan distribusi.');
                     }
                     $stockItem->qty -= $extraNeeded;
                     $stockItem->last_updated = today();
@@ -291,7 +299,7 @@ class RequestController extends Controller
                 'qty_distributed' => $validated['qtyDistributed'],
                 'distributed_by' => $validated['distributedBy'],
                 'distributed_at' => today(),
-                'notes' => $validated['notes'] ?? null
+                'notes' => $validated['notes'] ?? null,
             ]);
 
             if ($itemRequest->qty_to_procure > 0) {
@@ -308,7 +316,7 @@ class RequestController extends Controller
                 $this->syncBonHeaderStatus($bonHeader);
             }
 
-            \App\Models\HistoryLog::create([
+            HistoryLog::create([
                 'actor' => $request->user() ? $request->user()->name : 'Sistem',
                 'action' => 'Distribusi Barang',
                 'details' => "Mendistribusikan {$validated['qtyDistributed']} unit {$stockItem->name} untuk BON {$itemRequest->bon_no}",
@@ -319,6 +327,7 @@ class RequestController extends Controller
             return response()->json($itemRequest->fresh(['distribution', 'procurements']));
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['message' => $e->getMessage()], 422);
         }
     }
@@ -363,7 +372,7 @@ class RequestController extends Controller
                 'contract_no' => $validated['contractNo'] ?? null,
                 'processed_by' => $validated['processedBy'],
                 'procurement_date' => today(),
-                'status' => 'Diproses'
+                'status' => 'Diproses',
             ]);
 
             $itemRequest->status = 'Dalam Pengadaan';
@@ -378,7 +387,7 @@ class RequestController extends Controller
                 $this->syncBonHeaderStatus($bonHeader);
             }
 
-            \App\Models\HistoryLog::create([
+            HistoryLog::create([
                 'actor' => $request->user() ? $request->user()->name : 'Sistem',
                 'action' => 'Proses Pengadaan',
                 'details' => "Memproses pengadaan {$validated['qtyProcured']} unit {$itemRequest->item_name} untuk BON {$itemRequest->bon_no}",
@@ -389,6 +398,7 @@ class RequestController extends Controller
             return response()->json($itemRequest->fresh(['distribution', 'procurements']));
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['message' => $e->getMessage()], 422);
         }
     }
@@ -404,9 +414,9 @@ class RequestController extends Controller
         try {
             $procurement = Procurement::findOrFail($validated['procurementId']);
             if ($procurement->status === 'Diterima') {
-                throw new \Exception("Pengadaan ini sudah selesai.");
+                throw new \Exception('Pengadaan ini sudah selesai.');
             }
-            
+
             $procurement->status = 'Diterima';
             $procurement->save();
 
@@ -421,17 +431,17 @@ class RequestController extends Controller
                 $stockItem->qty += $procurement->qty_procured;
                 $stockItem->last_updated = today();
                 $stockItem->save();
-                
+
                 $itemRequest->stock_item_id = $stockItem->id;
             }
 
             $itemRequest->qty_fulfilled += $procurement->qty_procured;
             $itemRequest->qty_to_procure = max(0, $itemRequest->qty_requested - $itemRequest->qty_fulfilled);
-            
+
             if ($itemRequest->qty_fulfilled >= $itemRequest->qty_requested) {
                 $itemRequest->status = 'Siap Didistribusikan';
             }
-            
+
             $itemRequest->last_updated = today();
             $itemRequest->save();
 
@@ -441,7 +451,7 @@ class RequestController extends Controller
                 $this->syncBonHeaderStatus($bonHeader);
             }
 
-            \App\Models\HistoryLog::create([
+            HistoryLog::create([
                 'actor' => $request->user() ? $request->user()->name : 'Sistem',
                 'action' => 'Pengadaan Selesai',
                 'details' => "Menyelesaikan pengadaan {$procurement->qty_procured} unit {$itemRequest->item_name} (BON {$itemRequest->bon_no})",
@@ -452,17 +462,18 @@ class RequestController extends Controller
             return response()->json($itemRequest->fresh(['distribution', 'procurements']));
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
     public function indexBons(Request $request)
     {
-        $query = \App\Models\BonHeader::with(['items' => function ($q) {
-                // Sertakan stock_item_id agar frontend bisa pre-fill barang_id
-                $q->select('id', 'bon_header_id', 'stock_item_id', 'item_name',
-                            'unit', 'qty_requested', 'qty_fulfilled', 'status', 'notes');
-            }])
+        $query = BonHeader::with(['items' => function ($q) {
+            // Sertakan stock_item_id agar frontend bisa pre-fill barang_id
+            $q->select('id', 'bon_header_id', 'stock_item_id', 'item_name',
+                'unit', 'qty_requested', 'qty_fulfilled', 'status', 'notes');
+        }])
             ->withCount('items')
             ->orderBy('date', 'desc')
             ->orderBy('id', 'desc');
@@ -479,7 +490,7 @@ class RequestController extends Controller
         }
 
         if ($request->filled('bon_no')) {
-            $query->where('bon_no', 'like', '%' . $request->input('bon_no') . '%');
+            $query->where('bon_no', 'like', '%'.$request->input('bon_no').'%');
         }
 
         if ($request->filled('start_date')) {
@@ -502,7 +513,7 @@ class RequestController extends Controller
 
     public function showBon(Request $request, $id)
     {
-        $bon = \App\Models\BonHeader::with(['items', 'statusHistories' => fn($q) => $q->orderBy('created_at', 'asc')])->findOrFail($id);
+        $bon = BonHeader::with(['items', 'statusHistories' => fn ($q) => $q->orderBy('created_at', 'asc')])->findOrFail($id);
 
         if ($request->user() && ($request->user()->role === 'Ketua Tim' || $request->user()->role === 'Ketua Tim Kerja')) {
             if ($bon->user_id !== $request->user()->id) {
@@ -528,7 +539,7 @@ class RequestController extends Controller
         ]);
 
         $statusVal = ($validated['status'] === 'draft' || $validated['status'] === 'Draft') ? 'Draft' : 'Menunggu Verifikasi';
-        $bonHeader = \App\Models\BonHeader::findOrFail($id);
+        $bonHeader = BonHeader::findOrFail($id);
         $user = $request->user();
 
         if ($bonHeader->user_id !== $user->id) {
@@ -543,7 +554,7 @@ class RequestController extends Controller
         try {
             $oldStatus = $bonHeader->status;
             $requester = $request->input('requester') ?? $bonHeader->requester;
-            $actualUser = \App\Models\User::where('name', $requester)->first();
+            $actualUser = User::where('name', $requester)->first();
             $section = $actualUser ? ($actualUser->section ?? 'Tata Usaha') : $bonHeader->section;
 
             $bonHeader->update([
@@ -555,7 +566,7 @@ class RequestController extends Controller
                 'last_updated' => today(),
             ]);
 
-            \App\Models\BonStatusHistory::create([
+            BonStatusHistory::create([
                 'bon_header_id' => $bonHeader->id,
                 'status_before' => $oldStatus,
                 'status_after' => $statusVal,
@@ -566,11 +577,11 @@ class RequestController extends Controller
             $bonHeader->items()->delete();
 
             foreach ($validated['items'] as $item) {
-                $stockItemId = !empty($item['barang_id']) && $item['barang_id'] > 0 ? $item['barang_id'] : null;
-                $stockItem   = $stockItemId ? \App\Models\StockItem::find($stockItemId) : null;
+                $stockItemId = ! empty($item['barang_id']) && $item['barang_id'] > 0 ? $item['barang_id'] : null;
+                $stockItem = $stockItemId ? StockItem::find($stockItemId) : null;
 
                 $itemName = $stockItem ? $stockItem->name : ($item['nama_barang'] ?? 'Barang Baru');
-                $unit     = $stockItem ? $stockItem->unit : ($item['satuan'] ?? 'Buah');
+                $unit = $stockItem ? $stockItem->unit : ($item['satuan'] ?? 'Buah');
 
                 ItemRequest::create([
                     'bon_header_id' => $bonHeader->id,
@@ -593,25 +604,27 @@ class RequestController extends Controller
                 ]);
             }
 
-            \App\Models\HistoryLog::create([
+            HistoryLog::create([
                 'actor' => $user->name,
                 'action' => $statusVal === 'Draft' ? 'Update Draft' : 'Ajukan Draft',
-                'details' => $statusVal === 'Draft' 
+                'details' => $statusVal === 'Draft'
                     ? "Memperbarui draft BON: {$bonHeader->bon_no}"
                     : "Mengirim draft BON {$bonHeader->bon_no} menjadi pengajuan ke petugas",
             ]);
 
             DB::commit();
+
             return response()->json($bonHeader->load('items'));
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Gagal memperbarui draft: ' . $e->getMessage()], 422);
+
+            return response()->json(['message' => 'Gagal memperbarui draft: '.$e->getMessage()], 422);
         }
     }
 
     public function destroyDraft(Request $request, $id)
     {
-        $bonHeader = \App\Models\BonHeader::findOrFail($id);
+        $bonHeader = BonHeader::findOrFail($id);
 
         if ($bonHeader->user_id !== $request->user()->id) {
             abort(403, 'Anda bukan pemilik draft ini.');
@@ -625,17 +638,19 @@ class RequestController extends Controller
         try {
             $bonHeader->items()->delete();
             $bonHeader->delete();
-            \App\Models\HistoryLog::create([
+            HistoryLog::create([
                 'actor' => $request->user() ? $request->user()->name : 'Sistem',
                 'action' => 'Hapus Draft',
                 'details' => "Menghapus draft BON: {$bonHeader->bon_no}",
             ]);
 
             DB::commit();
+
             return response()->json(['message' => 'Draft berhasil dihapus.']);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Gagal menghapus draft: ' . $e->getMessage()], 422);
+
+            return response()->json(['message' => 'Gagal menghapus draft: '.$e->getMessage()], 422);
         }
     }
 
@@ -667,7 +682,7 @@ class RequestController extends Controller
                 'last_updated' => today(),
             ]);
 
-            \App\Models\HistoryLog::create([
+            HistoryLog::create([
                 'actor' => $request->user() ? $request->user()->name : 'Sistem',
                 'action' => 'Selesai Sebagian',
                 'details' => "Menandai permintaan {$itemRequest->item_name} (BON {$itemRequest->bon_no}) selesai tanpa pengadaan sisa barang.",
@@ -679,6 +694,7 @@ class RequestController extends Controller
             return response()->json($itemRequest->fresh());
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['message' => 'Gagal menyelesaikan pengajuan.'], 500);
         }
     }
@@ -706,9 +722,9 @@ class RequestController extends Controller
                 // Stok yang sudah didistribusikan (qty_fulfilled) tidak dikembalikan.
                 // Tidak ada pengembalian stok ke gudang.
                 $notes = "Pembatalan sebagian: {$itemRequest->qty_fulfilled} {$itemRequest->unit} "
-                    . "sudah didistribusikan (tidak dikembalikan). "
-                    . "Sisa {$itemRequest->qty_to_procure} {$itemRequest->unit} yang belum diadakan dibatalkan. "
-                    . "Alasan: {$validated['alasan']}";
+                    .'sudah didistribusikan (tidak dikembalikan). '
+                    ."Sisa {$itemRequest->qty_to_procure} {$itemRequest->unit} yang belum diadakan dibatalkan. "
+                    ."Alasan: {$validated['alasan']}";
             } else {
                 // Status lain: kembalikan stok jika sudah dialokasikan
                 if ($itemRequest->stock_allocated && $itemRequest->qty_fulfilled > 0) {
@@ -719,7 +735,7 @@ class RequestController extends Controller
                             ->first();
 
                     if ($stockItem) {
-                        $stockItem->qty         += $itemRequest->qty_fulfilled;
+                        $stockItem->qty += $itemRequest->qty_fulfilled;
                         $stockItem->last_updated = today();
                         $stockItem->save();
                     }
@@ -730,31 +746,31 @@ class RequestController extends Controller
             $oldStatus = $itemRequest->status;
 
             $itemRequest->update([
-                'status'          => 'Ditolak',
-                'verifier_notes'  => $validated['alasan'],
+                'status' => 'Ditolak',
+                'verifier_notes' => $validated['alasan'],
                 // Terpenuhi Sebagian: pertahankan qty_fulfilled (sudah didistribusikan)
                 // Status lain: nol-kan semua
-                'qty_fulfilled'   => $isTerpenuhinSebagian ? $itemRequest->qty_fulfilled : 0,
-                'qty_to_procure'  => 0,
+                'qty_fulfilled' => $isTerpenuhinSebagian ? $itemRequest->qty_fulfilled : 0,
+                'qty_to_procure' => 0,
                 'stock_allocated' => $isTerpenuhinSebagian ? $itemRequest->stock_allocated : false,
-                'last_updated'    => today(),
+                'last_updated' => today(),
             ]);
 
             // Update parent BON header status
             $bonHeader = $itemRequest->bonHeader;
             if ($bonHeader) {
-                \App\Models\BonStatusHistory::create([
+                BonStatusHistory::create([
                     'bon_header_id' => $bonHeader->id,
                     'status_before' => $oldStatus,
-                    'status_after'  => 'Ditolak',
-                    'changed_by'    => $request->user()?->name ?? 'Petugas',
-                    'notes'         => "Pengajuan '{$itemRequest->item_name}' dibatalkan. {$notes}",
+                    'status_after' => 'Ditolak',
+                    'changed_by' => $request->user()?->name ?? 'Petugas',
+                    'notes' => "Pengajuan '{$itemRequest->item_name}' dibatalkan. {$notes}",
                 ]);
                 $bonHeader->update(['last_updated' => today()]);
                 $this->syncBonHeaderStatus($bonHeader);
             }
 
-            \App\Models\HistoryLog::create([
+            HistoryLog::create([
                 'actor' => $request->user() ? $request->user()->name : 'Sistem',
                 'action' => 'Tolak Pengajuan',
                 'details' => "Membatalkan permintaan {$itemRequest->item_name} (BON {$itemRequest->bon_no}). Alasan: {$validated['alasan']}",
@@ -766,29 +782,37 @@ class RequestController extends Controller
                 'message' => $isTerpenuhinSebagian
                     ? 'Sisa pengajuan yang belum terpenuhi berhasil dibatalkan. Barang yang sudah didistribusikan tidak dikembalikan.'
                     : 'Pengajuan berhasil dibatalkan.',
-                'data'    => $itemRequest->fresh(['distribution', 'procurements']),
+                'data' => $itemRequest->fresh(['distribution', 'procurements']),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
     private function syncBonHeaderStatus($bonHeader)
     {
-        if (!$bonHeader) return;
+        if (! $bonHeader) {
+            return;
+        }
 
         $items = $bonHeader->items;
-        if ($items->isEmpty()) return;
+        if ($items->isEmpty()) {
+            return;
+        }
 
         // If the header is draft, keep it draft unless changed.
-        if ($bonHeader->status === 'Draft') return;
+        if ($bonHeader->status === 'Draft') {
+            return;
+        }
 
-        $statuses = $items->pluck('status')->map(fn($s) => strtoupper(trim($s)))->toArray();
+        $statuses = $items->pluck('status')->map(fn ($s) => strtoupper(trim($s)))->toArray();
 
         // Check if any is draft
         if (in_array('DRAFT', $statuses)) {
             $bonHeader->update(['status' => 'Draft']);
+
             return;
         }
 
@@ -802,12 +826,14 @@ class RequestController extends Controller
         }
         if ($allRejected) {
             $bonHeader->update(['status' => 'Ditolak']);
+
             return;
         }
 
         // If any is DIAJUKAN or DICEK
         if (in_array('DIAJUKAN', $statuses) || in_array('DICEK', $statuses)) {
             $bonHeader->update(['status' => 'Menunggu Verifikasi']);
+
             return;
         }
 
@@ -826,6 +852,7 @@ class RequestController extends Controller
         }
         if ($hasInProgress) {
             $bonHeader->update(['status' => 'Diproses']);
+
             return;
         }
 
@@ -833,6 +860,7 @@ class RequestController extends Controller
         // Check if any is TERPENUHI or SIAP DIDISTRIBUSIKAN -> Disetujui
         if (in_array('TERPENUHI', $statuses) || in_array('SIAP DIDISTRIBUSIKAN', $statuses)) {
             $bonHeader->update(['status' => 'Disetujui']);
+
             return;
         }
 

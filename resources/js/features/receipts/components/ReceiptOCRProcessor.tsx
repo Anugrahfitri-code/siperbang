@@ -5,8 +5,8 @@ import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, 
 import { ConfirmDialog } from "../../../shared/components/feedback/ConfirmDialog";
 
 function nameSimilarity(left: string, right: string): number {
-  let leftNormalised = left.toLowerCase().replace(/\s+/g, ' ').trim();
-  let rightNormalised = right.toLowerCase().replace(/\s+/g, ' ').trim();
+  const leftNormalised = left.toLowerCase().replace(/\s+/g, ' ').trim();
+  const rightNormalised = right.toLowerCase().replace(/\s+/g, ' ').trim();
   if (leftNormalised === rightNormalised) return 1.0;
   if (leftNormalised === '' || rightNormalised === '') return 0.0;
   

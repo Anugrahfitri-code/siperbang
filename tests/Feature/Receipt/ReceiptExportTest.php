@@ -61,12 +61,12 @@ class ReceiptExportTest extends TestCase
             (string) $response->headers->get('Content-Disposition')
         );
         $this->assertStringContainsString('text/csv', (string) $response->headers->get('Content-Type'));
-        
+
         // Assert the content contains the invoice number
         ob_start();
         $response->sendContent();
         $content = ob_get_clean();
-        
+
         $this->assertStringContainsString('INV-CSV', $content);
         $this->assertStringContainsString('Toko CSV', $content);
         $this->assertStringContainsString('Barang CSV', $content);

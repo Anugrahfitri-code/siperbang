@@ -8,4 +8,4 @@ $limits = [
     'memory_limit' => ini_get('memory_limit'),
 ];
 
-fwrite(STDOUT, json_encode($limits, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL);
+fwrite(STDOUT, json_encode($limits, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL);

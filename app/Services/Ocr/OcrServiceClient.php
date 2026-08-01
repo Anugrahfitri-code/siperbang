@@ -117,7 +117,7 @@ final class OcrServiceClient
                 )
                 ->post(
                     $this->url
-                    . '/internal/v1/receipt-ocr',
+                    .'/internal/v1/receipt-ocr',
                 );
         } catch (ConnectionException $exception) {
             $connectionMessage = strtolower(
@@ -142,27 +142,24 @@ final class OcrServiceClient
                 message: $isTimeout
                     ? (
                         'Layanan OCR melewati batas waktu '
-                        . $this->timeout
-                        . ' detik.'
+                        .$this->timeout
+                        .' detik.'
                     )
                     : (
                         'Layanan OCR tidak dapat dihubungi di '
-                        . $this->url
-                        . '. Pastikan container atau server OCR aktif.'
+                        .$this->url
+                        .'. Pastikan container atau server OCR aktif.'
                     ),
                 httpStatus: 503,
                 retryable: true,
                 contextData: [
-                    'ocr_url' =>
-                        $this->url,
+                    'ocr_url' => $this->url,
 
-                    'failure_type' =>
-                        $isTimeout
+                    'failure_type' => $isTimeout
                             ? 'timeout'
                             : 'connection',
 
-                    'client_timeout_seconds' =>
-                        $this->timeout,
+                    'client_timeout_seconds' => $this->timeout,
                 ],
                 previous: $exception,
             );
@@ -284,30 +281,22 @@ final class OcrServiceClient
             : null;
 
         $message = match ($statusCode) {
-            401, 403 =>
-                'Autentikasi layanan OCR gagal.',
+            401, 403 => 'Autentikasi layanan OCR gagal.',
 
-            413 =>
-                'Ukuran dokumen melebihi batas layanan OCR.',
+            413 => 'Ukuran dokumen melebihi batas layanan OCR.',
 
-            415 =>
-                'Format dokumen tidak didukung layanan OCR.',
+            415 => 'Format dokumen tidak didukung layanan OCR.',
 
-            422 =>
-                $safeDetail
+            422 => $safeDetail
                 ?: 'Tidak ada teks yang dapat dibaca pada dokumen.',
 
-            429 =>
-                'Layanan OCR sedang menerima terlalu banyak permintaan.',
+            429 => 'Layanan OCR sedang menerima terlalu banyak permintaan.',
 
-            500 =>
-                'Layanan OCR gagal memproses dokumen.',
+            500 => 'Layanan OCR gagal memproses dokumen.',
 
-            503 =>
-                'Mesin OCR sedang tidak tersedia.',
+            503 => 'Mesin OCR sedang tidak tersedia.',
 
-            default =>
-                $safeDetail
+            default => $safeDetail
                 ?: 'Layanan OCR mengembalikan kesalahan.',
         };
 

@@ -19,4 +19,4 @@ if ($finfo === false) {
 $mimeType = finfo_file($finfo, $file);
 finfo_close($finfo);
 
-fwrite(STDOUT, ($mimeType ?: 'tidak diketahui') . PHP_EOL);
+fwrite(STDOUT, ($mimeType ?: 'tidak diketahui').PHP_EOL);

@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\Receipt\ReceiptDocumentStatus;
 use App\Http\Controllers\Controller;
-use App\Models\ReceiptDocument;
+use App\Jobs\Receipt\ProcessReceiptOcr;
 use App\Models\Receipt;
+use App\Models\ReceiptDocument;
 use App\Services\Inventory\InventoryCodeSuggestionService;
 use App\Services\Receipt\ReceiptStockSyncService;
-use App\Jobs\Receipt\ProcessReceiptOcr;
-use App\Enums\Receipt\ReceiptDocumentStatus;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ReceiptDocumentController extends Controller
 {
@@ -36,12 +36,10 @@ class ReceiptDocumentController extends Controller
                 ->whereIn(
                     'status',
                     [
-                        ReceiptDocumentStatus
-                            ::NEEDS_REVIEW
+                        ReceiptDocumentStatus::NEEDS_REVIEW
                             ->value,
 
-                        ReceiptDocumentStatus
-                            ::DRAFT
+                        ReceiptDocumentStatus::DRAFT
                             ->value,
 
                         /*
@@ -49,8 +47,7 @@ class ReceiptDocumentController extends Controller
                          * yang berstatus verified tetapi belum
                          * mempunyai receipt_id.
                          */
-                        ReceiptDocumentStatus
-                            ::VERIFIED
+                        ReceiptDocumentStatus::VERIFIED
                             ->value,
                     ],
                 );
@@ -98,34 +95,26 @@ class ReceiptDocumentController extends Controller
                     };
 
                     return [
-                        'id' =>
-                            $document->id,
+                        'id' => $document->id,
 
-                        'receipt_id' =>
-                            $document->receipt_id,
+                        'receipt_id' => $document->receipt_id,
 
-                        'original_filename' =>
-                            $document
-                                ->original_filename,
+                        'original_filename' => $document
+                            ->original_filename,
 
-                        'mime_type' =>
-                            $document->mime_type,
+                        'mime_type' => $document->mime_type,
 
-                        'size_bytes' =>
-                            $document->size_bytes,
+                        'size_bytes' => $document->size_bytes,
 
-                        'status' =>
-                            $document
-                                ->status
-                                ->value,
+                        'status' => $document
+                            ->status
+                            ->value,
 
-                        'manual_draft' =>
-                            $document
-                                ->manual_draft,
+                        'manual_draft' => $document
+                            ->manual_draft,
 
                         'summary' => [
-                            'invoiceNo' =>
-                                $manualDraft[
+                            'invoiceNo' => $manualDraft[
                                     'invoiceNo'
                                 ]
                                 ?? $fieldValue(
@@ -134,8 +123,7 @@ class ReceiptDocumentController extends Controller
                                     '',
                                 ),
 
-                            'storeName' =>
-                                $manualDraft[
+                            'storeName' => $manualDraft[
                                     'storeName'
                                 ]
                                 ?? $fieldValue(
@@ -144,8 +132,7 @@ class ReceiptDocumentController extends Controller
                                     '',
                                 ),
 
-                            'date' =>
-                                $manualDraft[
+                            'date' => $manualDraft[
                                     'date'
                                 ]
                                 ?? $fieldValue(
@@ -154,60 +141,52 @@ class ReceiptDocumentController extends Controller
                                     '',
                                 ),
 
-                            'method' =>
-                                $manualDraft[
+                            'method' => $manualDraft[
                                     'method'
                                 ]
                                 ?? null,
 
-                            'isTaxed' =>
-                                (bool) (
-                                    $manualDraft[
-                                        'isTaxed'
-                                    ]
-                                    ?? false
-                                ),
+                            'isTaxed' => (bool) (
+                                $manualDraft[
+                                    'isTaxed'
+                                ]
+                                ?? false
+                            ),
 
-                            'taxRate' =>
-                                (float) (
-                                    $manualDraft[
-                                        'taxRate'
-                                    ]
-                                    ?? 0
-                                ),
+                            'taxRate' => (float) (
+                                $manualDraft[
+                                    'taxRate'
+                                ]
+                                ?? 0
+                            ),
 
-                            'total' =>
-                                (float) (
-                                    $manualDraft[
-                                        'total'
-                                    ]
-                                    ?? $fieldValue(
-                                        $parsedResult,
-                                        'total',
-                                        0,
-                                    )
-                                ),
+                            'total' => (float) (
+                                $manualDraft[
+                                    'total'
+                                ]
+                                ?? $fieldValue(
+                                    $parsedResult,
+                                    'total',
+                                    0,
+                                )
+                            ),
                         ],
 
-                        'draft_saved_at' =>
-                            $document
-                                ->draft_saved_at
-                                ?->toISOString(),
+                        'draft_saved_at' => $document
+                            ->draft_saved_at
+                            ?->toISOString(),
 
-                        'processed_at' =>
-                            $document
-                                ->processed_at
-                                ?->toISOString(),
+                        'processed_at' => $document
+                            ->processed_at
+                            ?->toISOString(),
 
-                        'created_at' =>
-                            $document
-                                ->created_at
-                                ?->toISOString(),
+                        'created_at' => $document
+                            ->created_at
+                            ?->toISOString(),
 
-                        'updated_at' =>
-                            $document
-                                ->updated_at
-                                ?->toISOString(),
+                        'updated_at' => $document
+                            ->updated_at
+                            ?->toISOString(),
                     ];
                 }
             );
@@ -303,8 +282,8 @@ class ReceiptDocumentController extends Controller
                     $parsedResult['warnings'][] = [
                         'code' => 'unit_not_detected',
                         'field' => "items.{$index}.unit",
-                        'message' => 'Satuan barang ke-' . ($index + 1)
-                            . ' belum ditemukan. Pilih satuan secara manual.',
+                        'message' => 'Satuan barang ke-'.($index + 1)
+                            .' belum ditemukan. Pilih satuan secara manual.',
                         'severity' => 'warning',
                     ];
                 }
@@ -313,8 +292,8 @@ class ReceiptDocumentController extends Controller
                     $parsedResult['warnings'][] = [
                         'code' => 'inventory_code_not_matched',
                         'field' => "items.{$index}.inventory_code",
-                        'message' => 'Kode persediaan barang ke-' . ($index + 1)
-                            . ' belum dapat dicocokkan. Pilih kode 1.01.03 secara manual.',
+                        'message' => 'Kode persediaan barang ke-'.($index + 1)
+                            .' belum dapat dicocokkan. Pilih kode 1.01.03 secara manual.',
                         'severity' => 'warning',
                     ];
                 }
@@ -347,14 +326,14 @@ class ReceiptDocumentController extends Controller
                 'file',
                 'mimetypes:image/jpeg,image/png,application/pdf,image/tiff',
                 'mimes:jpg,jpeg,png,pdf,tif,tiff',
-                'max:' . $maxSize,
+                'max:'.$maxSize,
             ],
         ]);
 
         $file = $request->file('document');
-        
+
         $path = $file->store('receipts', 'local');
-        
+
         $fullPath = Storage::disk('local')->path($path);
         $sha256 = hash_file('sha256', $fullPath);
 
@@ -387,8 +366,8 @@ class ReceiptDocumentController extends Controller
             'message' => 'Dokumen diterima dan sedang diproses.',
             'data' => [
                 'id' => $document->id,
-                'status' => $document->status->value
-            ]
+                'status' => $document->status->value,
+            ],
         ], 202);
     }
 
@@ -426,26 +405,20 @@ class ReceiptDocumentController extends Controller
                 $receiptDocument->storage_path
             ),
             [
-                'Content-Type' =>
-                    $receiptDocument->mime_type,
+                'Content-Type' => $receiptDocument->mime_type,
 
-                'Content-Disposition' =>
-                    'inline; filename="'
-                    . $inlineFilename
-                    . '"',
+                'Content-Disposition' => 'inline; filename="'
+                    .$inlineFilename
+                    .'"',
 
-                'Cache-Control' =>
-                    'private, no-store, no-cache, '
-                    . 'must-revalidate, max-age=0',
+                'Cache-Control' => 'private, no-store, no-cache, '
+                    .'must-revalidate, max-age=0',
 
-                'Pragma' =>
-                    'no-cache',
+                'Pragma' => 'no-cache',
 
-                'Expires' =>
-                    '0',
+                'Expires' => '0',
 
-                'X-Content-Type-Options' =>
-                    'nosniff',
+                'X-Content-Type-Options' => 'nosniff',
             ],
         );
     }
@@ -460,10 +433,9 @@ class ReceiptDocumentController extends Controller
             !== null
         ) {
             return response()->json([
-                'message' =>
-                    'Dokumen ini sudah selesai '
-                    . 'diverifikasi dan tidak dapat '
-                    . 'disimpan kembali sebagai draft.',
+                'message' => 'Dokumen ini sudah selesai '
+                    .'diverifikasi dan tidak dapat '
+                    .'disimpan kembali sebagai draft.',
             ], 409);
         }
 
@@ -471,61 +443,45 @@ class ReceiptDocumentController extends Controller
             ! in_array(
                 $receiptDocument->status,
                 [
-                    ReceiptDocumentStatus
-                        ::NEEDS_REVIEW,
+                    ReceiptDocumentStatus::NEEDS_REVIEW,
 
-                    ReceiptDocumentStatus
-                        ::DRAFT,
+                    ReceiptDocumentStatus::DRAFT,
 
-                    ReceiptDocumentStatus
-                        ::VERIFIED,
+                    ReceiptDocumentStatus::VERIFIED,
                 ],
                 true,
             )
         ) {
             return response()->json([
-                'message' =>
-                    'Dokumen belum siap untuk '
-                    . 'disimpan sebagai draft.',
+                'message' => 'Dokumen belum siap untuk '
+                    .'disimpan sebagai draft.',
             ], 422);
         }
 
         $validated = $request->validate([
-            'invoiceNo' =>
-                'nullable|string|max:255',
+            'invoiceNo' => 'nullable|string|max:255',
 
-            'storeName' =>
-                'nullable|string|max:255',
+            'storeName' => 'nullable|string|max:255',
 
-            'date' =>
-                'nullable|date',
+            'date' => 'nullable|date',
 
-            'isTaxed' =>
-                'required|boolean',
+            'isTaxed' => 'required|boolean',
 
-            'taxRate' =>
-                'required|numeric|min:0|max:100',
+            'taxRate' => 'required|numeric|min:0|max:100',
 
-            'method' =>
-                'nullable|string|max:255',
+            'method' => 'nullable|string|max:255',
 
-            'bastName' =>
-                'nullable|string|max:255',
+            'bastName' => 'nullable|string|max:255',
 
-            'bastDate' =>
-                'nullable|date',
+            'bastDate' => 'nullable|date',
 
-            'items' =>
-                'present|array',
+            'items' => 'present|array',
 
-            'items.*.name' =>
-                'nullable|string|max:500',
+            'items.*.name' => 'nullable|string|max:500',
 
-            'items.*.qty' =>
-                'nullable|numeric|min:0',
+            'items.*.qty' => 'nullable|numeric|min:0',
 
-            'items.*.unit' =>
-                'nullable|string|max:30',
+            'items.*.unit' => 'nullable|string|max:30',
 
             'items.*.inventoryCode' => [
                 'nullable',
@@ -548,8 +504,7 @@ class ReceiptDocumentController extends Controller
                     ),
             ],
 
-            'items.*.price' =>
-                'nullable|numeric|min:0',
+            'items.*.price' => 'nullable|numeric|min:0',
         ]);
 
         $draftItems = collect(
@@ -586,40 +541,33 @@ class ReceiptDocumentController extends Controller
                         : 0;
 
                     return [
-                        'name' =>
-                            trim(
-                                (string) (
-                                    $item['name']
-                                    ?? ''
-                                )
-                            ),
+                        'name' => trim(
+                            (string) (
+                                $item['name']
+                                ?? ''
+                            )
+                        ),
 
-                        'qty' =>
-                            $qty,
+                        'qty' => $qty,
 
-                        'unit' =>
-                            $suggestionService->normaliseUnit(
-                                $item['unit'] ?? null,
-                            ),
+                        'unit' => $suggestionService->normaliseUnit(
+                            $item['unit'] ?? null,
+                        ),
 
-                        'inventoryCode' =>
-                            isset($item['inventoryCode'])
+                        'inventoryCode' => isset($item['inventoryCode'])
                                 ? trim((string) $item['inventoryCode'])
                                 : null,
 
-                        'stockItemId' =>
-                            isset($item['stockItemId'])
+                        'stockItemId' => isset($item['stockItemId'])
                                 ? (int) $item['stockItemId']
                                 : null,
 
-                        'price' =>
-                            $price,
+                        'price' => $price,
 
-                        'subtotal' =>
-                            round(
-                                $qty * $price,
-                                2,
-                            ),
+                        'subtotal' => round(
+                            $qty * $price,
+                            2,
+                        ),
                     ];
                 }
             )
@@ -661,103 +609,81 @@ class ReceiptDocumentController extends Controller
             : 0;
 
         $draft = [
-            'invoiceNo' =>
-                trim(
-                    (string) (
-                        $validated[
-                            'invoiceNo'
-                        ]
-                        ?? ''
-                    )
-                ),
+            'invoiceNo' => trim(
+                (string) (
+                    $validated[
+                        'invoiceNo'
+                    ]
+                    ?? ''
+                )
+            ),
 
-            'storeName' =>
-                trim(
-                    (string) (
-                        $validated[
-                            'storeName'
-                        ]
-                        ?? ''
-                    )
-                ),
+            'storeName' => trim(
+                (string) (
+                    $validated[
+                        'storeName'
+                    ]
+                    ?? ''
+                )
+            ),
 
-            'date' =>
-                $validated['date']
+            'date' => $validated['date']
                 ?? null,
 
-            'isTaxed' =>
-                $isTaxed,
+            'isTaxed' => $isTaxed,
 
-            'taxRate' =>
-                $taxRate,
+            'taxRate' => $taxRate,
 
-            'subtotal' =>
-                $subtotal,
+            'subtotal' => $subtotal,
 
-            'taxAmount' =>
-                $taxAmount,
+            'taxAmount' => $taxAmount,
 
-            'total' =>
-                round(
-                    $subtotal
-                    + $taxAmount,
-                    2,
-                ),
+            'total' => round(
+                $subtotal
+                + $taxAmount,
+                2,
+            ),
 
-            'method' =>
-                $validated['method']
+            'method' => $validated['method']
                 ?? null,
 
-            'bastName' =>
-                trim(
-                    (string) (
-                        $validated[
-                            'bastName'
-                        ]
-                        ?? ''
-                    )
-                ),
+            'bastName' => trim(
+                (string) (
+                    $validated[
+                        'bastName'
+                    ]
+                    ?? ''
+                )
+            ),
 
-            'bastDate' =>
-                $validated[
+            'bastDate' => $validated[
                     'bastDate'
                 ]
                 ?? null,
 
-            'items' =>
-                $draftItems,
+            'items' => $draftItems,
         ];
 
         $receiptDocument->update([
-            'manual_draft' =>
-                $draft,
+            'manual_draft' => $draft,
 
-            'draft_saved_by' =>
-                $request->user()?->id,
+            'draft_saved_by' => $request->user()?->id,
 
-            'draft_saved_at' =>
-                now(),
+            'draft_saved_at' => now(),
 
-            'status' =>
-                ReceiptDocumentStatus
-                    ::DRAFT,
+            'status' => ReceiptDocumentStatus::DRAFT,
         ]);
 
         return response()->json([
-            'message' =>
-                'Draft verifikasi berhasil disimpan.',
+            'message' => 'Draft verifikasi berhasil disimpan.',
 
             'data' => [
-                'document_id' =>
-                    $receiptDocument->id,
+                'document_id' => $receiptDocument->id,
 
-                'status' =>
-                    ReceiptDocumentStatus
-                        ::DRAFT
-                        ->value,
+                'status' => ReceiptDocumentStatus::DRAFT
+                    ->value,
 
-                'manual_draft' =>
-                    $draft,
+                'manual_draft' => $draft,
             ],
         ]);
     }
@@ -777,25 +703,21 @@ class ReceiptDocumentController extends Controller
             !== null
         ) {
             return response()->json([
-                'message' =>
-                    'Dokumen ini sudah pernah '
-                    . 'diverifikasi.',
+                'message' => 'Dokumen ini sudah pernah '
+                    .'diverifikasi.',
 
                 'data' => [
-                    'receipt' =>
-                        $receiptDocument
-                            ->receipt()
-                            ->with([
-                                'items.inventoryCodeMaster',
-                                'items.stockItem',
-                            ])
-                            ->first(),
+                    'receipt' => $receiptDocument
+                        ->receipt()
+                        ->with([
+                            'items.inventoryCodeMaster',
+                            'items.stockItem',
+                        ])
+                        ->first(),
 
-                    'document' =>
-                        $receiptDocument,
+                    'document' => $receiptDocument,
 
-                    'reused' =>
-                        true,
+                    'reused' => true,
                 ],
             ]);
         }
@@ -804,23 +726,19 @@ class ReceiptDocumentController extends Controller
             ! in_array(
                 $receiptDocument->status,
                 [
-                    ReceiptDocumentStatus
-                        ::NEEDS_REVIEW,
+                    ReceiptDocumentStatus::NEEDS_REVIEW,
 
-                    ReceiptDocumentStatus
-                        ::DRAFT,
+                    ReceiptDocumentStatus::DRAFT,
 
-                    ReceiptDocumentStatus
-                        ::VERIFIED,
+                    ReceiptDocumentStatus::VERIFIED,
                 ],
                 true,
             )
         ) {
             return response()->json([
-                'message' =>
-                    'Dokumen harus selesai '
-                    . 'diproses OCR sebelum '
-                    . 'dapat diverifikasi.',
+                'message' => 'Dokumen harus selesai '
+                    .'diproses OCR sebelum '
+                    .'dapat diverifikasi.',
             ], 422);
         }
 
@@ -830,41 +748,29 @@ class ReceiptDocumentController extends Controller
                  * Beberapa kuitansi memang tidak
                  * mempunyai nomor nota.
                  */
-                'invoiceNo' =>
-                    'nullable|string|max:255',
+                'invoiceNo' => 'nullable|string|max:255',
 
-                'storeName' =>
-                    'required|string|max:255',
+                'storeName' => 'required|string|max:255',
 
-                'date' =>
-                    'required|date',
+                'date' => 'required|date',
 
-                'isTaxed' =>
-                    'required|boolean',
+                'isTaxed' => 'required|boolean',
 
-                'taxRate' =>
-                    'required|numeric|min:0|max:100',
+                'taxRate' => 'required|numeric|min:0|max:100',
 
-                'method' =>
-                    'nullable|string|max:255',
+                'method' => 'nullable|string|max:255',
 
-                'bastName' =>
-                    'nullable|string|max:255',
+                'bastName' => 'nullable|string|max:255',
 
-                'bastDate' =>
-                    'nullable|date',
+                'bastDate' => 'nullable|date',
 
-                'items' =>
-                    'required|array|min:1',
+                'items' => 'required|array|min:1',
 
-                'items.*.name' =>
-                    'required|string|max:500',
+                'items.*.name' => 'required|string|max:500',
 
-                'items.*.qty' =>
-                    'required|integer|min:1',
+                'items.*.qty' => 'required|integer|min:1',
 
-                'items.*.unit' =>
-                    'required|string|max:30',
+                'items.*.unit' => 'required|string|max:30',
 
                 'items.*.inventoryCode' => [
                     'required',
@@ -887,50 +793,36 @@ class ReceiptDocumentController extends Controller
                         ),
                 ],
 
-                'items.*.price' =>
-                    'required|numeric|gt:0',
+                'items.*.price' => 'required|numeric|gt:0',
             ],
             [
-                'storeName.required' =>
-                    'Nama toko/penyedia wajib diisi.',
+                'storeName.required' => 'Nama toko/penyedia wajib diisi.',
 
-                'date.required' =>
-                    'Tanggal kuitansi wajib diisi.',
+                'date.required' => 'Tanggal kuitansi wajib diisi.',
 
-                'date.date' =>
-                    'Tanggal kuitansi tidak valid.',
+                'date.date' => 'Tanggal kuitansi tidak valid.',
 
-                'items.required' =>
-                    'Minimal satu barang wajib diisi.',
+                'items.required' => 'Minimal satu barang wajib diisi.',
 
-                'items.min' =>
-                    'Minimal satu barang wajib diisi.',
+                'items.min' => 'Minimal satu barang wajib diisi.',
 
-                'items.*.name.required' =>
-                    'Nama setiap barang wajib diisi.',
+                'items.*.name.required' => 'Nama setiap barang wajib diisi.',
 
-                'items.*.qty.integer' =>
-                    'Jumlah barang harus berupa '
-                    . 'bilangan bulat.',
+                'items.*.qty.integer' => 'Jumlah barang harus berupa '
+                    .'bilangan bulat.',
 
-                'items.*.qty.min' =>
-                    'Jumlah barang minimal 1.',
+                'items.*.qty.min' => 'Jumlah barang minimal 1.',
 
-                'items.*.unit.required' =>
-                    'Satuan setiap barang wajib dipilih.',
+                'items.*.unit.required' => 'Satuan setiap barang wajib dipilih.',
 
-                'items.*.inventoryCode.required' =>
-                    'Kode persediaan setiap barang wajib dipilih.',
+                'items.*.inventoryCode.required' => 'Kode persediaan setiap barang wajib dipilih.',
 
-                'items.*.inventoryCode.regex' =>
-                    'Kode persediaan harus berasal dari kategori 1.01.03.',
+                'items.*.inventoryCode.regex' => 'Kode persediaan harus berasal dari kategori 1.01.03.',
 
-                'items.*.inventoryCode.exists' =>
-                    'Kode persediaan tidak ditemukan pada master resmi.',
+                'items.*.inventoryCode.exists' => 'Kode persediaan tidak ditemukan pada master resmi.',
 
-                'items.*.price.gt' =>
-                    'Harga setiap barang harus '
-                    . 'lebih besar dari 0.',
+                'items.*.price.gt' => 'Harga setiap barang harus '
+                    .'lebih besar dari 0.',
             ],
         );
 
@@ -942,34 +834,28 @@ class ReceiptDocumentController extends Controller
                     array $item
                 ) use ($suggestionService) {
                     return [
-                        'name' =>
-                            trim(
-                                $item['name']
-                            ),
+                        'name' => trim(
+                            $item['name']
+                        ),
 
-                        'qty' =>
-                            (int) $item['qty'],
+                        'qty' => (int) $item['qty'],
 
-                        'unit' =>
-                            $suggestionService->normaliseUnit(
-                                $item['unit'],
-                            ),
+                        'unit' => $suggestionService->normaliseUnit(
+                            $item['unit'],
+                        ),
 
-                        'inventory_code' =>
-                            trim($item['inventoryCode']),
+                        'inventory_code' => trim($item['inventoryCode']),
 
-                        'stock_item_id' =>
-                            isset($item['stockItemId'])
+                        'stock_item_id' => isset($item['stockItemId'])
                                 ? (int) $item['stockItemId']
                                 : null,
 
-                        'price' =>
-                            round(
-                                (float) $item[
-                                    'price'
-                                ],
-                                2,
-                            ),
+                        'price' => round(
+                            (float) $item[
+                                'price'
+                            ],
+                            2,
+                        ),
                     ];
                 }
             )
@@ -983,13 +869,12 @@ class ReceiptDocumentController extends Controller
                     float $total,
                     array $item,
                 ): float {
-                    return (
+                    return
                         $total
                         + (
                             $item['qty']
                             * $item['price']
-                        )
-                    );
+                        );
                 },
                 0,
             ),
@@ -1043,7 +928,7 @@ class ReceiptDocumentController extends Controller
         if ($invoiceNo === '') {
             $invoiceNo = (
                 'DOC-'
-                . $receiptDocument->id
+                .$receiptDocument->id
             );
         }
 
@@ -1130,20 +1015,17 @@ class ReceiptDocumentController extends Controller
                         !== null
                     ) {
                         return [
-                            'receipt' =>
-                                $lockedDocument
-                                    ->receipt()
-                                    ->with([
-                                        'items.inventoryCodeMaster',
-                                        'items.stockItem',
-                                    ])
-                                    ->first(),
+                            'receipt' => $lockedDocument
+                                ->receipt()
+                                ->with([
+                                    'items.inventoryCodeMaster',
+                                    'items.stockItem',
+                                ])
+                                ->first(),
 
-                            'document' =>
-                                $lockedDocument,
+                            'document' => $lockedDocument,
 
-                            'reused' =>
-                                true,
+                            'reused' => true,
                         ];
                     }
 
@@ -1194,13 +1076,12 @@ class ReceiptDocumentController extends Controller
                             ! $sameDate
                             || ! $sameTotal
                         ) {
-                            throw ValidationException
-                                ::withMessages([
+                            throw ValidationException::withMessages([
                                     'invoiceNo' => [
                                         'Nomor invoice ini sudah '
-                                        . 'digunakan untuk toko '
-                                        . 'yang sama, tetapi tanggal '
-                                        . 'atau totalnya berbeda.',
+                                        .'digunakan untuk toko '
+                                        .'yang sama, tetapi tanggal '
+                                        .'atau totalnya berbeda.',
                                     ],
                                 ]);
                         }
@@ -1222,41 +1103,31 @@ class ReceiptDocumentController extends Controller
                         );
 
                         $lockedDocument->update([
-                            'receipt_id' =>
-                                $duplicate->id,
+                            'receipt_id' => $duplicate->id,
 
-                            'manual_draft' =>
-                                $verifiedDraft,
+                            'manual_draft' => $verifiedDraft,
 
-                            'draft_saved_by' =>
-                                $draftSavedBy,
+                            'draft_saved_by' => $draftSavedBy,
 
-                            'draft_saved_at' =>
-                                now(),
+                            'draft_saved_at' => now(),
 
-                            'status' =>
-                                ReceiptDocumentStatus
-                                    ::VERIFIED,
+                            'status' => ReceiptDocumentStatus::VERIFIED,
 
-                            'verified_at' =>
-                                now(),
+                            'verified_at' => now(),
                         ]);
 
                         return [
-                            'receipt' =>
-                                $duplicate
-                                    ->fresh()
-                                    ->load([
-                                        'items.inventoryCodeMaster',
-                                        'items.stockItem',
-                                    ]),
+                            'receipt' => $duplicate
+                                ->fresh()
+                                ->load([
+                                    'items.inventoryCodeMaster',
+                                    'items.stockItem',
+                                ]),
 
-                            'document' =>
-                                $lockedDocument
-                                    ->fresh(),
+                            'document' => $lockedDocument
+                                ->fresh(),
 
-                            'reused' =>
-                                true,
+                            'reused' => true,
                         ];
                     }
 
@@ -1270,61 +1141,49 @@ class ReceiptDocumentController extends Controller
                     );
 
                     $lockedDocument->update([
-                        'receipt_id' =>
-                            $receipt->id,
+                        'receipt_id' => $receipt->id,
 
-                        'manual_draft' =>
-                            $verifiedDraft,
+                        'manual_draft' => $verifiedDraft,
 
-                        'draft_saved_by' =>
-                            $draftSavedBy,
+                        'draft_saved_by' => $draftSavedBy,
 
-                        'draft_saved_at' =>
-                            now(),
+                        'draft_saved_at' => now(),
 
-                        'status' =>
-                            ReceiptDocumentStatus
-                                ::VERIFIED,
+                        'status' => ReceiptDocumentStatus::VERIFIED,
 
-                        'verified_at' =>
-                            now(),
+                        'verified_at' => now(),
                     ]);
 
                     return [
-                        'receipt' =>
-                            $receipt
-                                ->load([
-                                    'items.inventoryCodeMaster',
-                                    'items.stockItem',
-                                ]),
+                        'receipt' => $receipt
+                            ->load([
+                                'items.inventoryCodeMaster',
+                                'items.stockItem',
+                            ]),
 
-                        'document' =>
-                            $lockedDocument
-                                ->fresh(),
+                        'document' => $lockedDocument
+                            ->fresh(),
 
-                        'reused' =>
-                            false,
+                        'reused' => false,
                     ];
                 },
                 3,
             );
 
             return response()->json([
-                'message' =>
-                    $result['reused']
+                'message' => $result['reused']
                         ? (
                             'Invoice sudah pernah '
-                            . 'diverifikasi. Data kuitansi, '
-                            . 'kode persediaan, satuan, dan stok master '
-                            . 'telah diperbarui.'
+                            .'diverifikasi. Data kuitansi, '
+                            .'kode persediaan, satuan, dan stok master '
+                            .'telah diperbarui.'
                         )
                         : (
                             'Dokumen berhasil diverifikasi dan '
-                            . 'stok master telah diperbarui.'
+                            .'stok master telah diperbarui.'
                         ),
 
-                'data' =>
-                    $result,
+                'data' => $result,
             ]);
         } catch (
             ValidationException $exception
@@ -1336,19 +1195,15 @@ class ReceiptDocumentController extends Controller
             Log::error(
                 'Gagal menyimpan verifikasi kuitansi.',
                 [
-                    'receipt_document_id' =>
-                        $receiptDocument->id,
+                    'receipt_document_id' => $receiptDocument->id,
 
-                    'sql_state' =>
-                        $exception->errorInfo[0]
+                    'sql_state' => $exception->errorInfo[0]
                         ?? null,
 
-                    'driver_code' =>
-                        $exception->errorInfo[1]
+                    'driver_code' => $exception->errorInfo[1]
                         ?? null,
 
-                    'message' =>
-                        $exception->getMessage(),
+                    'message' => $exception->getMessage(),
                 ],
             );
 
@@ -1361,20 +1216,18 @@ class ReceiptDocumentController extends Controller
             );
 
             return response()->json([
-                'message' =>
-                    $isDuplicate
+                'message' => $isDuplicate
                         ? (
                             'Nomor invoice tersebut '
-                            . 'sudah digunakan. Periksa '
-                            . 'daftar kuitansi valid.'
+                            .'sudah digunakan. Periksa '
+                            .'daftar kuitansi valid.'
                         )
                         : (
                             'Database gagal menyimpan '
-                            . 'hasil verifikasi.'
+                            .'hasil verifikasi.'
                         ),
 
-                'code' =>
-                    $isDuplicate
+                'code' => $isDuplicate
                         ? 'duplicate_invoice'
                         : 'database_error',
             ], $isDuplicate ? 409 : 500);
@@ -1384,32 +1237,25 @@ class ReceiptDocumentController extends Controller
             Log::error(
                 'Gagal menyimpan verifikasi kuitansi.',
                 [
-                    'receipt_document_id' =>
-                        $receiptDocument->id,
+                    'receipt_document_id' => $receiptDocument->id,
 
-                    'exception' =>
-                        $exception,
+                    'exception' => $exception,
                 ],
             );
 
             return response()->json([
-                'message' =>
-                    'Verifikasi gagal disimpan. '
-                    . 'Periksa log Laravel untuk '
-                    . 'detail teknis.',
+                'message' => 'Verifikasi gagal disimpan. '
+                    .'Periksa log Laravel untuk '
+                    .'detail teknis.',
 
-                'code' =>
-                    'verification_failed',
+                'code' => 'verification_failed',
 
-                'error' =>
-                    config('app.debug')
+                'error' => config('app.debug')
                         ? $exception->getMessage()
                         : null,
             ], 500);
         }
     }
-
-
 
     public function retry(
         ReceiptDocument $receiptDocument,
@@ -1426,8 +1272,7 @@ class ReceiptDocumentController extends Controller
                 ],
             )
             ->update([
-                'status' =>
-                    ReceiptDocumentStatus::QUEUED->value,
+                'status' => ReceiptDocumentStatus::QUEUED->value,
 
                 'ocr_engine' => null,
                 'ocr_engine_version' => null,
@@ -1443,7 +1288,7 @@ class ReceiptDocumentController extends Controller
             return response()->json([
                 'message' => (
                     'Hanya dokumen berstatus failed '
-                    . 'atau uploaded yang dapat diproses ulang.'
+                    .'atau uploaded yang dapat diproses ulang.'
                 ),
             ], 409);
         }
@@ -1457,23 +1302,21 @@ class ReceiptDocumentController extends Controller
         return response()->json([
             'message' => (
                 'Dokumen dimasukkan kembali '
-                . 'ke antrean OCR.'
+                .'ke antrean OCR.'
             ),
             'data' => [
-                'id' =>
-                    $receiptDocument->id,
+                'id' => $receiptDocument->id,
 
-                'status' =>
-                    $receiptDocument
-                        ->status
-                        ->value,
+                'status' => $receiptDocument
+                    ->status
+                    ->value,
 
-                'attempts' =>
-                    $receiptDocument
-                        ->attempts,
+                'attempts' => $receiptDocument
+                    ->attempts,
             ],
         ], 202);
     }
+
     public function destroy(ReceiptDocument $receiptDocument)
     {
         if ($receiptDocument->status === ReceiptDocumentStatus::VERIFIED && $receiptDocument->receipt_id !== null) {

@@ -12,13 +12,13 @@ class Procurement extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'qty_procured'   => 'integer',
-        'unit_price'     => 'float',
-        'total_price'    => 'float',
-        'is_taxed'       => 'boolean',
-        'tax_rate'       => 'float',
+        'qty_procured' => 'integer',
+        'unit_price' => 'float',
+        'total_price' => 'float',
+        'is_taxed' => 'boolean',
+        'tax_rate' => 'float',
         'procurement_date' => 'date',
-        'bast_date'      => 'date',
+        'bast_date' => 'date',
     ];
 
     public function itemRequest()

@@ -27,8 +27,8 @@ $options = [
 ];
 
 $context = stream_context_create($options);
-$result = file_get_contents($baseUrl . '/api/login', false, $context);
+$result = file_get_contents($baseUrl.'/api/login', false, $context);
 $status = $http_response_header[0] ?? 'Status tidak tersedia';
 
-fwrite(STDOUT, $status . PHP_EOL);
-fwrite(STDOUT, ($result === false ? 'Request gagal.' : $result) . PHP_EOL);
+fwrite(STDOUT, $status.PHP_EOL);
+fwrite(STDOUT, ($result === false ? 'Request gagal.' : $result).PHP_EOL);

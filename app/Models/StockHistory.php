@@ -10,6 +10,7 @@ class StockHistory extends Model
     use HasFactory;
 
     protected $table = 'stok_histories';
+
     protected $guarded = [];
 
     protected $casts = [

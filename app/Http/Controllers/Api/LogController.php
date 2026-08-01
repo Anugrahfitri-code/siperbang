@@ -12,14 +12,14 @@ class LogController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        
+
         $query = HistoryLog::where('action', 'not like', '%Login%');
 
-        if ($user && !in_array(strtolower($user->role), ['admin', 'superadmin', 'petugas persediaan'])) {
+        if ($user && ! in_array(strtolower($user->role), ['admin', 'superadmin', 'petugas persediaan'])) {
             $query->where(function ($q) use ($user) {
                 // Return if user_id explicitly matches or actor contains user's name
                 $q->where('user_id', $user->id)
-                  ->orWhere('actor', 'like', "%{$user->name}%");
+                    ->orWhere('actor', 'like', "%{$user->name}%");
             });
         }
 
@@ -59,11 +59,11 @@ class LogController extends Controller
             $query->whereYear('date', $year);
         }
 
-        if (!$isAnnual && $month !== 'All') {
+        if (! $isAnnual && $month !== 'All') {
             $query->whereMonth('date', $month);
         }
 
-        if (!empty($search)) {
+        if (! empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('store_name', 'like', "%{$search}%")
                     ->orWhere('invoice_no', 'like', "%{$search}%")

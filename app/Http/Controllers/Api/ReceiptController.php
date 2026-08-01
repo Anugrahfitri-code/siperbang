@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\Receipt\ReceiptDocumentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\HistoryLog;
 use App\Models\Receipt;
+use App\Models\ReceiptDocument;
 use App\Services\Inventory\InventoryCodeSuggestionService;
 use App\Services\Receipt\ReceiptExcelExportService;
 use App\Services\Receipt\ReceiptStockSyncService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -146,8 +151,7 @@ class ReceiptController extends Controller
             $validated['receipt_ids']
         )
             ->map(
-                fn (mixed $id): int =>
-                    (int) $id
+                fn (mixed $id): int => (int) $id
             )
             ->values();
 
@@ -162,8 +166,7 @@ class ReceiptController extends Controller
             )
             ->get()
             ->keyBy(
-                fn (Receipt $receipt): int =>
-                    (int) $receipt->id
+                fn (Receipt $receipt): int => (int) $receipt->id
             );
 
         /*
@@ -172,8 +175,7 @@ class ReceiptController extends Controller
          */
         $receipts = $requestedIds
             ->map(
-                fn (int $id): ?Receipt =>
-                    $receiptsById->get($id)
+                fn (int $id): ?Receipt => $receiptsById->get($id)
             );
 
         /*
@@ -194,14 +196,13 @@ class ReceiptController extends Controller
          */
         if (
             $receipts->contains(
-                fn (Receipt $receipt): bool =>
-                    ! $receipt->is_verified
+                fn (Receipt $receipt): bool => ! $receipt->is_verified
             )
         ) {
             throw ValidationException::withMessages([
                 'receipt_ids' => [
                     'Hanya kuitansi yang sudah valid '
-                    . 'yang dapat diekspor.',
+                    .'yang dapat diekspor.',
                 ],
             ]);
         }
@@ -215,8 +216,7 @@ class ReceiptController extends Controller
         $incompleteReceipt = $receipts->first(
             function (Receipt $receipt): bool {
                 return $receipt->items->contains(
-                    fn ($item): bool =>
-                        blank($item->inventory_code)
+                    fn ($item): bool => blank($item->inventory_code)
                         || blank($item->unit)
                 );
             }
@@ -230,20 +230,20 @@ class ReceiptController extends Controller
             throw ValidationException::withMessages([
                 'receipt_ids' => [
                     'Kuitansi '
-                    . ($receiptLabel !== ''
+                    .($receiptLabel !== ''
                         ? $receiptLabel
-                        : '#' . $incompleteReceipt->id)
-                    . ' masih memiliki kode persediaan atau '
-                    . 'satuan yang kosong. Batalkan verifikasi '
-                    . 'kuitansi tersebut, lengkapi datanya pada '
-                    . 'draft, lalu verifikasi dan ekspor kembali.',
+                        : '#'.$incompleteReceipt->id)
+                    .' masih memiliki kode persediaan atau '
+                    .'satuan yang kosong. Batalkan verifikasi '
+                    .'kuitansi tersebut, lengkapi datanya pada '
+                    .'draft, lalu verifikasi dan ekspor kembali.',
                 ],
             ]);
         }
 
         /**
-         * @var \Illuminate\Support\Collection<int, Receipt>
-         *     $receipts
+         * @var Collection<int, Receipt>
+         *                               $receipts
          */
         $export = $exportService->create(
             $receipts
@@ -254,12 +254,10 @@ class ReceiptController extends Controller
                 $export['path'],
                 $export['filename'],
                 [
-                    'Content-Type' =>
-                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 
-                    'Cache-Control' =>
-                        'private, no-store, no-cache, '
-                        . 'must-revalidate, max-age=0',
+                    'Cache-Control' => 'private, no-store, no-cache, '
+                        .'must-revalidate, max-age=0',
                 ],
             )
             ->deleteFileAfterSend(true);
@@ -326,7 +324,7 @@ class ReceiptController extends Controller
                 throw ValidationException::withMessages([
                     'items' => [
                         'Daftar barang yang dikirim tidak sama dengan '
-                        . 'barang pada kuitansi.',
+                        .'barang pada kuitansi.',
                     ],
                 ]);
             }
@@ -367,9 +365,8 @@ class ReceiptController extends Controller
         }, 3);
 
         return response()->json([
-            'message' =>
-                'Kode persediaan, satuan, dan stok master '
-                . 'berhasil diperbarui.',
+            'message' => 'Kode persediaan, satuan, dan stok master '
+                .'berhasil diperbarui.',
             'data' => $updatedReceipt,
         ]);
     }
@@ -388,7 +385,7 @@ class ReceiptController extends Controller
                     ->lockForUpdate()
                     ->findOrFail($receipt->id);
 
-                $document = \App\Models\ReceiptDocument::query()
+                $document = ReceiptDocument::query()
                     ->where('receipt_id', $lockedReceipt->id)
                     ->lockForUpdate()
                     ->first();
@@ -432,7 +429,7 @@ class ReceiptController extends Controller
                         'manual_draft' => $manualDraft,
                         'draft_saved_by' => auth()->id(),
                         'draft_saved_at' => now(),
-                        'status' => \App\Enums\Receipt\ReceiptDocumentStatus::NEEDS_REVIEW,
+                        'status' => ReceiptDocumentStatus::NEEDS_REVIEW,
                         'verified_at' => null,
                     ]);
                 }
@@ -442,28 +439,26 @@ class ReceiptController extends Controller
 
                 $lockedReceipt->delete();
 
-                \App\Models\HistoryLog::create([
+                HistoryLog::create([
                     'actor' => auth()->user()->name
-                        . ' ('
-                        . auth()->user()->role
-                        . ')',
+                        .' ('
+                        .auth()->user()->role
+                        .')',
                     'action' => 'Batalkan Verifikasi Kuitansi',
-                    'details' =>
-                        'Petugas membatalkan verifikasi kuitansi '
-                        . ($invoiceNo ?: 'tanpa nomor')
-                        . ' dari '
-                        . ($storeName ?: '-')
-                        . ' dan mengembalikan perubahan stok master.',
+                    'details' => 'Petugas membatalkan verifikasi kuitansi '
+                        .($invoiceNo ?: 'tanpa nomor')
+                        .' dari '
+                        .($storeName ?: '-')
+                        .' dan mengembalikan perubahan stok master.',
                 ]);
             }, 3);
 
             return response()->json([
-                'message' =>
-                    'Verifikasi kuitansi berhasil dibatalkan dan '
-                    . 'stok master telah disesuaikan.',
+                'message' => 'Verifikasi kuitansi berhasil dibatalkan dan '
+                    .'stok master telah disesuaikan.',
             ]);
         } catch (\Throwable $exception) {
-            \Illuminate\Support\Facades\Log::error(
+            Log::error(
                 'Gagal membatalkan kuitansi',
                 [
                     'id' => $receipt->id,
@@ -472,14 +467,12 @@ class ReceiptController extends Controller
             );
 
             return response()->json([
-                'message' =>
-                    'Terjadi kesalahan sistem saat '
-                    . 'membatalkan kuitansi.',
+                'message' => 'Terjadi kesalahan sistem saat '
+                    .'membatalkan kuitansi.',
                 'error' => config('app.debug')
                     ? $exception->getMessage()
                     : null,
             ], 500);
         }
     }
-
 }

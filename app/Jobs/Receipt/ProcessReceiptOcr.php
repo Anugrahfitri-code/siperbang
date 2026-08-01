@@ -65,11 +65,9 @@ final class ProcessReceiptOcr implements ShouldQueue
                 ],
             )
             ->update([
-                'status' =>
-                    ReceiptDocumentStatus::PROCESSING->value,
+                'status' => ReceiptDocumentStatus::PROCESSING->value,
 
-                'attempts' =>
-                    DB::raw('attempts + 1'),
+                'attempts' => DB::raw('attempts + 1'),
 
                 'error_message' => null,
                 'processed_at' => null,
@@ -79,8 +77,7 @@ final class ProcessReceiptOcr implements ShouldQueue
             Log::info(
                 'OCR job dilewati karena dokumen tidak lagi berada pada status queued.',
                 [
-                    'receipt_document_id' =>
-                        $this->receiptDocumentId,
+                    'receipt_document_id' => $this->receiptDocumentId,
                 ],
             );
 
@@ -100,8 +97,7 @@ final class ProcessReceiptOcr implements ShouldQueue
 
             $result = $client->processReceipt(
                 filePath: $filePath,
-                originalFilename:
-                    $document->original_filename,
+                originalFilename: $document->original_filename,
             );
 
             /*
@@ -174,7 +170,7 @@ final class ProcessReceiptOcr implements ShouldQueue
 
             if (count($parsedItems) < count($originalItems)) {
                 foreach ($originalItems as $index => $originalItem) {
-                    if (!isset($parsedItems[$index])) {
+                    if (! isset($parsedItems[$index])) {
                         $parsedItems[$index] = $originalItem;
                     }
                 }
@@ -210,7 +206,7 @@ final class ProcessReceiptOcr implements ShouldQueue
             if (empty($parsedResult['store_name']['value'])) {
                 $isNeedsReview = true;
             }
-            
+
             if (empty($parsedResult['invoice_no']['value'])) {
                 $isNeedsReview = true;
             }
@@ -288,19 +284,15 @@ final class ProcessReceiptOcr implements ShouldQueue
                     $isNeedsReview = true;
 
                     $warnings[] = [
-                        'code' =>
-                            'item_value_rejected_plausibility',
+                        'code' => 'item_value_rejected_plausibility',
 
-                        'field' =>
-                            "items.{$index}",
+                        'field' => "items.{$index}",
 
-                        'message' =>
-                            'Qty atau harga item ditolak karena ' .
-                            'menghasilkan nilai yang tidak masuk akal ' .
+                        'message' => 'Qty atau harga item ditolak karena '.
+                            'menghasilkan nilai yang tidak masuk akal '.
                             'dibanding total dokumen.',
 
-                        'severity' =>
-                            'error',
+                        'severity' => 'error',
                     ];
 
                     /*
@@ -314,36 +306,31 @@ final class ProcessReceiptOcr implements ShouldQueue
                         $item['qty'] = [
                             'value' => 1,
                             'confidence' => null,
-                            'source' =>
-                                'server_reconciled_total',
+                            'source' => 'server_reconciled_total',
                         ];
 
                         $item['price'] = [
                             'value' => $itemAnchor,
                             'confidence' => null,
-                            'source' =>
-                                'server_reconciled_total',
+                            'source' => 'server_reconciled_total',
                         ];
 
                         $item['subtotal'] = [
                             'value' => $itemAnchor,
                             'confidence' => null,
-                            'source' =>
-                                'server_reconciled_total',
+                            'source' => 'server_reconciled_total',
                         ];
 
                         $calculatedItemsSubtotal +=
                             $itemAnchor;
                     } else {
                         foreach (
-                            ['qty', 'price', 'subtotal']
-                            as $field
+                            ['qty', 'price', 'subtotal'] as $field
                         ) {
                             $item[$field] = [
                                 'value' => null,
                                 'confidence' => null,
-                                'source' =>
-                                    'rejected_plausibility',
+                                'source' => 'rejected_plausibility',
                             ];
                         }
                     }
@@ -405,14 +392,12 @@ final class ProcessReceiptOcr implements ShouldQueue
 
                 'overall_confidence' => $overallConfidence,
 
-                'ocr_engine' =>
-                    (string) (
-                        $result['engine']
-                        ?? 'paddleocr'
-                    ),
+                'ocr_engine' => (string) (
+                    $result['engine']
+                    ?? 'paddleocr'
+                ),
 
-                'ocr_engine_version' =>
-                    isset($result['engine_version'])
+                'ocr_engine_version' => isset($result['engine_version'])
                     ? (string) $result[
                         'engine_version'
                     ]
@@ -425,14 +410,11 @@ final class ProcessReceiptOcr implements ShouldQueue
             Log::info(
                 'Dokumen berhasil diproses oleh OCR.',
                 [
-                    'receipt_document_id' =>
-                        $document->id,
+                    'receipt_document_id' => $document->id,
 
-                    'attempt' =>
-                        $this->attempts(),
+                    'attempt' => $this->attempts(),
 
-                    'engine' =>
-                        $document->ocr_engine,
+                    'engine' => $document->ocr_engine,
                 ],
             );
         } catch (Throwable $exception) {
@@ -474,34 +456,25 @@ final class ProcessReceiptOcr implements ShouldQueue
         Log::warning(
             'Pemrosesan OCR gagal.',
             [
-                'receipt_document_id' =>
-                    $document->id,
+                'receipt_document_id' => $document->id,
 
-                'attempt' =>
-                    $this->attempts(),
+                'attempt' => $this->attempts(),
 
-                'maximum_attempts' =>
-                    $this->tries,
+                'maximum_attempts' => $this->tries,
 
-                'retryable' =>
-                    $retryable,
+                'retryable' => $retryable,
 
-                'will_retry' =>
-                    $willRetry,
+                'will_retry' => $willRetry,
 
-                'exception_class' =>
-                    $exception::class,
+                'exception_class' => $exception::class,
 
-                'message' =>
-                    $safeMessage,
+                'message' => $safeMessage,
 
-                'context' =>
-                    $exception instanceof OcrServiceException
+                'context' => $exception instanceof OcrServiceException
                         ? $exception->getContextData()
                         : [],
 
-                'previous_message' =>
-                    $exception->getPrevious() !== null
+                'previous_message' => $exception->getPrevious() !== null
                         ? Str::limit(
                             $exception->getPrevious()->getMessage(),
                             500,
@@ -549,17 +522,14 @@ final class ProcessReceiptOcr implements ShouldQueue
         }
 
         $document->update([
-            'status' =>
-                ReceiptDocumentStatus::FAILED,
+            'status' => ReceiptDocumentStatus::FAILED,
 
-            'error_message' =>
-                $document->error_message
+            'error_message' => $document->error_message
                 ?: $this->safeErrorMessage(
                     $exception,
                 ),
 
-            'processed_at' =>
-                $document->processed_at
+            'processed_at' => $document->processed_at
                 ?: now(),
         ]);
     }

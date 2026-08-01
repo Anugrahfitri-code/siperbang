@@ -13,7 +13,7 @@ class Distribution extends Model
 
     protected $casts = [
         'qty_distributed' => 'integer',
-        'distributed_at'  => 'date',
+        'distributed_at' => 'date',
     ];
 
     public function itemRequest()

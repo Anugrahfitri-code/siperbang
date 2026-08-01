@@ -1,5 +1,7 @@
 <?php
+
 namespace Database\Seeders\Inventory;
+
 use App\Models\Barang;
 use App\Models\KategoriBarang;
 use App\Models\KodePersediaan;
@@ -157,8 +159,8 @@ class OfficeActivityInventoryCodeSeeder extends Seeder
                     $query->where(
                         'code',
                         'like',
-                        OfficeInventoryCatalog::codePrefix() . $group . '%',
-                    )->orWhere('code', 'like', '1.01.03.' . $group . '%');
+                        OfficeInventoryCatalog::codePrefix().$group.'%',
+                    )->orWhere('code', 'like', '1.01.03.'.$group.'%');
                 })
                 ->update(['category' => $name]);
         }
@@ -168,7 +170,7 @@ class OfficeActivityInventoryCodeSeeder extends Seeder
      * Satukan kategori lama/case variant ke kategori resmi. Kategori lain
      * di luar kelompok 1.01.03 tidak disentuh.
      *
-     * @param array<string, int> $categoryIds
+     * @param  array<string, int>  $categoryIds
      */
     private function mergeLegacyCategoryRows(array $categoryIds): void
     {
@@ -192,7 +194,7 @@ class OfficeActivityInventoryCodeSeeder extends Seeder
 
                 KodePersediaan::query()
                     ->where('kategori_barang_id', $category->id)
-                    ->where('kode', 'like', OfficeInventoryCatalog::codePrefix() . '%')
+                    ->where('kode', 'like', OfficeInventoryCatalog::codePrefix().'%')
                     ->update(['kategori_barang_id' => $categoryIds[$group]]);
 
                 Barang::query()

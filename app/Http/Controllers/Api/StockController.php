@@ -175,7 +175,7 @@ class StockController extends Controller
             $builder->where(
                 'code',
                 'like',
-                OfficeInventoryCatalog::codePrefix() . '%',
+                OfficeInventoryCatalog::codePrefix().'%',
             )->orWhere('code', 'like', '1.01.03.%');
         });
     }
@@ -186,8 +186,8 @@ class StockController extends Controller
             $builder->where(
                 'code',
                 'like',
-                OfficeInventoryCatalog::codePrefix() . $group . '%',
-            )->orWhere('code', 'like', '1.01.03.' . $group . '%');
+                OfficeInventoryCatalog::codePrefix().$group.'%',
+            )->orWhere('code', 'like', '1.01.03.'.$group.'%');
         });
     }
 }

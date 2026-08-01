@@ -1,10 +1,11 @@
 <?php
 
 declare(strict_types=1);
+use Illuminate\Support\Facades\DB;
 
-require dirname(__DIR__) . '/bootstrap.php';
+require dirname(__DIR__).'/bootstrap.php';
 
-$jobs = Illuminate\Support\Facades\DB::table('failed_jobs')
+$jobs = DB::table('failed_jobs')
     ->orderByDesc('id')
     ->get();
 

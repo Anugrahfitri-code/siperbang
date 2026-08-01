@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Exceptions\Inventory\ExcelValidationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\UploadStokExcelRequest;
 use App\Models\AuditLog;
@@ -11,7 +12,6 @@ use App\Models\StokUploadDetail;
 use App\Services\Inventory\ExcelPersediaanImportService;
 use App\Services\Inventory\StokCancellationService;
 use App\Services\Inventory\StokFinalizationService;
-use App\Exceptions\Inventory\ExcelValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -21,8 +21,8 @@ class StokUploadController extends Controller
 {
     public function __construct(
         private ExcelPersediaanImportService $importService,
-        private StokFinalizationService      $finalizationService,
-        private StokCancellationService      $cancellationService,
+        private StokFinalizationService $finalizationService,
+        private StokCancellationService $cancellationService,
     ) {}
 
     // ──────────────────────────────────────────────────────────────
@@ -32,26 +32,27 @@ class StokUploadController extends Controller
     public function index()
     {
         $this->authorizeRole('Petugas Persediaan');
+
         return view('stok-upload.index');
     }
 
     public function upload(UploadStokExcelRequest $request)
     {
-        $file         = $request->file('file_excel');
+        $file = $request->file('file_excel');
         $originalName = $file->getClientOriginalName();
-        $extension    = strtolower($file->getClientOriginalExtension());
-        $storedName   = now()->format('YmdHis') . '_' . Str::uuid() . '.' . $extension;
-        $path         = $file->storeAs('private/uploads', $storedName);
-        $fullPath     = Storage::path($path);
+        $extension = strtolower($file->getClientOriginalExtension());
+        $storedName = now()->format('YmdHis').'_'.Str::uuid().'.'.$extension;
+        $path = $file->storeAs('private/uploads', $storedName);
+        $fullPath = Storage::path($path);
 
         try {
             $batch = $this->importService->import($fullPath, $originalName, $storedName);
 
             if ($request->wantsJson()) {
                 return response()->json([
-                    'success'  => true,
+                    'success' => true,
                     'batch_id' => $batch->id,
-                    'message'  => 'File Excel berhasil diunggah dan valid.'
+                    'message' => 'File Excel berhasil diunggah dan valid.',
                 ]);
             }
 
@@ -61,10 +62,11 @@ class StokUploadController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'error'   => 'Validasi gagal. Terdapat data yang tidak sesuai format atau hitungan pada file.',
-                    'details' => $e->getErrors()
+                    'error' => 'Validasi gagal. Terdapat data yang tidak sesuai format atau hitungan pada file.',
+                    'details' => $e->getErrors(),
                 ], 422);
             }
+
             // File rejected — errors flashed/logged elsewhere
             return redirect()->route('stok-upload.index')
                 ->with('upload_rejected', true);
@@ -74,12 +76,12 @@ class StokUploadController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'error'   => 'Gagal memproses file: ' . $e->getMessage()
+                    'error' => 'Gagal memproses file: '.$e->getMessage(),
                 ], 500);
             }
 
             return redirect()->route('stok-upload.index')
-                ->withErrors(['file_excel' => 'Gagal memproses file: ' . $e->getMessage()]);
+                ->withErrors(['file_excel' => 'Gagal memproses file: '.$e->getMessage()]);
         }
     }
 
@@ -112,8 +114,8 @@ class StokUploadController extends Controller
                 ->with(
                     'error',
                     "Batch #{$batch->id} sudah dibatalkan "
-                    . 'dan tidak dapat dibuka. '
-                    . 'Upload file baru untuk menambah stok.'
+                    .'dan tidak dapat dibuka. '
+                    .'Upload file baru untuk menambah stok.'
                 );
         }
 
@@ -177,10 +179,9 @@ class StokUploadController extends Controller
         $totalValue = (float) $approvedRows->sum(
             fn (
                 StokUploadDetail $detail
-            ): float =>
-                (float) (
-                    $detail->total_calculated ?? 0
-                )
+            ): float => (float) (
+                $detail->total_calculated ?? 0
+            )
         );
 
         /*
@@ -230,9 +231,9 @@ class StokUploadController extends Controller
         $batch = StokUpload::findOrFail($id);
 
         $request->validate([
-            'items'               => 'required|array',
-            'items.*.detail_id'   => 'required|integer|exists:stok_upload_details,id',
-            'items.*.action'      => 'required|string|in:Setuju,Perbaiki,Tolak',
+            'items' => 'required|array',
+            'items.*.detail_id' => 'required|integer|exists:stok_upload_details,id',
+            'items.*.action' => 'required|string|in:Setuju,Perbaiki,Tolak',
             'items.*.kode_persediaan' => 'nullable|string|max:50',
         ]);
 
@@ -242,14 +243,14 @@ class StokUploadController extends Controller
                 ->firstOrFail();
 
             match ($item['action']) {
-                'Setuju'  => $detail->update([
-                    'status_verification'      => 'Setuju',
-                    'status_validation'        => 'Menunggu Verifikasi',
+                'Setuju' => $detail->update([
+                    'status_verification' => 'Setuju',
+                    'status_validation' => 'Menunggu Verifikasi',
                 ]),
                 'Perbaiki' => $detail->update([
-                    'status_verification'      => 'Setuju',
+                    'status_verification' => 'Setuju',
                     'verified_kode_persediaan' => $item['kode_persediaan'] ?? $detail->kode_persediaan_excel,
-                    'status_validation'        => 'Menunggu Verifikasi',
+                    'status_validation' => 'Menunggu Verifikasi',
                 ]),
                 'Tolak' => $detail->update([
                     'status_verification' => 'Tolak',
@@ -263,16 +264,16 @@ class StokUploadController extends Controller
         $pendingCount = $batch->details()->where('status_verification', 'Pending')->count();
         if ($pendingCount === 0) {
             $batch->update([
-                'status'       => StokUpload::STATUS_SIAP_DIFINALISASI,
+                'status' => StokUpload::STATUS_SIAP_DIFINALISASI,
                 'current_step' => StokUpload::STEP_REVIEW,
             ]);
         }
 
         AuditLog::create([
-            'user_id'     => auth()->id(),
-            'action'      => 'Verifikasi Kode Persediaan',
+            'user_id' => auth()->id(),
+            'action' => 'Verifikasi Kode Persediaan',
             'description' => "Menyimpan verifikasi kode untuk batch #{$batch->id}.",
-            'ip_address'  => $request->ip(),
+            'ip_address' => $request->ip(),
         ]);
 
         return redirect()
@@ -291,6 +292,7 @@ class StokUploadController extends Controller
 
         try {
             $results = $this->finalizationService->finalize($batch);
+
             return redirect()->route('stok-upload.riwayat')
                 ->with('success', "Finalisasi berhasil! {$results['inserted']} barang baru ditambahkan, {$results['updated']} diperbarui.");
         } catch (\Exception $e) {
@@ -315,6 +317,7 @@ class StokUploadController extends Controller
             if (($results['clamped'] ?? 0) > 0) {
                 $msg .= " {$results['clamped']} item stok disetel ke 0 karena sudah terpakai sebelum pembatalan.";
             }
+
             return redirect()->route('stok-upload.riwayat')->with('success', $msg);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
@@ -365,15 +368,15 @@ class StokUploadController extends Controller
         }
 
         // Remove stored file
-        Storage::delete('private/uploads/' . $batch->file_name_stored);
+        Storage::delete('private/uploads/'.$batch->file_name_stored);
 
         $batch->delete(); // soft delete
 
         AuditLog::create([
-            'user_id'     => auth()->id(),
-            'action'      => 'Hapus Upload (Sampah)',
+            'user_id' => auth()->id(),
+            'action' => 'Hapus Upload (Sampah)',
             'description' => "Memindahkan batch #{$batch->id} ({$batch->file_name_original}) ke sampah.",
-            'ip_address'  => request()->ip(),
+            'ip_address' => request()->ip(),
         ]);
 
         return redirect()->route('stok-upload.riwayat')
@@ -404,15 +407,15 @@ class StokUploadController extends Controller
         $batch = StokUpload::onlyTrashed()->findOrFail($id);
 
         // Remove stored file permanently
-        Storage::delete('private/uploads/' . $batch->file_name_stored);
+        Storage::delete('private/uploads/'.$batch->file_name_stored);
 
         $batch->forceDelete();
 
         AuditLog::create([
-            'user_id'     => auth()->id(),
-            'action'      => 'Hapus Permanen Upload',
+            'user_id' => auth()->id(),
+            'action' => 'Hapus Permanen Upload',
             'description' => "Menghapus permanen batch #{$batch->id} ({$batch->file_name_original}) dari sampah.",
-            'ip_address'  => request()->ip(),
+            'ip_address' => request()->ip(),
         ]);
 
         return redirect()->route('stok-upload.trash')
@@ -452,8 +455,8 @@ class StokUploadController extends Controller
         $batch->refresh();
         $details = $batch->details;
 
-        $validCount    = $details->where('status_validation', 'Menunggu Verifikasi')->count();
-        $errorCount    = $details->where('status_validation', 'Perlu Perbaikan')->count();
+        $validCount = $details->where('status_validation', 'Menunggu Verifikasi')->count();
+        $errorCount = $details->where('status_validation', 'Perlu Perbaikan')->count();
         $rejectedCount = $details->where('status_verification', 'Tolak')->count();
 
         $newStatus = $errorCount === 0
@@ -461,10 +464,10 @@ class StokUploadController extends Controller
             : StokUpload::STATUS_PERLU_PERBAIKAN;
 
         $batch->update([
-            'valid_rows_count'    => $validCount,
-            'error_rows_count'    => $errorCount,
+            'valid_rows_count' => $validCount,
+            'error_rows_count' => $errorCount,
             'rejected_rows_count' => $rejectedCount,
-            'status'              => $newStatus,
+            'status' => $newStatus,
         ]);
     }
 

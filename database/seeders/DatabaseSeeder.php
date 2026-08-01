@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Database\Seeders\Inventory\OfficeActivityInventoryCodeSeeder;
 use App\Models\User;
+use Database\Seeders\Inventory\OfficeActivityInventoryCodeSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 

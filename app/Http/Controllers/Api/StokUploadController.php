@@ -46,7 +46,7 @@ class StokUploadController extends Controller
         $totalApproved = $approvedRows->count();
         $totalValue = (float) $approvedRows->sum(fn ($d) => (float) ($d->total_calculated ?? 0));
 
-        $canFinalize = $totalApproved > 0 && $pendingRows->isEmpty() && !in_array($batch->status, [StokUpload::STATUS_SELESAI, StokUpload::STATUS_DIBATALKAN], true);
+        $canFinalize = $totalApproved > 0 && $pendingRows->isEmpty() && ! in_array($batch->status, [StokUpload::STATUS_SELESAI, StokUpload::STATUS_DIBATALKAN], true);
 
         return response()->json([
             'batch' => $batch,
@@ -69,7 +69,7 @@ class StokUploadController extends Controller
                 'approved' => $approvedRows,
                 'rejected' => $rejectedRows,
                 'all' => $allDetails,
-            ]
+            ],
         ]);
     }
 
@@ -79,9 +79,9 @@ class StokUploadController extends Controller
         $batch = StokUpload::findOrFail($id);
 
         $request->validate([
-            'items'               => 'required|array',
-            'items.*.detail_id'   => 'required|integer|exists:stok_upload_details,id',
-            'items.*.action'      => 'required|string|in:Setuju,Perbaiki,Tolak',
+            'items' => 'required|array',
+            'items.*.detail_id' => 'required|integer|exists:stok_upload_details,id',
+            'items.*.action' => 'required|string|in:Setuju,Perbaiki,Tolak',
             'items.*.kode_persediaan' => 'nullable|string|max:50',
         ]);
 
@@ -91,14 +91,14 @@ class StokUploadController extends Controller
                 ->firstOrFail();
 
             match ($item['action']) {
-                'Setuju'  => $detail->update([
-                    'status_verification'      => 'Setuju',
-                    'status_validation'        => 'Menunggu Verifikasi',
+                'Setuju' => $detail->update([
+                    'status_verification' => 'Setuju',
+                    'status_validation' => 'Menunggu Verifikasi',
                 ]),
                 'Perbaiki' => $detail->update([
-                    'status_verification'      => 'Setuju',
+                    'status_verification' => 'Setuju',
                     'verified_kode_persediaan' => $item['kode_persediaan'] ?? $detail->kode_persediaan_excel,
-                    'status_validation'        => 'Menunggu Verifikasi',
+                    'status_validation' => 'Menunggu Verifikasi',
                 ]),
                 'Tolak' => $detail->update([
                     'status_verification' => 'Tolak',
@@ -111,16 +111,16 @@ class StokUploadController extends Controller
         $pendingCount = $batch->details()->where('status_verification', 'Pending')->count();
         if ($pendingCount === 0) {
             $batch->update([
-                'status'       => StokUpload::STATUS_SIAP_DIFINALISASI,
+                'status' => StokUpload::STATUS_SIAP_DIFINALISASI,
                 'current_step' => StokUpload::STEP_REVIEW,
             ]);
         }
 
         AuditLog::create([
-            'user_id'     => auth()->id(),
-            'action'      => 'Verifikasi Kode Persediaan (API)',
+            'user_id' => auth()->id(),
+            'action' => 'Verifikasi Kode Persediaan (API)',
             'description' => "Menyimpan verifikasi kode untuk batch #{$batch->id}.",
-            'ip_address'  => $request->ip(),
+            'ip_address' => $request->ip(),
         ]);
 
         return response()->json(['success' => true, 'message' => 'Verifikasi berhasil disimpan']);
@@ -133,6 +133,7 @@ class StokUploadController extends Controller
 
         try {
             $results = $this->finalizationService->finalize($batch);
+
             return response()->json(['success' => true, 'message' => "Finalisasi berhasil! {$results['inserted']} barang baru ditambahkan, {$results['updated']} diperbarui."]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 400);
@@ -152,17 +153,17 @@ class StokUploadController extends Controller
     public function apiStats()
     {
         $this->authorizeRole('Petugas Persediaan');
-        
+
         $finalisedBatches = StokUpload::where('status', StokUpload::STATUS_SELESAI)->get();
-        
+
         $totalBelanja = 0;
         $totalPajak = 0;
-        
+
         foreach ($finalisedBatches as $batch) {
-            $details = \App\Models\StokUploadDetail::where('stok_upload_id', $batch->id)
+            $details = StokUploadDetail::where('stok_upload_id', $batch->id)
                 ->where('status_verification', 'Setuju')
                 ->get();
-                
+
             foreach ($details as $detail) {
                 $totalBelanja += (float) $detail->total_calculated;
                 if ($detail->is_taxed) {
@@ -171,7 +172,7 @@ class StokUploadController extends Controller
                 }
             }
         }
-        
+
         $pendingVerify = StokUpload::whereIn('status', [StokUpload::STATUS_MENUNGGU_VERIFIKASI, StokUpload::STATUS_SIAP_DIFINALISASI])->count();
 
         return response()->json([

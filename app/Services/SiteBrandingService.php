@@ -32,8 +32,7 @@ class SiteBrandingService
     public function __construct(
         private readonly HtmlSanitizer $htmlSanitizer,
         private readonly ImageOptimizer $imageOptimizer,
-    ) {
-    }
+    ) {}
 
     /** @return array<string, string> */
     public function activeRaw(): array
@@ -83,8 +82,8 @@ class SiteBrandingService
     }
 
     /**
-     * @param array<string, mixed> $data
-     * @param array<string, UploadedFile|null> $files
+     * @param  array<string, mixed>  $data
+     * @param  array<string, UploadedFile|null>  $files
      */
     public function saveVersion(
         array $data,
@@ -497,7 +496,7 @@ class SiteBrandingService
     }
 
     /** @param array<string, mixed> $data
-     *  @return array<string, string>
+     * @return array<string, string>
      */
     private function sanitizeTextSettings(array $data): array
     {
@@ -567,8 +566,8 @@ class SiteBrandingService
     }
 
     /**
-     * @param array<string, mixed> $before
-     * @param array<string, mixed> $after
+     * @param  array<string, mixed>  $before
+     * @param  array<string, mixed>  $after
      * @return array<string, array{before: string|null, after: string|null}>
      */
     private function settingChanges(array $before, array $after): array
@@ -681,7 +680,7 @@ class SiteBrandingService
     }
 
     /** @param array<string, mixed> $settings
-     *  @return array<string, string>
+     * @return array<string, string>
      */
     private function normalizeRawSettings(array $settings): array
     {
