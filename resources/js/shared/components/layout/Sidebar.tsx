@@ -24,6 +24,8 @@ import {
   UserRole,
 } from "../../types";
 import { useSettings } from "../../context/SettingsContext";
+import { renderBrandingTemplate } from "../../settings";
+import { ColoredText } from "../branding/ColoredText";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -712,11 +714,11 @@ export function Sidebar({
 
             <div>
               <p className="text-xs font-extrabold text-slate-800">
-                {settings.app_name || "SIPERBANG"} v1.1.0
+                <ColoredText text={settings.app_name || "SIPERBANG"} colorsJson={settings.app_name_colors} /> v1.1.0
               </p>
 
-              <p className="mt-1 text-xs font-semibold text-slate-400">
-                © {new Date().getFullYear()} {settings.instansi_name || "KOMDIGI"}
+              <p className="mt-1 max-w-44 text-xs font-semibold leading-relaxed text-slate-400">
+                {renderBrandingTemplate(settings.footer_copyright, settings)}
               </p>
             </div>
           </div>

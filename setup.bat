@@ -25,7 +25,7 @@ if %errorlevel% neq 0 (
 REM ─── Cek Node.js & npm ────────────────────────
 node -v >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] Node.js tidak ditemukan. Install Node.js versi 20+ di https://nodejs.org
+    echo [ERROR] Node.js tidak ditemukan. Install Node.js versi 22+ di https://nodejs.org
     pause & exit /b 1
 )
 
@@ -90,6 +90,16 @@ if %errorlevel% neq 0 (
 )
 echo [OK] Migrasi berhasil.
 
+REM ─── Public storage link ─────────────────────
+echo.
+echo [INFO] Menyiapkan akses publik untuk logo dan favicon...
+php artisan storage:link
+if %errorlevel% neq 0 (
+    echo [PERINGATAN] storage:link gagal. Jalankan terminal sebagai Administrator atau buat public\storage secara manual.
+) else (
+    echo [OK] Tautan public\storage siap.
+)
+
 REM ─── Jalankan seeder (opsional) ─────────────
 echo.
 set /p RUN_SEED="Jalankan database seeder? (data awal/contoh) [y/N]: "
@@ -104,16 +114,29 @@ if /i "%RUN_SEED%"=="y" (
 
 REM ─── NPM install ────────────────────────────
 echo.
-echo [INFO] Menginstall dependensi Node.js (npm install)...
-npm install --ignore-scripts
+echo [INFO] Menginstall dependensi Node.js secara reproducible (npm ci)...
+npm ci
 if %errorlevel% neq 0 (
-    echo [ERROR] npm install gagal.
+    echo [ERROR] npm ci gagal.
     pause & exit /b 1
 ) else (
     echo [OK] Dependensi Node.js berhasil diinstall.
 )
 
-REM ─── Build assets ───────────────────────────
+REM ─── Validasi dan build assets ───────────────
+echo.
+echo [INFO] Memeriksa type dan lint frontend...
+call npm run typecheck
+if %errorlevel% neq 0 (
+    echo [ERROR] Typecheck frontend gagal.
+    pause & exit /b 1
+)
+call npm run lint
+if %errorlevel% neq 0 (
+    echo [ERROR] Lint frontend gagal.
+    pause & exit /b 1
+)
+
 echo.
 echo [INFO] Build asset frontend (npm run build)...
 npm run build
@@ -122,6 +145,12 @@ if %errorlevel% neq 0 (
     pause & exit /b 1
 ) else (
     echo [OK] Asset frontend berhasil di-build.
+)
+
+call npm run verify:build
+if %errorlevel% neq 0 (
+    echo [ERROR] Integritas build frontend gagal diverifikasi.
+    pause & exit /b 1
 )
 
 REM ─── Selesai ────────────────────────────────

@@ -25,6 +25,8 @@ import { LayoutDashboard, FileSpreadsheet, ClipboardList, Package, Receipt, Hist
 import { apiFetch } from "./shared/api";
 import { useSettings } from "./shared/context/SettingsContext";
 import { SiteSettings } from "./features/settings/components/SiteSettings";
+import { renderBrandingTemplate } from "./shared/settings";
+import { ColoredText } from "./shared/components/branding/ColoredText";
 
 type AuthenticatedUser = {
   id: number | string;
@@ -909,8 +911,11 @@ useEffect(() => {
   const { settings } = useSettings();
 
   useEffect(() => {
-    document.title = `${settings.app_name || "SIPERBANG"} - Modul Stok & Persediaan`;
-  }, [settings.app_name]);
+    const appName = settings.app_name || "SIPERBANG";
+    document.title = isLoggedIn
+      ? `${appName} — Modul Stok & Persediaan`
+      : `${appName} — ${settings.app_subtitle || "Sistem Informasi Persediaan Barang"}`;
+  }, [isLoggedIn, settings.app_name, settings.app_subtitle]);
 
   if (!authChecked) {
     return (
@@ -1328,8 +1333,8 @@ useEffect(() => {
       {/* Footer */}
       <footer className="mt-12 border-t border-slate-200 bg-white py-6 text-center text-xs font-medium text-slate-500 lg:pl-72">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p>{settings.footer_copyright || `© ${new Date().getFullYear()} BBPSDM Komunikasi dan Digital Makassar. Seluruh hak cipta dilindungi.`}</p>
-          <p className="mt-1 text-2xs text-slate-400 font-bold uppercase tracking-wider">{settings.app_name || "SIPERBANG"} v1.1.0</p>
+          <p>{renderBrandingTemplate(settings.footer_copyright, settings)}</p>
+          <p className="mt-1 text-2xs text-slate-400 font-bold uppercase tracking-wider"><ColoredText text={settings.app_name || "SIPERBANG"} colorsJson={settings.app_name_colors} /> v1.1.0</p>
         </div>
       </footer>
     </div>

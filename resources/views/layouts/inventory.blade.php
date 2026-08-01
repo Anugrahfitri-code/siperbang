@@ -4,7 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', config('app.name', 'SIPERBANG'))</title>
+    <title>@yield('title', $siteSettings['app_name'] ?? config('app.name', 'SIPERBANG'))</title>
+    <meta name="application-name" content="{{ $siteSettings['app_name'] ?? config('app.name', 'SIPERBANG') }}">
+    <meta name="description" content="{{ $siteSettings['app_subtitle'] ?? 'Sistem Informasi Persediaan Barang' }}">
+    <link rel="icon" href="{{ $siteSettings['favicon_url'] ?? asset('images/brand/siperbang-symbol.png') }}">
     @vite(['resources/css/app.css'])
     @stack('head')
 </head>
@@ -221,7 +224,7 @@
 
         {{-- Footer --}}
         <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400 mt-auto">
-            <p>{{ $siteSettings['footer_copyright'] ?? '© 2026 SIPERBANG - Kementerian Komunikasi dan Digital. All Rights Reserved.' }}</p>
+            <p>{{ $siteSettings['footer_copyright_rendered'] ?? ('© '.now()->year.' '.($siteSettings['app_name'] ?? 'SIPERBANG').'. Seluruh hak cipta dilindungi.') }}</p>
         </footer>
     </div>
 </div>

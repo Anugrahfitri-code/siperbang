@@ -12,9 +12,9 @@
 
 ## Prasyarat Server (Production)
 
-- PHP 8.4+ dengan ekstensi: pdo, pdo_mysql, mbstring, fileinfo, zip, gd, curl, opcache
+- PHP 8.4+ dengan ekstensi: dom, curl, libxml, pdo, pdo_mysql, mbstring, fileinfo, zip, gd, opcache
 - Composer 2.x
-- Node.js 20.x (hanya untuk build, tidak perlu di server production)
+- Node.js 22.x (hanya untuk build, tidak perlu di server production)
 - MySQL 8+ atau PostgreSQL 15+
 - Python 3.10+ (untuk OCR service)
 - Nginx atau Apache
@@ -35,9 +35,15 @@ cd /var/www/siperbang
 
 ```bash
 composer install --optimize-autoloader --no-dev
-npm install
+npm ci
+npm run typecheck
+npm run lint
 npm run build
+npm run verify:build
+rm -f public/hot
 ```
+
+`public/hot` tidak boleh ada di production. Keberadaannya membuat Laravel mencoba mengambil aset dari Vite development server.
 
 ### 3. Konfigurasi Environment
 
@@ -73,6 +79,7 @@ CACHE_STORE=database
 
 ```bash
 php artisan migrate --force
+php artisan storage:link
 php artisan db:seed --class="Database\\Seeders\\Inventory\\OfficeActivityInventoryCodeSeeder"
 ```
 
@@ -148,7 +155,24 @@ supervisorctl update
 supervisorctl start siperbang-ocr-worker:*
 ```
 
-### 9. Deploy OCR Service
+### 9. Laravel Scheduler
+
+Branding yang dijadwalkan dipublikasikan oleh command `branding:publish-due`. Tambahkan satu entri cron untuk user aplikasi:
+
+```cron
+* * * * * cd /var/www/siperbang && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Uji konfigurasi:
+
+```bash
+php artisan schedule:list
+php artisan branding:publish-due
+```
+
+Tanpa cron tersebut, versi terjadwal tetap tersimpan tetapi tidak akan aktif otomatis pada waktunya.
+
+### 10. Deploy OCR Service
 
 ```bash
 cd /var/www/siperbang/ocr-service
@@ -196,11 +220,15 @@ git pull origin main
 
 # 3. Install dependencies baru (jika ada)
 composer install --optimize-autoloader --no-dev
-npm install
+npm ci
+npm run typecheck
+npm run lint
 npm run build
+npm run verify:build
 
-# 4. Jalankan migrasi baru (jika ada)
+# 4. Jalankan migrasi dan pastikan storage link tersedia
 php artisan migrate --force
+php artisan storage:link
 
 # 5. Clear & rebuild cache
 php artisan optimize:clear
@@ -209,7 +237,13 @@ php artisan optimize
 # 6. Restart queue worker
 supervisorctl restart siperbang-ocr-worker:*
 
-# 7. Nonaktifkan maintenance mode
+# 7. Validasi route, scheduler, dan health endpoint
+php artisan route:list --path=settings
+php artisan schedule:list
+php artisan branding:publish-due
+curl -f http://127.0.0.1/up
+
+# 8. Nonaktifkan maintenance mode
 php artisan up
 ```
 
@@ -281,8 +315,14 @@ curl -f http://localhost/api/user  # harus return 401 (bukan 500)
 # Cek OCR service
 curl -f http://127.0.0.1:8001/health
 
-# Cek queue worker
+# Cek queue worker dan scheduler
 php artisan queue:monitor
+php artisan schedule:list
+php artisan branding:publish-due
+
+# Cek symlink dan endpoint identitas
+readlink -f public/storage
+curl -f http://localhost/api/settings
 
 # Cek supervisor
 supervisorctl status

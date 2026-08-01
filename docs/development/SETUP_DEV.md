@@ -12,18 +12,20 @@ Install semua tools berikut sebelum mulai:
 |---|---|---|
 | PHP | 8.4 | https://windows.php.net/download (Windows) atau `apt install php8.4` |
 | Composer | 2.x | https://getcomposer.org/download |
-| Node.js | 20.x LTS | https://nodejs.org |
+| Node.js | 22.x | https://nodejs.org |
 | Python | 3.10+ | https://www.python.org/downloads |
 | Git | 2.x | https://git-scm.com |
 
 **PHP Extensions yang harus aktif** (cek di `php.ini`):
 ```
+extension=dom
+extension=curl
+extension=libxml
 extension=pdo_sqlite
 extension=mbstring
 extension=fileinfo
 extension=zip
 extension=gd
-extension=curl
 ```
 
 ---
@@ -45,8 +47,9 @@ Perintah `composer setup` melakukan:
 1. `composer install`
 2. Generate `APP_KEY`
 3. Jalankan migrations
-4. `npm install`
-5. `npm run build`
+4. Buat symbolic link public storage
+5. `npm ci`
+6. `npm run build`
 
 ---
 
@@ -59,6 +62,7 @@ APP_NAME=SIPERBANG
 APP_ENV=local
 APP_DEBUG=true
 APP_URL=http://localhost:8000
+APP_TIMEZONE=Asia/Makassar
 
 # Database — gunakan SQLite untuk dev
 DB_CONNECTION=sqlite

@@ -42,10 +42,10 @@ Sistem menggunakan **Role-Based Access Control** via `RoleMiddleware`:
 - Ketua Tim hanya bisa melihat BON dari seksinya sendiri
 - Endpoint user management hanya untuk Superadmin
 
-### Yang Perlu Diperbaiki
-- [ ] Role disimpan sebagai string — tidak ada validasi enum di level database
-- [ ] Tidak ada audit log untuk aksi login/logout/akses ditolak
-- [ ] `StokUploadController` menggunakan method `authorizeRole()` sendiri, tidak menggunakan `RoleMiddleware` secara konsisten
+### Peningkatan lanjutan
+- [ ] Pertimbangkan enum/database constraint untuk nilai role.
+- [ ] Lengkapi audit log untuk login, logout, gagal login, dan akses ditolak.
+- [ ] Konsolidasikan otorisasi controller lama ke middleware/policy secara bertahap.
 
 ---
 
@@ -76,9 +76,16 @@ Sistem menggunakan **Role-Based Access Control** via `RoleMiddleware`:
 - SHA256 hash dihitung dan disimpan untuk setiap dokumen OCR (deteksi duplikat)
 - Nama file disanitasi di `OcrServiceClient::sanitizeFilename()`
 
-### Yang Perlu Diperbaiki
-- [ ] Nama file tersimpan menggunakan `time() . '_' . $originalName` — predictable dan bisa collision. Sebaiknya gunakan UUID
-- [ ] Tidak ada pembatasan tipe file di level server (hanya validasi mime dari client)
+### Identitas situs
+
+- Logo branding dibatasi ke PNG, JPEG, dan WebP menggunakan validasi server.
+- Gambar ditulis ulang dengan PHP GD, diperkecil, dan metadata bawaan dibuang.
+- SVG tidak diterima agar active content tidak disajikan langsung.
+- Path aset disimpan relatif pada disk Laravel, bukan sebagai URL domain absolut.
+
+### Peningkatan lanjutan
+- [ ] Migrasikan nama file upload lama yang masih predictable ke UUID/ULID.
+- [ ] Tambahkan pemindaian malware untuk dokumen upload berisiko tinggi bila aplikasi dibuka lebih luas.
 
 ---
 
@@ -86,11 +93,13 @@ Sistem menggunakan **Role-Based Access Control** via `RoleMiddleware`:
 
 - `APP_KEY` di-generate saat setup dan disimpan di `.env`
 - OCR service token disimpan di `.env` sebagai `OCR_SERVICE_TOKEN`
-- File `.env` sudah ada di `.gitignore` — tidak akan ter-commit
+- File `.env` ada di `.gitignore`, tetapi `.gitignore` tidak melindungi arsip ZIP yang dibuat secara manual.
+- Gunakan `php scripts/package-release.php` untuk menghasilkan paket source tersanitasi.
+- Paket source tidak boleh berisi `.env`, database runtime, kuitansi, log, token OCR, atau storage privat.
 
 ### Yang Perlu Diperbaiki
-- [ ] Tidak ada rotasi secret secara berkala
-- [ ] Tidak ada penggunaan secret manager (Vault, AWS Secrets Manager, dll.)
+- [ ] Terapkan rotasi secret berkala dan segera rotasi bila pernah masuk arsip yang dibagikan.
+- [ ] Gunakan secret manager pada production (Vault, AWS Secrets Manager, atau ekuivalen).
 
 ---
 
@@ -107,14 +116,16 @@ Saat ini **tidak ada** rate limiting di semua endpoint.
 
 ## Audit Trail
 
-- `audit_logs` mencatat: finalisasi stok Excel
-- `history_logs` mencatat: finalisasi stok (duplikat)
-- `bon_status_histories` mencatat: perubahan status BON
+- `audit_logs` mencatat finalisasi stok Excel.
+- `history_logs` mencatat aksi operasional dan perubahan versi identitas situs.
+- `bon_status_histories` mencatat perubahan status BON.
+- Endpoint pencatatan history tidak mempercayai `user_id` atau nama aktor dari browser; aktor diambil dari sesi server.
+- Audit branding menyimpan versi, key yang berubah, versi sebelumnya, user, IP, request ID, dan user-agent tanpa menyalin binary gambar atau HTML penuh.
 
 ### Yang Perlu Diperbaiki
-- [ ] Audit log belum mencakup: login, logout, gagal login, akses ditolak, delete data, update user
-- [ ] `history_logs` dan `audit_logs` redundan — perlu dikonsolidasikan
-- [ ] `history_logs.actor` menggunakan string (nama), bukan FK ke `users` — data bisa inconsistent
+- [ ] Audit log belum mencakup seluruh login, logout, gagal login, akses ditolak, delete data, dan update user.
+- [ ] `history_logs` dan `audit_logs` masih tumpang tindih; rencanakan konsolidasi skema.
+- [ ] Pertimbangkan kebijakan retensi dan ekspor audit ke penyimpanan append-only.
 
 ---
 
@@ -141,7 +152,10 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains (hanya HTTPS)
 - [ ] Aktifkan HTTPS dan set `APP_URL` ke https://
 - [ ] Konfigurasi security headers di nginx/Apache
 - [ ] Aktifkan rate limiting di endpoint login dan upload
-- [ ] Pastikan `.env` tidak bisa diakses via web
-- [ ] Pastikan `storage/` tidak bisa diakses langsung via web (hanya `public/`)
+- [ ] Pastikan `.env` tidak bisa diakses via web dan tidak masuk ZIP/backup source
+- [ ] Pastikan hanya `public/storage` yang dapat diakses web dan `storage/app/private` tetap tertutup
+- [ ] Pastikan `public/hot` tidak ada di production
+- [ ] Jalankan secret scan pada paket rilis
+- [ ] Verifikasi Laravel Scheduler aktif untuk publikasi branding terjadwal
 - [ ] Review dan audit semua user dan role sebelum go-live
 - [ ] Aktifkan logging terstruktur dan kirim ke sistem monitoring

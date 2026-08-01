@@ -22,7 +22,12 @@ users
   │       └─── receipts (receipt_id)
   │               └─── receipt_items (receipt_id)
   │
-  └─── audit_logs (user_id)
+  ├─── audit_logs (user_id)
+  ├─── history_logs (user_id)
+  └─── site_branding_versions (created_by, published_by)
+
+site_settings (snapshot identitas aktif)
+site_branding_versions (riwayat draft/jadwal/publikasi/arsip)
 
 kategori_barang
   └─── kode_persediaan (kategori_barang_id)
@@ -34,6 +39,40 @@ stock_items / barang
 ```
 
 ---
+
+
+## Tabel: site_settings
+
+Source of truth identitas yang sedang aktif. Tabel key-value ini hanya menyimpan satu snapshot publik saat ini; seluruh riwayat berada di `site_branding_versions`.
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| id | bigint PK | |
+| key | varchar UNIQUE | Key identitas aktif |
+| value | text NULL | Nilai teks atau path aset relatif |
+| created_at, updated_at | timestamp | |
+
+Key aset memakai `app_logo_path`, `instansi_logo_path`, dan `favicon_path`. Nilai yang di-upload disimpan sebagai path relatif seperti `branding/app-logo/<uuid>.png`, bukan URL domain absolut.
+
+## Tabel: site_branding_versions
+
+Snapshot versioned untuk perubahan identitas tahunan.
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| id | bigint PK | |
+| label | varchar(120) | Nama versi, misalnya `Identitas 2027` |
+| settings | JSON | Snapshot seluruh field teks dan path aset |
+| status | varchar(20) | `draft`, `scheduled`, `published`, atau `archived` |
+| effective_from | timestamp NULL | Awal masa berlaku/publikasi terjadwal |
+| effective_until | timestamp NULL | Akhir masa berlaku setelah diarsipkan |
+| notes | text NULL | Catatan operasional |
+| created_by | bigint NULL FK users | Pembuat versi |
+| published_by | bigint NULL FK users | Penerbit; null untuk scheduler sistem |
+| published_at | timestamp NULL | Waktu publikasi aktual |
+| created_at, updated_at | timestamp | |
+
+Hanya satu versi yang seharusnya berstatus `published`. Aktivasi memakai transaksi dan row lock; versi aktif sebelumnya diubah menjadi `archived` dan memperoleh `effective_until`.
 
 ## Tabel: users
 

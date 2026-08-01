@@ -347,9 +347,9 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-xs font-extrabold text-slate-800">SIPERBANG</p>
+                    <p class="text-xs font-extrabold text-slate-800">{{ $siteSettings['app_name'] ?? 'SIPERBANG' }}</p>
                     <p class="mt-0.5 text-xs font-semibold text-slate-400">v1.1.0</p>
-                    <p class="mt-1 text-xs font-semibold text-slate-400">© 2026 KOMDIGI</p>
+                    <p class="mt-1 max-w-44 text-xs font-semibold leading-relaxed text-slate-400">{{ $siteSettings['footer_copyright_rendered'] ?? ('© '.now()->year.' '.($siteSettings['instansi_name'] ?? 'Instansi').'.') }}</p>
                 </div>
             </div>
         </div>

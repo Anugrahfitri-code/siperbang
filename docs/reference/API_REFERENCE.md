@@ -4,6 +4,14 @@ Base URL development: `http://localhost:8000`
 
 Aplikasi menggunakan autentikasi session Laravel. Endpoint API tetap memakai middleware `web`, session cookie, dan CSRF untuk request yang mengubah data.
 
+## Endpoint publik
+
+| Method | Endpoint | Fungsi |
+|---|---|---|
+| `GET` | `/api/settings` | Mengambil identitas situs aktif yang sudah di-whitelist untuk login, favicon, dan metadata publik |
+
+Response hanya berisi nama aplikasi/instansi, teks login/footer, serta URL logo dan favicon. Path storage internal dan key setting lain tidak dipublikasikan.
+
 ## Autentikasi
 
 | Method | Endpoint | Fungsi |
@@ -75,13 +83,31 @@ Aplikasi menggunakan autentikasi session Laravel. Endpoint API tetap memakai mid
 | `POST` | `/api/receipt-documents/{receiptDocument}/retry` | Mengulang proses OCR |
 | `DELETE` | `/api/receipt-documents/{receiptDocument}` | Menghapus dokumen OCR |
 
-### Ekspor log
+### Ekspor rekap kuitansi
 
 | Method | Endpoint | Fungsi |
 |---|---|---|
-| `GET` | `/api/export-excel` | Ekspor data melalui `LogController@exportExcel` |
+| `GET` | `/api/export-excel` | Membuat workbook XLSX rekap kuitansi tervalidasi melalui `LogController@exportExcel` |
+
+Parameter: `year`, `month`, `search`, `annual`, dan `date_basis` (`receipt_date` atau `upload_date`). Workbook memakai identitas aktif, menyajikan subtotal, pajak/PPN, total akhir, dan dikirim dengan cache `no-store`.
 
 ## Superadmin
+
+### Identitas situs dan versioning branding
+
+| Method | Endpoint | Fungsi |
+|---|---|---|
+| `POST` | `/api/settings` | Endpoint kompatibilitas untuk menyimpan dan mempublikasikan identitas |
+| `GET` | `/api/settings/versions` | Daftar seluruh versi branding dan statusnya |
+| `POST` | `/api/settings/versions` | Membuat draft, publikasi langsung, atau versi terjadwal |
+| `POST` | `/api/settings/versions/{brandingVersion}` | Memperbarui draft atau versi terjadwal |
+| `POST` | `/api/settings/versions/{brandingVersion}/publish` | Publikasi langsung atau sesuai `effective_from` |
+| `POST` | `/api/settings/versions/{brandingVersion}/rollback` | Membuat publikasi baru dari versi arsip |
+| `DELETE` | `/api/settings/versions/{brandingVersion}` | Menghapus draft/versi terjadwal yang belum aktif |
+
+Mutasi menerima multipart form data agar dapat mengunggah `app_logo`, `instansi_logo`, dan `favicon`. Format aset: PNG, JPEG, atau WebP. HTML login disanitasi di server.
+
+### Manajemen pengguna
 
 | Method | Endpoint | Fungsi |
 |---|---|---|

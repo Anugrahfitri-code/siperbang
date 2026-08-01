@@ -28,8 +28,12 @@ composer install
 cp .env.example .env
 php artisan key:generate
 php artisan migrate
+php artisan storage:link
 npm ci
+npm run typecheck
+npm run lint
 npm run build
+npm run verify:build
 ```
 
 Konfigurasi awal menggunakan SQLite. Pastikan file database tersedia:
@@ -121,7 +125,11 @@ php artisan test
 Frontend:
 
 ```bash
+npm ci
+npm run typecheck
+npm run lint
 npm run build
+npm run verify:build
 ```
 
 OCR:

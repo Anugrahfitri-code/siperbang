@@ -2,32 +2,50 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use App\Services\SiteBrandingService;
+use App\Support\SiteBranding\HtmlSanitizer;
+use App\Support\SiteBranding\ImageOptimizer;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        //
+        $this->app->singleton(HtmlSanitizer::class);
+        $this->app->singleton(ImageOptimizer::class);
+        $this->app->scoped(SiteBrandingService::class);
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        // Bagikan $siteSettings ke seluruh view secara global
-        // agar layout (main.blade.php, app.blade.php, dll.) dapat membaca
-        // pengaturan identitas situs yang disimpan di database.
-        View::composer('*', function ($view) {
-            if (Schema::hasTable('site_settings')) {
-                $view->with('siteSettings', DB::table('site_settings')->pluck('value', 'key')->toArray());
+        View::composer('*', function ($view): void {
+            try {
+                $view->with(
+                    'siteSettings',
+                    app(SiteBrandingService::class)->forViews(),
+                );
+            } catch (Throwable $exception) {
+                report($exception);
+
+                $defaults = config('site_branding.defaults', []);
+                $view->with('siteSettings', [
+                    ...$defaults,
+                    'app_logo_url' => $defaults['app_logo_path'] ?? '/images/brand/siperbang-symbol.png',
+                    'instansi_logo_url' => $defaults['instansi_logo_path'] ?? '/images/brand/komdigi-logo.png',
+                    'favicon_url' => $defaults['favicon_path'] ?? '/images/brand/siperbang-symbol.png',
+                    'footer_copyright_rendered' => str_replace(
+                        ['{year}', '{app_name}', '{instansi_name}', '{instansi_full_name}'],
+                        [
+                            now()->year,
+                            $defaults['app_name'] ?? '',
+                            $defaults['instansi_name'] ?? '',
+                            $defaults['instansi_sub'] ?? '',
+                        ],
+                        $defaults['footer_copyright'] ?? '',
+                    ),
+                ]);
             }
         });
     }

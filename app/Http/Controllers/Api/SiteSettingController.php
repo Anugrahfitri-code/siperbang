@@ -3,108 +3,159 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SiteBranding\PublishSiteBrandingRequest;
+use App\Http\Requests\SiteBranding\SaveSiteBrandingRequest;
+use App\Models\SiteBrandingVersion;
+use App\Services\SiteBrandingService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class SiteSettingController extends Controller
 {
-    /**
-     * Display a listing of the settings.
-     */
-    public function index()
+    public function __construct(
+        private readonly SiteBrandingService $branding,
+    ) {
+    }
+
+    public function index(): JsonResponse
     {
-        $settings = DB::table('site_settings')->pluck('value', 'key');
-        return response()->json($settings);
+        return response()
+            ->json($this->branding->active())
+            ->header('Cache-Control', 'private, no-store, max-age=0')
+            ->header('Pragma', 'no-cache');
+    }
+
+    public function versions(): JsonResponse
+    {
+        $versions = SiteBrandingVersion::query()
+            ->with(['creator:id,name', 'publisher:id,name'])
+            ->latest('id')
+            ->get()
+            ->map(fn (SiteBrandingVersion $version) => $this->branding->presentVersion($version));
+
+        return response()->json(['data' => $versions]);
+    }
+
+    public function store(SaveSiteBrandingRequest $request): JsonResponse
+    {
+        $version = $this->branding->saveVersion(
+            $request->validated(),
+            $this->uploadedFiles($request),
+            $request->user(),
+        );
+
+        return response()->json([
+            'message' => $this->successMessage($version),
+            'settings' => $this->branding->active(),
+            'version' => $this->branding->presentVersion($version),
+        ], 201);
     }
 
     /**
-     * Update site settings.
+     * Backward-compatible endpoint for the previous settings screen.
+     * Requests without action/label are treated as immediate publications.
      */
-    public function update(Request $request)
+    public function update(SaveSiteBrandingRequest $request): JsonResponse
     {
-        // Validasi input
-        $validated = $request->validate([
-            'app_name'          => 'nullable|string|max:255',
-            'app_subtitle'      => 'nullable|string|max:255',
-            'instansi_name'     => 'nullable|string|max:255',
-            'instansi_sub'      => 'nullable|string|max:255',
-            'login_heading'     => 'nullable|string',
-            'login_description' => 'nullable|string',
-            'footer_copyright'  => 'nullable|string',
-            'app_logo'          => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
-            'instansi_logo'     => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
-        ]);
-
-        DB::transaction(function () use ($request, $validated) {
-            // 1. Simpan Teks
-            $textKeys = [
-                'app_name', 
-                'app_subtitle', 
-                'instansi_name', 
-                'instansi_sub', 
-                'login_heading', 
-                'login_description', 
-                'footer_copyright'
-            ];
-            
-            foreach ($textKeys as $key) {
-                if (array_key_exists($key, $validated)) {
-                    DB::table('site_settings')->updateOrInsert(
-                        ['key' => $key],
-                        [
-                            'value'      => $validated[$key] ?? '', 
-                            'updated_at' => now()
-                        ]
-                    );
-                }
-            }
-
-            // 2. Handle Upload Logo Aplikasi
-            if ($request->hasFile('app_logo')) {
-                // Hapus logo lama jika ada
-                $oldLogo = DB::table('site_settings')->where('key', 'app_logo_url')->value('value');
-                if ($oldLogo) {
-                    $oldPath = str_replace('/storage/', '', parse_url($oldLogo, PHP_URL_PATH));
-                    Storage::disk('public')->delete($oldPath);
-                }
-
-                // Simpan logo baru
-                $path = $request->file('app_logo')->store('settings', 'public');
-                $url = asset('storage/' . $path);
-
-                DB::table('site_settings')->updateOrInsert(
-                    ['key' => 'app_logo_url'],
-                    ['value' => $url, 'updated_at' => now()]
-                );
-            }
-
-            // 3. Handle Upload Logo Instansi
-            if ($request->hasFile('instansi_logo')) {
-                // Hapus logo lama jika ada
-                $oldLogo = DB::table('site_settings')->where('key', 'instansi_logo_url')->value('value');
-                if ($oldLogo) {
-                    $oldPath = str_replace('/storage/', '', parse_url($oldLogo, PHP_URL_PATH));
-                    Storage::disk('public')->delete($oldPath);
-                }
-
-                // Simpan logo baru
-                $path = $request->file('instansi_logo')->store('settings', 'public');
-                $url = asset('storage/' . $path);
-
-                DB::table('site_settings')->updateOrInsert(
-                    ['key' => 'instansi_logo_url'],
-                    ['value' => $url, 'updated_at' => now()]
-                );
-            }
-        });
-
-        // Ambil data terbaru untuk dikembalikan ke frontend
-        $updatedSettings = DB::table('site_settings')->pluck('value', 'key');
+        $version = $this->branding->saveVersion(
+            $request->validated(),
+            $this->uploadedFiles($request),
+            $request->user(),
+        );
 
         return response()->json([
-            'message'  => 'Pengaturan situs berhasil diperbarui.',
-            'settings' => $updatedSettings
+            'message' => $this->successMessage($version),
+            'settings' => $this->branding->active(),
+            'version' => $this->branding->presentVersion($version),
         ]);
+    }
+
+    public function updateVersion(
+        SaveSiteBrandingRequest $request,
+        SiteBrandingVersion $brandingVersion,
+    ): JsonResponse {
+        $version = $this->branding->saveVersion(
+            $request->validated(),
+            $this->uploadedFiles($request),
+            $request->user(),
+            $brandingVersion,
+        );
+
+        return response()->json([
+            'message' => $this->successMessage($version),
+            'settings' => $this->branding->active(),
+            'version' => $this->branding->presentVersion($version),
+        ]);
+    }
+
+    public function publish(
+        PublishSiteBrandingRequest $request,
+        SiteBrandingVersion $brandingVersion,
+    ): JsonResponse {
+        $effectiveFrom = $request->filled('effective_from')
+            ? $request->date('effective_from')
+            : $brandingVersion->effective_from;
+
+        $version = $this->branding->publish(
+            $brandingVersion,
+            $request->user(),
+            $effectiveFrom,
+        );
+
+        return response()->json([
+            'message' => $this->successMessage($version),
+            'settings' => $this->branding->active(),
+            'version' => $this->branding->presentVersion($version),
+        ]);
+    }
+
+    public function rollback(
+        Request $request,
+        SiteBrandingVersion $brandingVersion,
+    ): JsonResponse {
+        abort_unless($request->user()?->role === 'Superadmin', 403);
+
+        $version = $this->branding->rollback(
+            $brandingVersion,
+            $request->user(),
+        );
+
+        return response()->json([
+            'message' => 'Identitas situs berhasil dikembalikan melalui versi rollback baru.',
+            'settings' => $this->branding->active(),
+            'version' => $this->branding->presentVersion($version),
+        ]);
+    }
+
+    public function destroy(
+        Request $request,
+        SiteBrandingVersion $brandingVersion,
+    ): JsonResponse {
+        abort_unless($request->user()?->role === 'Superadmin', 403);
+
+        $this->branding->deleteVersion($brandingVersion, $request->user());
+
+        return response()->json([
+            'message' => 'Draft identitas berhasil dihapus.',
+        ]);
+    }
+
+    /** @return array<string, \Illuminate\Http\UploadedFile|null> */
+    private function uploadedFiles(SaveSiteBrandingRequest $request): array
+    {
+        return [
+            'app_logo' => $request->file('app_logo'),
+            'instansi_logo' => $request->file('instansi_logo'),
+            'favicon' => $request->file('favicon'),
+        ];
+    }
+
+    private function successMessage(SiteBrandingVersion $version): string
+    {
+        return match ($version->status) {
+            SiteBrandingVersion::STATUS_PUBLISHED => 'Identitas situs berhasil dipublikasikan.',
+            SiteBrandingVersion::STATUS_SCHEDULED => 'Publikasi identitas berhasil dijadwalkan.',
+            default => 'Draft identitas situs berhasil disimpan.',
+        };
     }
 }

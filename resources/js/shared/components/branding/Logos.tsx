@@ -1,5 +1,30 @@
 import React from "react";
-import { useSettings } from "../context/SettingsContext";
+import { useSettings } from "../../context/SettingsContext";
+import { defaultSiteSettings } from "../../settings";
+
+const renderColoredText = (text: string, colorsJson: string | undefined, defaultClass: string) => {
+  if (!text) return null;
+  let colors: string[] = [];
+  try {
+    colors = JSON.parse(colorsJson || "[]");
+  } catch(e) {}
+  
+  if (!colors || colors.length === 0) {
+    return <span className={defaultClass}>{text}</span>;
+  }
+  
+  return (
+    <>
+      {text.split('').map((char, i) => {
+        const color = colors[i];
+        if (color) {
+          return <span key={i} style={{ color }}>{char}</span>;
+        }
+        return <span key={i} className={defaultClass}>{char}</span>;
+      })}
+    </>
+  );
+};
 
 interface SiperbangLogoProps {
   className?: string;
@@ -13,7 +38,7 @@ export const SiperbangLogo: React.FC<SiperbangLogoProps> = ({
   lightText = false,
 }) => {
   const { settings, normalizeLogoUrl } = useSettings();
-  const logoUrl = normalizeLogoUrl(settings.app_logo_url);
+  const logoUrl = normalizeLogoUrl(settings.app_logo_url, defaultSiteSettings.app_logo_url);
   const appName = settings.app_name || "SIPERBANG";
   const appSubtitle = settings.app_subtitle || "Sistem Informasi Persediaan Barang";
 
@@ -23,7 +48,7 @@ export const SiperbangLogo: React.FC<SiperbangLogoProps> = ({
         <img
           src={logoUrl}
           alt={`Logo ${appName}`}
-          className="w-full h-full object-contain scale-[1.5] select-none pointer-events-none"
+          className="w-full h-full object-contain select-none pointer-events-none"
           onError={(e) => {
             const img = e.currentTarget;
             img.onerror = null;
@@ -34,8 +59,8 @@ export const SiperbangLogo: React.FC<SiperbangLogoProps> = ({
 
       {!iconOnly && (
         <div className="flex flex-col select-none justify-center ml-2">
-          <div className={`text-xl font-medium tracking-wide ${lightText ? "text-white" : "text-slate-700"} flex items-center`}>
-            {appName === "SIPERBANG" ? (
+          <div className={`text-sm font-extrabold tracking-wider leading-none ${lightText ? "text-white" : "text-[#4A4A4A]"} flex items-center`}>
+            {appName === "SIPERBANG" && (!settings.app_name_colors || settings.app_name_colors === '[]') ? (
               <>
                 S<span className="text-[#a0258b]">I</span>
                 <span className="text-[#1a50a1]">P</span>
@@ -47,13 +72,13 @@ export const SiperbangLogo: React.FC<SiperbangLogoProps> = ({
                 <span className="text-[#d7195d]">G</span>
               </>
             ) : (
-              <span className={lightText ? "text-white" : "text-slate-800"}>{appName}</span>
+              renderColoredText(appName, settings.app_name_colors, lightText ? "text-white" : "text-[#4A4A4A]")
             )}
           </div>
 
           <div
-            className={`text-[10px] text-left font-semibold tracking-tight mt-0.5 leading-tight uppercase ${
-              lightText ? "text-white" : "text-black"
+            className={`text-[10px] text-left font-semibold tracking-tight mt-0.5 leading-tight ${
+              lightText ? "text-white/70" : "text-[#7A7A7A]"
             }`}
           >
             {appSubtitle}
@@ -72,7 +97,7 @@ export const KomdigiLogo: React.FC<{
   iconOnly = false,
 }) => {
   const { settings, normalizeLogoUrl } = useSettings();
-  const logoUrl = normalizeLogoUrl(settings.instansi_logo_url);
+  const logoUrl = normalizeLogoUrl(settings.instansi_logo_url, defaultSiteSettings.instansi_logo_url);
   const instansiName = settings.instansi_name || "KOMDIGI";
   const instansiSub = settings.instansi_sub || "Kementerian Komunikasi dan Digital Republik Indonesia";
 
@@ -94,7 +119,7 @@ export const KomdigiLogo: React.FC<{
       {!iconOnly && (
         <div className="flex flex-col select-none text-left">
           <span className="text-sm font-extrabold text-[#4A4A4A] tracking-wider leading-none">
-            {instansiName}
+            {renderColoredText(instansiName, settings.instansi_name_colors, "text-[#4A4A4A]")}
           </span>
 
           <span className="text-[10px] text-[#7A7A7A] font-semibold tracking-tight leading-tight mt-0.5">

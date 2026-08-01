@@ -29,13 +29,17 @@ class LogController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'actor' => 'required|string',
-            'action' => 'required|string',
-            'details' => 'required|string',
-            'user_id' => 'nullable|integer'
+            'action' => ['required', 'string', 'max:120'],
+            'details' => ['required', 'string', 'max:5000'],
         ]);
 
-        $log = HistoryLog::create($validated);
+        $user = $request->user();
+        $log = HistoryLog::create([
+            ...$validated,
+            'actor' => $user->name,
+            'user_id' => $user->id,
+        ]);
+
         return response()->json($log, 201);
     }
 
