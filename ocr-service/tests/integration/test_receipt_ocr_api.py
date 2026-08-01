@@ -10,7 +10,8 @@ import pytest
 from unittest.mock import patch, PropertyMock
 
 @pytest.fixture(autouse=True)
-def mock_model_ready():
+def mock_env_and_ready():
+    settings.service_token = "test-token"
     with patch('app.main._get_model_state', return_value=("ready", None)), \
          patch('app.ocr_engine.OcrEngine.is_loaded', new_callable=PropertyMock, return_value=True):
         yield
