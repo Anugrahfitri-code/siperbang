@@ -67,6 +67,8 @@ class SiteBrandingSettingsTest extends TestCase
 
     public function test_blade_entry_page_uses_active_identity_metadata(): void
     {
+        $this->withoutVite();
+
         \DB::table('site_settings')->where('key', 'app_name')->update([
             'value' => 'PORTAL PROFESIONAL',
             'updated_at' => now(),
