@@ -171,6 +171,15 @@ Route::middleware('auth')->prefix('api')->group(function () {
 
     // ---- Superadmin Only ----
     Route::middleware('role:Superadmin')->group(function () {
+        // Site identity and versioned branding
+        Route::post('/settings', [\App\Http\Controllers\Api\SiteSettingController::class, 'update']);
+        Route::get('/settings/versions', [\App\Http\Controllers\Api\SiteSettingController::class, 'versions']);
+        Route::post('/settings/versions', [\App\Http\Controllers\Api\SiteSettingController::class, 'store']);
+        Route::post('/settings/versions/{brandingVersion}', [\App\Http\Controllers\Api\SiteSettingController::class, 'updateVersion']);
+        Route::post('/settings/versions/{brandingVersion}/publish', [\App\Http\Controllers\Api\SiteSettingController::class, 'publish']);
+        Route::post('/settings/versions/{brandingVersion}/rollback', [\App\Http\Controllers\Api\SiteSettingController::class, 'rollback']);
+        Route::delete('/settings/versions/{brandingVersion}', [\App\Http\Controllers\Api\SiteSettingController::class, 'destroy']);
+
         // Users
         Route::get('/users', [\App\Http\Controllers\Api\UserController::class, 'index']);
         Route::post('/users', [\App\Http\Controllers\Api\UserController::class, 'store']);

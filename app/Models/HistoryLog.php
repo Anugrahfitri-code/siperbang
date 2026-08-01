@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class HistoryLog extends Model
 {
@@ -16,8 +17,8 @@ class HistoryLog extends Model
         'details',
     ];
 
-    public function user(){
-        
-    return $this->belongsTo(User::class, 'actor', 'name'); // Menghubungkan log dengan data user
-}
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

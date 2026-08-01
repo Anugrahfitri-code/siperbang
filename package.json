@@ -3,10 +3,11 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
+        "build": "vite build && node scripts/write-build-metadata.mjs",
         "dev": "vite",
         "typecheck": "tsc --noEmit",
-        "lint": "eslint resources/js"
+        "lint": "eslint resources/js",
+        "verify:build": "node scripts/verify-build-metadata.mjs"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

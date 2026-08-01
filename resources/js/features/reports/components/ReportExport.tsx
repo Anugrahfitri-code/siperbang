@@ -3,12 +3,14 @@ import ExcelJS from "exceljs";
 import { ReceiptData } from "../../../shared/types";
 import { FileSpreadsheet, Search, DownloadCloud, Check, RefreshCw } from "lucide-react";
 import { AlertDialog } from "../../../shared/components/feedback/AlertDialog";
+import { useSettings } from "../../../shared/context/SettingsContext";
 
 interface ReportExportProps {
   receipts: ReceiptData[];
 }
 
 export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
+  const { settings } = useSettings();
   const [filterMonth, setFilterMonth] = useState("All");
   const [alertMsg, setAlertMsg] = useState<{ title: string; message: string } | null>(null);
   const [filterYear, setFilterYear] = useState("2026");
@@ -85,7 +87,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
     }
 
     return true;
-  });
+  }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const reportRows = filteredReceipts.flatMap((rc) =>
     rc.items.map((it) => {
@@ -155,6 +157,10 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
           return matchesStore || matchesInvoice || matchesItem;
         }
         return true;
+      }).sort((a: any, b: any) => {
+        const dateA = new Date(a.date || a.created_at || 0).getTime();
+        const dateB = new Date(b.date || b.created_at || 0).getTime();
+        return dateA - dateB;
       });
 
       if (verifiedData.length === 0) {
@@ -163,6 +169,9 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
       }
 
       const workbook = new ExcelJS.Workbook();
+      workbook.creator = settings.app_name || "SIPERBANG";
+      workbook.lastModifiedBy = settings.app_name || "SIPERBANG";
+
       const thinBorder: Partial<ExcelJS.Borders> = {
         top: { style: "thin" },
         left: { style: "thin" },
@@ -244,7 +253,7 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
         const sheet = workbook.addWorksheet("REKAP");
 
         sheet.getCell("A1").value = "REKAP BELANJA PERSEDIAAN BARANG HABIS PAKAI";
-        sheet.getCell("A2").value = "BBLSDM KOMDIGI MAKASSAR";
+        sheet.getCell("A2").value = (settings.instansi_sub || settings.instansi_name || "").toUpperCase();
         sheet.getCell("A3").value = `TA ${filterYear}`;
 
         sheet.mergeCells("A1:L1");
@@ -391,9 +400,11 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
+
+      const safePrefix = (settings.app_name || "SIPERBANG").replace(/[^a-z0-9]/gi, '_').toUpperCase();
       a.download = exportMode === "per_kuitansi" 
-        ? `Ekspor_Kuitansi_${filterYear}.xlsx`
-        : `Rekap_Belanja_Persediaan_TA_${filterYear}.xlsx`;
+        ? `${safePrefix}_EKSPOR_KUITANSI_${filterYear}.xlsx`
+        : `${safePrefix}_REKAP_BELANJA_PERSEDIAAN_TA_${filterYear}.xlsx`;
       
       document.body.appendChild(a);
       a.click();

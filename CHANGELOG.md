@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Added — Kelola Identitas Situs
+
+- Versioning branding dengan status draft, scheduled, published, dan archived.
+- Preview, publikasi langsung/terjadwal, riwayat, audit before/after, serta rollback satu aksi.
+- Upload logo aplikasi, logo instansi, dan favicon yang divalidasi, di-resize, dan disimpan sebagai path relatif.
+- Sanitasi HTML server-side, template footer bertoken aman, cache branding, dan source-of-truth backend untuk React, Blade, serta ekspor.
+- Test authorization, whitelist API, sanitasi, upload, atomic cleanup, cache invalidation, jadwal publikasi, dan rollback.
+- Verifikasi integritas build frontend dan script paket rilis yang mengecualikan secret/data runtime.
+
+### Fixed — Kelola Identitas Situs
+
+- Mendaftarkan endpoint simpan khusus Superadmin.
+- Menghapus ketergantungan pada URL logo absolut, tahun footer statis, metadata/filename laporan hardcoded, dan editor `document.execCommand()`.
+- Mencegah form menyimpan default ketika settings gagal dimuat, mengulang upload file lama, serta membocorkan object URL preview.
+- Menambahkan `storage:link`, validasi build, dan penolakan `public/hot` pada deployment/release.
+
 ### Changed
 
 - Merapikan struktur file non-runtime tanpa mengubah logika bisnis.

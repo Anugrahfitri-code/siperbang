@@ -212,9 +212,9 @@ Workflow utama pengisian stok dari file Excel supplier.
 - **File:** `app/Http/Controllers/Api/LogController.php` → `exportExcel()`
 - **Filter:** year, month, search, annual
 - **Akses:** `Petugas Persediaan`, `Superadmin`
-- **Test:** Tidak ada
+- **Test:** `tests/Feature/Receipt/ReceiptExportTest.php`
 - **Status:** Berfungsi normal
-- **Catatan:** Output CSV bukan Excel meskipun nama method `exportExcel`. Nama menyesatkan.
+- **Catatan:** Laporan dihasilkan langsung sebagai file CSV (StreamedResponse) dari sisi server.
 
 ### 7.2 Report Export Frontend
 - **Frontend:** `resources/js/features/reports/components/ReportExport.tsx`
@@ -272,3 +272,27 @@ Workflow utama pengisian stok dari file Excel supplier.
 Controller `PerbaikiDataController`, `VerifikasiKodePersediaanController`, dan `StokPengadaanController` sudah dipindahkan ke arsip setelah pemeriksaan route dan referensi aktif. `BarangController` tetap aktif pada `app/Http/Controllers/Web/BarangController.php` karena digunakan oleh route master barang.
 
 `Barang` dan `StockItem` tetap menjadi dua model aktif. Keduanya mempunyai penggunaan yang berbeda pada alur stok lama dan alur permintaan. Penyatuan model memerlukan migrasi data dan berada di luar perapian folder.
+
+## Modul 9: Identitas Situs dan Branding Tahunan
+
+### 9.1 Identitas aktif
+- **Endpoint publik:** GET `/api/settings`
+- **Service:** `app/Services/SiteBrandingService.php`
+- **Sumber aktif:** `site_settings`
+- **Surface:** React, Blade, title, favicon, footer, laporan, dan metadata workbook
+- **Status:** Aktif
+
+### 9.2 Versioning, jadwal, dan rollback
+- **Akses:** Superadmin
+- **Tabel:** `site_branding_versions`
+- **Status:** `draft`, `scheduled`, `published`, `archived`
+- **Scheduler command:** `php artisan branding:publish-due`
+- **Test:** `tests/Feature/SiteBranding/SiteBrandingSettingsTest.php`
+- **Catatan:** Rollback membuat versi publikasi baru, bukan mengubah snapshot arsip.
+
+### 9.3 Upload aset branding
+- **Format:** PNG, JPEG, WebP
+- **Pemrosesan:** server-side validation, resize, re-encode, dan penghapusan metadata melalui PHP GD
+- **Storage:** path relatif pada disk public di bawah `branding/`
+- **Keamanan:** SVG tidak diterima; file lama dipertahankan selama masih direferensikan versi aktif/arsip.
+

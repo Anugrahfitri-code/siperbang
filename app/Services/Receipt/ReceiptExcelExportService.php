@@ -3,6 +3,7 @@
 namespace App\Services\Receipt;
 
 use App\Models\Receipt;
+use App\Services\SiteBrandingService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
@@ -13,6 +14,10 @@ use RuntimeException;
 
 class ReceiptExcelExportService
 {
+    public function __construct(
+        private readonly SiteBrandingService $branding,
+    ) {
+    }
     /*
      * Sheet contoh tanpa pajak.
      *
@@ -78,8 +83,8 @@ class ReceiptExcelExportService
 
         $workbook
             ->getProperties()
-            ->setCreator('SIPERBANG')
-            ->setLastModifiedBy('SIPERBANG')
+            ->setCreator($this->branding->activeRaw()['app_name'])
+            ->setLastModifiedBy($this->branding->activeRaw()['app_name'])
             ->setTitle('Belanja Persediaan')
             ->setSubject(
                 'Ekspor kuitansi belanja persediaan'
@@ -607,7 +612,7 @@ class ReceiptExcelExportService
                 $receipt->date?->format('Ymd')
                 ?? now()->format('Ymd');
 
-            return "{$storeName}_{$receiptDate}.xlsx";
+            return $this->branding->safeFilePrefix()."_{$storeName}_{$receiptDate}.xlsx";
         }
 
         $years = $receipts
@@ -624,6 +629,6 @@ class ReceiptExcelExportService
                 ? ' ' . $years->first()
                 : '';
 
-        return "Belanja Persediaan{$yearLabel}.xlsx";
+        return $this->branding->safeFilePrefix()."_BELANJA_PERSEDIAAN{$yearLabel}.xlsx";
     }
 }

@@ -2,67 +2,80 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main", "master"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main", "master"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.4'
-        extensions: pdo_sqlite, mbstring, fileinfo, zip, gd
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: dom, curl, libxml, pdo_sqlite, mbstring, fileinfo, zip, gd
+          coverage: none
 
-    - name: Validate composer.json and composer.lock
-      run: composer validate --strict
+      - name: Validate Composer files
+        run: composer validate --strict
 
-    - name: Install Dependencies
-      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
 
-    - name: Copy .env
-      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+      - name: Prepare test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          mkdir -p database
+          touch database/database.sqlite
 
-    - name: Generate key
-      run: php artisan key:generate
+      - name: Run migrations
+        run: php artisan migrate --force
 
-    - name: Create Database
-      run: |
-        mkdir -p database
-        touch database/database.sqlite
+      - name: Check code style
+        run: vendor/bin/pint --test
 
-    - name: Run Migrations
-      run: php artisan migrate -q --no-ansi --no-interaction --no-scripts --no-progress --force
-
-    - name: Code Style (Pint)
-      run: vendor/bin/pint --test
-
-    - name: Execute tests (PHPUnit)
-      run: php artisan test
+      - name: Execute backend tests
+        run: php artisan test
 
   frontend-tests:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Typecheck
-      run: npm run typecheck
+      - name: Typecheck
+        run: npm run typecheck
 
-    - name: Build
-      run: npm run build
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify build matches source
+        run: npm run verify:build
+
+      - name: Reject Vite development marker
+        run: test ! -f public/hot
 
   ocr-tests:
     runs-on: ubuntu-latest
@@ -70,19 +83,20 @@ jobs:
       run:
         working-directory: ./ocr-service
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.10"
-        cache: 'pip'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: ocr-service/requirements.txt
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
 
-    - name: Run Pytest
-      run: python -m pytest
+      - name: Run Pytest
+        run: python -m pytest

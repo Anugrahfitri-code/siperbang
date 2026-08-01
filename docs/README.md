@@ -16,9 +16,9 @@ SIPERBANG adalah aplikasi manajemen persediaan barang internal berbasis web untu
 
 ## Prasyarat
 
-- PHP >= 8.4 dengan ekstensi: `pdo`, `mbstring`, `fileinfo`, `zip`, `gd`
+- PHP >= 8.4 dengan ekstensi: `dom`, `curl`, `libxml`, `pdo`, `mbstring`, `fileinfo`, `zip`, `gd`
 - Composer >= 2.x
-- Node.js >= 20.x + npm
+- Node.js >= 22.x + npm
 - Python >= 3.10 (untuk OCR service)
 - SQLite (dev) atau MySQL 8+ / PostgreSQL 15+ (prod)
 
@@ -43,7 +43,8 @@ composer install
 cp .env.example .env
 php artisan key:generate
 php artisan migrate
-npm install
+php artisan storage:link
+npm ci
 npm run build
 php artisan serve
 ```
@@ -93,6 +94,8 @@ OCR_SERVICE_TOKEN= # Bearer token untuk OCR service
 | [SETUP_DEV.md](development/SETUP_DEV.md) | Panduan onboarding developer baru |
 | [DEPLOYMENT.md](operations/DEPLOYMENT.md) | Panduan deploy ke staging/production |
 | [SECURITY.md](operations/SECURITY.md) | Kebijakan keamanan |
+| [BRANDING.md](operations/BRANDING.md) | Operasional identitas dan pergantian branding tahunan |
+| [RELEASE_PACKAGING.md](operations/RELEASE_PACKAGING.md) | Membuat paket source tanpa secret/data runtime |
 | [CHANGELOG.md](../CHANGELOG.md) | Riwayat perubahan |
 | [ROADMAP.md](planning/ROADMAP.md) | Rencana pengembangan |
 | [PROJECT_STRUCTURE.md](development/PROJECT_STRUCTURE.md) | Struktur folder dan aturan penempatan file |

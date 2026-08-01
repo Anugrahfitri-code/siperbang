@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { UserRole } from "../../../shared/types";
 import { LogIn, Loader2, Eye, EyeOff, Menu, X, Shield, ArrowRight, ScanLine, FileText, CheckCircle2, Package, Monitor, Facebook, Instagram, Youtube, Twitter, Linkedin, Github, MapPin, Phone, Mail, Bell, Target, Clock, FileSearch } from "lucide-react";
 import { SiperbangLogo, KomdigiLogo } from "../../../shared/components/branding/Logos";
+import { ColoredText } from "../../../shared/components/branding/ColoredText";
 import { apiFetch } from "../../../shared/api";
 import { useSettings } from "../../../shared/context/SettingsContext";
+import { renderBrandingTemplate } from "../../../shared/settings";
 import { sanitizeHtml } from "../../../shared/utils/sanitizeHtml";
 
 /* ────────────────────────────────────────────────────────────
@@ -581,7 +583,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
               {/* Title */}
               <h2 className="text-4xl lg:text-5xl font-extrabold text-[#0055A5] leading-none mb-4 tracking-tight">
-                {appName}
+                <ColoredText text={appName} colorsJson={settings.app_name_colors} />
               </h2>
 
               {/* Subtitle */}
@@ -596,7 +598,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   <SiperbangLogo iconOnly />
                 </div>
                 <p className="text-[13px] text-slate-600 leading-relaxed font-medium pt-0.5">
-                  <span className="font-bold text-slate-800">{appName}</span> dirancang untuk membantu instansi pemerintah mengelola persediaan barang secara digital, akurat, dan real-time. Dilengkapi teknologi OCR AI untuk verifikasi otomatis, pemantauan stok, dan pelaporan yang lebih mudah.
+                  <span className="font-bold text-slate-800"><ColoredText text={appName} colorsJson={settings.app_name_colors} /></span> dirancang untuk membantu instansi pemerintah mengelola persediaan barang secara digital, akurat, dan real-time. Dilengkapi teknologi OCR AI untuk verifikasi otomatis, pemantauan stok, dan pelaporan yang lebih mudah.
                 </p>
               </div>
 
@@ -646,7 +648,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         <div className="mx-auto px-6" style={{ maxWidth: 1280 }}>
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900">
-              Fitur Unggulan {appName}
+              Fitur Unggulan <ColoredText text={appName} colorsJson={settings.app_name_colors} />
             </h2>
           </div>
           
@@ -706,7 +708,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         <div className="mx-auto px-6" style={{ maxWidth: 1280 }}>
           <div className="text-center mb-20">
             <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900">
-              Cara Kerja {appName}
+              Cara Kerja <ColoredText text={appName} colorsJson={settings.app_name_colors} />
             </h2>
           </div>
 
@@ -764,7 +766,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 Semua Informasi dalam Satu Genggaman
               </h2>
               <p className="text-[17px] text-slate-700/90 leading-relaxed mb-8 font-medium relative z-10">
-                Dashboard {appName} memberikan ringkasan informasi penting secara real-time untuk memudahkan monitoring dan pengambilan keputusan.
+                Dashboard <ColoredText text={appName} colorsJson={settings.app_name_colors} /> memberikan ringkasan informasi penting secara real-time untuk memudahkan monitoring dan pengambilan keputusan.
               </p>
               <button
                 onClick={() => setShowModal(true)}
@@ -782,8 +784,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 <div className="absolute inset-0 bg-blue-500/20 blur-[60px] rounded-full"></div>
                 
                 <img
-                  src="/images/landing/feature-preview-2.png"
-                  alt="Dashboard Preview 2"
+                  src="/images/landing/feature-preview-3.png"
+                  alt="Dashboard Preview 3"
                   className="w-full h-auto object-contain rounded-3xl relative z-10 bg-white"
                   style={{ 
                     boxShadow: "-10px 20px 40px rgba(0, 0, 0, 0.15), 0 0 15px rgba(255, 255, 255, 0.5)",
@@ -810,12 +812,54 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-12 group">
             {[
-              { name: "Anugrah Fitri Novanda", role: "Universitas Hasanuddin", image: "/images/team/anugrah.jpg" },
-              { name: "Siti Nurfadhilah Az Zahra Syam", role: "Universitas Hasanuddin", image: "/images/team/zahra.jpg" },
-              { name: "A. Izza Syathra", role: "Universitas Hasanuddin", image: "/images/team/izza.jpg" },
-              { name: "Vina Sucitra", role: "Universitas Hasanuddin", image: "/images/team/vina.jpg" },
-              { name: "Sita Rasmi Raihana", role: "Universitas Hasanuddin", image: "/images/team/sita.jpg" },
-              { name: "Isnadia Nurfadillah", role: "Universitas Hasanuddin", image: "/images/team/isnadia.jpg" },
+              { 
+                name: "Anugrah Fitri Novanda", 
+                role: "Universitas Hasanuddin", 
+                image: "/images/team/anugrah.jpg", 
+                instagram: "https://www.instagram.com/ira.fitri4343",
+                linkedin: "https://www.linkedin.com/in/anugrah-fitri-817037219",
+                github: "https://github.com/Anugrahfitri-code"
+              },
+              { 
+                name: "Siti Nurfadhilah Az Zahra Syam", 
+                role: "Universitas Hasanuddin", 
+                image: "/images/team/zahra.jpg", 
+                instagram: "https://www.instagram.com/fadhilahazz__",
+                linkedin: "https://www.linkedin.com/in/siti-nurfadhilah-az-zahra-syam-14074336b",
+                github: "https://github.com/Azzahra9"
+              },
+              { 
+                name: "A. Izza Syathra", 
+                role: "Universitas Hasanuddin", 
+                image: "/images/team/izza.jpg", 
+                instagram: "https://www.instagram.com/_izzsythra",
+                linkedin: "https://www.linkedin.com/in/a-izza-syathra-a98a3b3bb",
+                github: "https://github.com/izzasyathra"
+              },
+              { 
+                name: "Vina Sucitra", 
+                role: "Universitas Hasanuddin", 
+                image: "/images/team/vina.jpg", 
+                instagram: "https://www.instagram.com/vina_sucitra024",
+                linkedin: "https://www.linkedin.com/in/vina-sucitra-6804b2384",
+                github: "https://github.com/VinaSucitra"
+              },
+              { 
+                name: "Sita Rasmi Raihana", 
+                role: "Universitas Hasanuddin", 
+                image: "/images/team/sita.jpg", 
+                instagram: "https://www.instagram.com/s4_rai",
+                linkedin: "https://www.linkedin.com/in/sita-rasmi-raihana-546987381",
+                github: "https://github.com/Rai-14"
+              },
+              { 
+                name: "Isnadia Nurfadillah", 
+                role: "Universitas Hasanuddin", 
+                image: "/images/team/isnadia.jpg", 
+                instagram: "https://www.instagram.com/isnadiyahh",
+                linkedin: "https://www.linkedin.com/in/isnadia-nurfadillah-a3973b318",
+                github: "https://github.com/Isnadia52"
+              },
             ].map((member, i) => (
               <div key={i} className="flex flex-col items-center text-center group transition-transform duration-500 ease-out transform scale-100 group-hover:scale-90 group-hover:opacity-80 hover:scale-[1.35] hover:opacity-100 hover:z-20 cursor-pointer">
                 <div className="w-28 h-28 rounded-full overflow-hidden bg-slate-100 mb-5 relative shadow-sm border border-slate-200 transition-all duration-500 ease-out transform hover:-translate-y-3 hover:border-blue-300 hover:shadow-[0_32px_64px_rgba(0,85,165,0.2)]">
@@ -829,8 +873,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 <h4 className="text-lg font-bold text-slate-900 leading-tight mb-1">{member.name}</h4>
                 <p className="text-sm text-slate-500 font-semibold mb-4">{member.role}</p>
                 <div className="flex items-center gap-3 text-slate-400">
-                  <a href="#" className="hover:text-[#0077b5] transition-colors"><Linkedin size={20} /></a>
-                  <a href="#" className="hover:text-slate-900 transition-colors"><Github size={20} /></a>
+                  <a href={member.instagram || "#"} target="_blank" rel="noopener noreferrer" className="hover:text-[#E1306C] transition-colors"><Instagram size={20} /></a>
+                  <a href={member.linkedin || "#"} target="_blank" rel="noopener noreferrer" className="hover:text-[#0077b5] transition-colors"><Linkedin size={20} /></a>
+                  <a href={member.github || "#"} target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 transition-colors"><Github size={20} /></a>
                 </div>
               </div>
             ))}
@@ -896,21 +941,31 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
             {/* Kontak & Didukung Oleh */}
             <div>
-              <h4 className="text-white font-bold text-lg mb-6">Kontak</h4>
-              <ul className="space-y-4 mb-10">
-                <li className="flex items-start gap-3 text-[15px] text-slate-400">
-                  <MapPin size={18} className="shrink-0 mt-0.5 text-blue-400" />
-                  <span>Jl. Prof. Abdurrahman Basalamah II No.25, Karampuang<br />Kec. Panakkukang, Kota Makassar<br />Sulawesi Selatan 9023</span>
-                </li>
-                <li className="flex items-center gap-3 text-[15px] text-slate-400">
-                  <Phone size={18} className="shrink-0 text-blue-400" />
-                  <span>0851-1729-7705</span>
-                </li>
-                <li className="flex items-center gap-3 text-[15px] text-slate-400">
-                  <Mail size={18} className="shrink-0 text-blue-400" />
-                  <span>bblsdm.makassar@komdigi.go.id</span>
-                </li>
+              {(settings.contact_address || settings.contact_phone || settings.contact_email) && (
+                <>
+                  <h4 className="text-white font-bold text-lg mb-6">Kontak</h4>
+                  <ul className="space-y-4 mb-10">
+                {settings.contact_address && (
+                  <li className="flex items-start gap-3 text-[15px] text-slate-400">
+                    <MapPin size={18} className="shrink-0 mt-0.5 text-blue-400" />
+                    <span className="whitespace-pre-line">{settings.contact_address}</span>
+                  </li>
+                )}
+                {settings.contact_phone && (
+                  <li className="flex items-center gap-3 text-[15px] text-slate-400">
+                    <Phone size={18} className="shrink-0 text-blue-400" />
+                    <span>{settings.contact_phone}</span>
+                  </li>
+                )}
+                {settings.contact_email && (
+                  <li className="flex items-center gap-3 text-[15px] text-slate-400">
+                    <Mail size={18} className="shrink-0 text-blue-400" />
+                    <span>{settings.contact_email}</span>
+                  </li>
+                )}
               </ul>
+                </>
+              )}
 
               <h4 className="text-white font-bold text-lg mb-4">Didukung oleh {instansiName}</h4>
               <div className="flex items-center gap-3">
@@ -927,7 +982,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           </div>
 
           <div className="pt-8 border-t border-white/10 text-center text-slate-500 text-[13px]">
-            {settings.footer_copyright || `© ${new Date().getFullYear()} ${appName}, All rights reserved.`}
+            {renderBrandingTemplate(settings.footer_copyright, settings)}
           </div>
         </div>
       </footer>

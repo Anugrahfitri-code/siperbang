@@ -15,7 +15,7 @@ echo ""
 
 # ─── Cek PHP ────────────────────────────────────
 if ! command -v php &> /dev/null; then
-    echo -e "${RED}[ERROR]${NC} PHP tidak ditemukan. Install PHP 8.3+ terlebih dahulu."
+    echo -e "${RED}[ERROR]${NC} PHP tidak ditemukan. Install PHP 8.4+ terlebih dahulu."
     exit 1
 fi
 
@@ -27,7 +27,7 @@ fi
 
 # ─── Cek Node.js & npm ──────────────────────────
 if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
-    echo -e "${RED}[ERROR]${NC} Node.js atau npm tidak ditemukan. Install versi 20+ di https://nodejs.org"
+    echo -e "${RED}[ERROR]${NC} Node.js atau npm tidak ditemukan. Install versi 22+ di https://nodejs.org"
     exit 1
 fi
 
@@ -84,6 +84,16 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}[OK]${NC} Migrasi berhasil."
 
+# ─── Public storage link ────────────────────────
+echo ""
+echo -e "${CYAN}[INFO]${NC} Menyiapkan akses publik untuk logo dan favicon..."
+php artisan storage:link
+if [ $? -ne 0 ]; then
+    echo -e "${YELLOW}[PERINGATAN]${NC} storage:link gagal. Pastikan public/storage dapat dibuat oleh user web server."
+else
+    echo -e "${GREEN}[OK]${NC} Tautan public/storage siap."
+fi
+
 # ─── Seeder ─────────────────────────────────────
 echo ""
 read -p "Jalankan database seeder? (data awal/contoh) [y/N]: " RUN_SEED
@@ -98,16 +108,24 @@ fi
 
 # ─── NPM install ────────────────────────────────
 echo ""
-echo -e "${CYAN}[INFO]${NC} Menginstall dependensi Node.js (npm install)..."
-npm install --ignore-scripts
+echo -e "${CYAN}[INFO]${NC} Menginstall dependensi Node.js secara reproducible (npm ci)..."
+npm ci
 if [ $? -ne 0 ]; then
-    echo -e "${RED}[ERROR]${NC} npm install gagal."
+    echo -e "${RED}[ERROR]${NC} npm ci gagal."
     exit 1
 else
     echo -e "${GREEN}[OK]${NC} Dependensi Node.js berhasil diinstall."
 fi
 
-# ─── Build assets ───────────────────────────────
+# ─── Validasi dan build assets ──────────────────
+echo ""
+echo -e "${CYAN}[INFO]${NC} Memeriksa type dan lint frontend..."
+npm run typecheck && npm run lint
+if [ $? -ne 0 ]; then
+    echo -e "${RED}[ERROR]${NC} Typecheck atau lint frontend gagal."
+    exit 1
+fi
+
 echo ""
 echo -e "${CYAN}[INFO]${NC} Build asset frontend (npm run build)..."
 npm run build
@@ -116,6 +134,12 @@ if [ $? -ne 0 ]; then
     exit 1
 else
     echo -e "${GREEN}[OK]${NC} Asset frontend berhasil di-build."
+fi
+
+npm run verify:build
+if [ $? -ne 0 ]; then
+    echo -e "${RED}[ERROR]${NC} Integritas build frontend gagal diverifikasi."
+    exit 1
 fi
 
 # ─── Selesai ────────────────────────────────────
