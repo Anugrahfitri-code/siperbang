@@ -12,13 +12,13 @@ class ItemRequest extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'qty_requested'   => 'integer',
-        'qty_available'   => 'integer',
-        'qty_fulfilled'   => 'integer',
-        'qty_to_procure'  => 'integer',
+        'qty_requested' => 'integer',
+        'qty_available' => 'integer',
+        'qty_fulfilled' => 'integer',
+        'qty_to_procure' => 'integer',
         'stock_allocated' => 'boolean',
-        'date'            => 'date',
-        'last_updated'    => 'date',
+        'date' => 'date',
+        'last_updated' => 'date',
     ];
 
     // ── Relationships ────────────────────────────────────────────

@@ -20,6 +20,7 @@ interface StokUpload {
   status: string;
   user?: User;
   cancelled_at?: string;
+  created_at?: string;
 }
 
 export const UploadHistoryReact: React.FC<{ filterPending?: boolean; onOpenStepper?: (id: number) => void }> = ({ filterPending = false, onOpenStepper }) => {

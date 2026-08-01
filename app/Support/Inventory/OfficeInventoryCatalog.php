@@ -34,8 +34,8 @@ final class OfficeInventoryCatalog
         foreach (self::groups() as $group => $name) {
             $options[] = [
                 'group' => (string) $group,
-                'code' => $formattedPrefix . '.' . $group,
-                'code_prefix' => self::codePrefix() . $group,
+                'code' => $formattedPrefix.'.'.$group,
+                'code_prefix' => self::codePrefix().$group,
                 'name' => $name,
             ];
         }

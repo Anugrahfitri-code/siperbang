@@ -29,8 +29,8 @@ class PerbaikiDataController extends Controller
                 ->with('error', 'Batch ini sudah difinalisasi dan tidak dapat diubah.');
         }
 
-        $errorRows  = $batch->details->where('status_validation', 'Perlu Perbaikan');
-        $validRows  = $batch->details->where('status_validation', 'Menunggu Verifikasi');
+        $errorRows = $batch->details->where('status_validation', 'Perlu Perbaikan');
+        $validRows = $batch->details->where('status_validation', 'Menunggu Verifikasi');
         $masterCodes = KodePersediaan::with('kategoriBarang')->orderBy('kode')->get();
 
         return view('stok-upload.perbaiki', compact('batch', 'errorRows', 'validRows', 'masterCodes'));
@@ -52,14 +52,14 @@ class PerbaikiDataController extends Controller
         }
 
         $request->validate([
-            'rows'                       => 'required|array',
-            'rows.*.detail_id'           => 'required|integer|exists:stok_upload_details,id',
-            'rows.*.kode_persediaan'     => 'nullable|string|max:50',
-            'rows.*.nama_barang'         => 'required|string|max:255',
-            'rows.*.qty'                 => 'required|integer|min:1',
-            'rows.*.unit'                => 'required|string|max:50',
-            'rows.*.price_unit'          => 'required|numeric|min:0',
-            'rows.*.is_taxed'            => 'nullable|boolean',
+            'rows' => 'required|array',
+            'rows.*.detail_id' => 'required|integer|exists:stok_upload_details,id',
+            'rows.*.kode_persediaan' => 'nullable|string|max:50',
+            'rows.*.nama_barang' => 'required|string|max:255',
+            'rows.*.qty' => 'required|integer|min:1',
+            'rows.*.unit' => 'required|string|max:50',
+            'rows.*.price_unit' => 'required|numeric|min:0',
+            'rows.*.is_taxed' => 'nullable|boolean',
         ]);
 
         foreach ($request->input('rows', []) as $input) {
@@ -67,10 +67,10 @@ class PerbaikiDataController extends Controller
                 ->where('id', $input['detail_id'])
                 ->firstOrFail();
 
-            $isTaxed       = isset($input['is_taxed']) && (bool) $input['is_taxed'];
-            $priceUnit     = (float) $input['price_unit'];
-            $qty           = (int) $input['qty'];
-            $taxRate       = 0.11;
+            $isTaxed = isset($input['is_taxed']) && (bool) $input['is_taxed'];
+            $priceUnit = (float) $input['price_unit'];
+            $qty = (int) $input['qty'];
+            $taxRate = 0.11;
             $priceUnitTaxed = $isTaxed ? round($priceUnit * (1 + $taxRate), 2) : $priceUnit;
             $totalCalculated = round($priceUnitTaxed * $qty, 2);
 
@@ -78,19 +78,19 @@ class PerbaikiDataController extends Controller
             $kodePersediaan = $input['kode_persediaan'] ?? $detail->kode_persediaan_excel;
 
             $detail->update([
-                'kode_persediaan_excel'   => $kodePersediaan,
-                'verified_kode_persediaan'=> $kodePersediaan,
-                'nama_barang'             => $input['nama_barang'],
-                'qty'                     => $qty,
-                'unit'                    => $input['unit'],
-                'price_unit'              => $priceUnit,
-                'price_unit_taxed'        => $priceUnitTaxed,
-                'total_calculated'        => $totalCalculated,
-                'is_taxed'                => $isTaxed,
+                'kode_persediaan_excel' => $kodePersediaan,
+                'verified_kode_persediaan' => $kodePersediaan,
+                'nama_barang' => $input['nama_barang'],
+                'qty' => $qty,
+                'unit' => $input['unit'],
+                'price_unit' => $priceUnit,
+                'price_unit_taxed' => $priceUnitTaxed,
+                'total_calculated' => $totalCalculated,
+                'is_taxed' => $isTaxed,
                 // Clear the error — row has been user-corrected, pending re-validation check
-                'status_validation'       => 'Menunggu Verifikasi',
-                'status_verification'     => 'Setuju',
-                'notes_error'             => null,
+                'status_validation' => 'Menunggu Verifikasi',
+                'status_verification' => 'Setuju',
+                'notes_error' => null,
             ]);
         }
 
@@ -98,10 +98,10 @@ class PerbaikiDataController extends Controller
         $this->recalculateBatchStats($batch);
 
         AuditLog::create([
-            'user_id'     => auth()->id(),
-            'action'      => 'Perbaiki Data Upload',
+            'user_id' => auth()->id(),
+            'action' => 'Perbaiki Data Upload',
             'description' => "User memperbaiki baris data pada batch upload #{$batch->id}.",
-            'ip_address'  => $request->ip(),
+            'ip_address' => $request->ip(),
         ]);
 
         return redirect()->route('stok-upload.perbaiki.index', $batch->id)
@@ -129,15 +129,15 @@ class PerbaikiDataController extends Controller
         $batch->update(['status' => 'Menunggu Verifikasi']);
 
         AuditLog::create([
-            'user_id'     => auth()->id(),
-            'action'      => 'Ajukan Ulang Upload',
+            'user_id' => auth()->id(),
+            'action' => 'Ajukan Ulang Upload',
             'description' => "Batch upload #{$batch->id} diajukan ulang ke status Menunggu Verifikasi setelah perbaikan data.",
-            'ip_address'  => $request->ip(),
+            'ip_address' => $request->ip(),
         ]);
 
         HistoryLog::create([
-            'actor'   => auth()->user()->name,
-            'action'  => 'Ajukan Ulang Upload',
+            'actor' => auth()->user()->name,
+            'action' => 'Ajukan Ulang Upload',
             'details' => "Batch #{$batch->id} ({$batch->file_name_original}) diajukan ulang setelah perbaikan data oleh user.",
         ]);
 
@@ -153,8 +153,8 @@ class PerbaikiDataController extends Controller
         $batch->refresh();
         $details = $batch->details;
 
-        $validCount    = $details->where('status_validation', 'Menunggu Verifikasi')->count();
-        $errorCount    = $details->where('status_validation', 'Perlu Perbaikan')->count();
+        $validCount = $details->where('status_validation', 'Menunggu Verifikasi')->count();
+        $errorCount = $details->where('status_validation', 'Perlu Perbaikan')->count();
         $rejectedCount = $details->where('status_verification', 'Tolak')->count();
 
         if ($errorCount === 0) {
@@ -166,10 +166,10 @@ class PerbaikiDataController extends Controller
         }
 
         $batch->update([
-            'valid_rows_count'    => $validCount,
-            'error_rows_count'    => $errorCount,
+            'valid_rows_count' => $validCount,
+            'error_rows_count' => $errorCount,
             'rejected_rows_count' => $rejectedCount,
-            'status'              => $batchStatus,
+            'status' => $batchStatus,
         ]);
     }
 

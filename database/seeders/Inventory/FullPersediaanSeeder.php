@@ -793,7 +793,7 @@ class FullPersediaanSeeder extends Seeder
                 ['kode' => $item['kode']],
                 [
                     'kategori_barang_id' => $cat[$item['g']],
-                    'nama_barang'        => $item['nama'],
+                    'nama_barang' => $item['nama'],
                 ],
             );
         }

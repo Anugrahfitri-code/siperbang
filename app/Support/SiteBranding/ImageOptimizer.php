@@ -126,9 +126,9 @@ class ImageOptimizer
             @unlink($temporaryPath);
         }
     }
+
     private function disk(): string
     {
         return (string) config('site_branding.disk', 'public');
     }
-
 }

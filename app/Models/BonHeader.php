@@ -10,6 +10,7 @@ class BonHeader extends Model
     use HasFactory;
 
     protected $table = 'bon_headers';
+
     protected $guarded = [];
 
     protected $casts = [

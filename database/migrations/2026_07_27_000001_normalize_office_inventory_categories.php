@@ -32,7 +32,7 @@ return new class extends Migration
 
             if (Schema::hasTable('kode_persediaan')) {
                 DB::table('kode_persediaan')
-                    ->where('kode', 'like', OfficeInventoryCatalog::codePrefix() . $group . '%')
+                    ->where('kode', 'like', OfficeInventoryCatalog::codePrefix().$group.'%')
                     ->update([
                         'kategori_barang_id' => $id,
                         'updated_at' => now(),
@@ -45,8 +45,8 @@ return new class extends Migration
                         $query->where(
                             'code',
                             'like',
-                            OfficeInventoryCatalog::codePrefix() . $group . '%',
-                        )->orWhere('code', 'like', '1.01.03.' . $group . '%');
+                            OfficeInventoryCatalog::codePrefix().$group.'%',
+                        )->orWhere('code', 'like', '1.01.03.'.$group.'%');
                     })
                     ->update([
                         'category' => $name,
@@ -59,7 +59,7 @@ return new class extends Migration
     }
 
     /**
-     * @param array<string, int> $categoryIds
+     * @param  array<string, int>  $categoryIds
      */
     private function mergeLegacyRows(array $categoryIds): void
     {
@@ -83,7 +83,7 @@ return new class extends Migration
             if (Schema::hasTable('kode_persediaan')) {
                 DB::table('kode_persediaan')
                     ->where('kategori_barang_id', $category->id)
-                    ->where('kode', 'like', OfficeInventoryCatalog::codePrefix() . '%')
+                    ->where('kode', 'like', OfficeInventoryCatalog::codePrefix().'%')
                     ->update([
                         'kategori_barang_id' => $categoryIds[$group],
                         'updated_at' => now(),

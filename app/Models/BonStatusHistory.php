@@ -10,6 +10,7 @@ class BonStatusHistory extends Model
     use HasFactory;
 
     protected $table = 'bon_status_histories';
+
     protected $guarded = [];
 
     public function header()

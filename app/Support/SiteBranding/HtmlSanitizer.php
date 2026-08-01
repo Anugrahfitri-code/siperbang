@@ -79,6 +79,7 @@ class HtmlSanitizer
             if ($child->nodeType === XML_COMMENT_NODE) {
                 $parent->removeChild($child);
                 $child = $next;
+
                 continue;
             }
 
@@ -92,6 +93,7 @@ class HtmlSanitizer
                     }
                     $parent->removeChild($child);
                     $child = $next;
+
                     continue;
                 }
 
@@ -120,6 +122,7 @@ class HtmlSanitizer
                 } else {
                     $element->setAttribute('style', $style);
                 }
+
                 continue;
             }
 

@@ -36,8 +36,8 @@ return new class extends Migration
         // Add granular error column name for improved per-column error display
         Schema::table('stok_upload_details', function (Blueprint $table) {
             $table->string('error_column')->nullable()
-                  ->after('notes_error')
-                  ->comment('Column letter/name where the error occurred, e.g. B, C, D, F');
+                ->after('notes_error')
+                ->comment('Column letter/name where the error occurred, e.g. B, C, D, F');
         });
 
         // ── stok_histories ──────────────────────────────────────────
@@ -45,7 +45,7 @@ return new class extends Migration
         Schema::table('stok_histories', function (Blueprint $table) {
             $table->boolean('is_reversal')->default(false)->after('notes');
             $table->unsignedBigInteger('reversal_of_id')->nullable()->after('is_reversal')
-                  ->comment('Points to the original stok_histories.id that this row reverses');
+                ->comment('Points to the original stok_histories.id that this row reverses');
         });
     }
 

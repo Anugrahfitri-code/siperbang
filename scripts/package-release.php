@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 /** @return array{hash: string, files: array<int, string>} */
 function calculateFrontendSourceHash(string $root): array
 {
@@ -156,7 +155,6 @@ if ($includeBuild && ! is_file($root.'/public/build/manifest.json')) {
     exit(1);
 }
 
-
 if ($includeBuild) {
     $metadataPath = $root.'/public/build/build-meta.json';
     $metadata = is_file($metadataPath)
@@ -279,7 +277,7 @@ $shouldExclude = static function (string $relative) use ($excludedPrefixes, $exc
     return realpath($absolute) === realpath($output);
 };
 
-$zip = new ZipArchive();
+$zip = new ZipArchive;
 if ($zip->open($output, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
     fwrite(STDERR, "Gagal membuka output ZIP.\n");
     exit(1);

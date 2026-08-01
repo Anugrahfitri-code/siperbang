@@ -11,15 +11,21 @@ class StokUpload extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'stok_uploads';
+
     protected $guarded = [];
 
     // ── Simplified status set ────────────────────────────────────
-    const STATUS_DRAFT              = 'Draft';
-    const STATUS_PERLU_PERBAIKAN    = 'Perlu Perbaikan';
+    const STATUS_DRAFT = 'Draft';
+
+    const STATUS_PERLU_PERBAIKAN = 'Perlu Perbaikan';
+
     const STATUS_MENUNGGU_VERIFIKASI = 'Menunggu Verifikasi';
-    const STATUS_SIAP_DIFINALISASI  = 'Siap Difinalisasi';
-    const STATUS_SELESAI            = 'Selesai';
-    const STATUS_DIBATALKAN         = 'Dibatalkan';
+
+    const STATUS_SIAP_DIFINALISASI = 'Siap Difinalisasi';
+
+    const STATUS_SELESAI = 'Selesai';
+
+    const STATUS_DIBATALKAN = 'Dibatalkan';
 
     public static function validStatuses(): array
     {
@@ -34,20 +40,23 @@ class StokUpload extends Model
     }
 
     // ── Stepper constants ────────────────────────────────────────
-    const STEP_UPLOAD      = 1;
+    const STEP_UPLOAD = 1;
+
     const STEP_PEMERIKSAAN = 2;
-    const STEP_VERIFIKASI  = 3;
-    const STEP_REVIEW      = 4;
+
+    const STEP_VERIFIKASI = 3;
+
+    const STEP_REVIEW = 4;
 
     protected $casts = [
-        'upload_date'         => 'datetime',
-        'sheets_count'        => 'integer',
-        'rows_count'          => 'integer',
-        'valid_rows_count'    => 'integer',
-        'error_rows_count'    => 'integer',
+        'upload_date' => 'datetime',
+        'sheets_count' => 'integer',
+        'rows_count' => 'integer',
+        'valid_rows_count' => 'integer',
+        'error_rows_count' => 'integer',
         'rejected_rows_count' => 'integer',
-        'current_step'        => 'integer',
-        'cancelled_at'        => 'datetime',
+        'current_step' => 'integer',
+        'cancelled_at' => 'datetime',
     ];
 
     protected $dates = ['deleted_at'];
@@ -107,11 +116,11 @@ class StokUpload extends Model
     public function resolveNextStep(): int
     {
         return match ($this->status) {
-            self::STATUS_DRAFT              => self::STEP_PEMERIKSAAN,
-            self::STATUS_PERLU_PERBAIKAN    => self::STEP_PEMERIKSAAN,
+            self::STATUS_DRAFT => self::STEP_PEMERIKSAAN,
+            self::STATUS_PERLU_PERBAIKAN => self::STEP_PEMERIKSAAN,
             self::STATUS_MENUNGGU_VERIFIKASI => self::STEP_VERIFIKASI,
-            self::STATUS_SIAP_DIFINALISASI  => self::STEP_REVIEW,
-            default                         => self::STEP_REVIEW,
+            self::STATUS_SIAP_DIFINALISASI => self::STEP_REVIEW,
+            default => self::STEP_REVIEW,
         };
     }
 
@@ -119,13 +128,13 @@ class StokUpload extends Model
     public function statusColor(): string
     {
         return match ($this->status) {
-            self::STATUS_DRAFT              => 'bg-slate-100 text-slate-700',
-            self::STATUS_PERLU_PERBAIKAN    => 'bg-rose-100 text-rose-800',
+            self::STATUS_DRAFT => 'bg-slate-100 text-slate-700',
+            self::STATUS_PERLU_PERBAIKAN => 'bg-rose-100 text-rose-800',
             self::STATUS_MENUNGGU_VERIFIKASI => 'bg-amber-100 text-amber-800',
-            self::STATUS_SIAP_DIFINALISASI  => 'bg-indigo-100 text-indigo-800',
-            self::STATUS_SELESAI            => 'bg-emerald-100 text-emerald-800',
-            self::STATUS_DIBATALKAN         => 'bg-gray-200 text-gray-600 line-through',
-            default                         => 'bg-slate-100 text-slate-600',
+            self::STATUS_SIAP_DIFINALISASI => 'bg-indigo-100 text-indigo-800',
+            self::STATUS_SELESAI => 'bg-emerald-100 text-emerald-800',
+            self::STATUS_DIBATALKAN => 'bg-gray-200 text-gray-600 line-through',
+            default => 'bg-slate-100 text-slate-600',
         };
     }
 }

@@ -174,7 +174,7 @@ useEffect(() => {
       const fetchRequests = apiFetch("/api/requests");
       const fetchLogs = apiFetch("/api/logs");
 
-      let fetchBons = apiFetch("/api/requests/bon?all=true");
+      const fetchBons = apiFetch("/api/requests/bon?all=true");
       let fetchStocks = Promise.resolve(null as any);
       let fetchReceipts = Promise.resolve(null as any);
       let fetchUsers = Promise.resolve(null as any);
@@ -510,7 +510,7 @@ useEffect(() => {
 
     await addLog(
       currentUser,
-      statusLabel === "draft" ? "Simpan Draft BON" : "Kirim BON",
+      payload.status === "draft" ? "Simpan Draft BON" : "Kirim BON",
       detailMsg,
       data.user_id
     );
@@ -695,7 +695,7 @@ useEffect(() => {
       if (deductStock) {
         setStock((prev) =>
           prev.map((s) => {
-            if (s.code === deductStock.code) {
+            if (s.code === (deductStock as any).code || (s as any).id === deductStock.id) {
               return {
                 ...s,
                 qty: Math.max(0, s.qty - deductStock.qtyToDeduct),
@@ -1022,8 +1022,8 @@ useEffect(() => {
 
                   <div className="space-y-4">
                       {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => {
-                        const relatedBon = bons.find(b => (b.bonNo || b.bon_no) === (r.bonNo || r.bon_no));
-                        return (
+                      const relatedBon = bons.find(b => (b.bonNo || (b as any).bon_no) === (r.bonNo || (r as any).bon_no));
+                      return (
                         <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-xl p-5 shadow-sm gap-4">
                           <div>
                             <span className="font-mono text-xs font-bold text-slate-400 block uppercase tracking-wider mb-1">{r.bonNo}</span>
@@ -1224,7 +1224,7 @@ useEffect(() => {
 
                   <div className="space-y-4">
                     {requests.filter((r) => r.status === RequestStatus.DIAJUKAN).map((r) => {
-                      const relatedBon = bons.find(b => (b.bonNo || b.bon_no) === (r.bonNo || r.bon_no));
+                      const relatedBon = bons.find(b => (b.bonNo || (b as any).bon_no) === (r.bonNo || (r as any).bon_no));
                       return (
                       <div key={r.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-white border border-slate-100 border-l-4 border-l-amber-400 rounded-xl p-5 shadow-sm gap-4 transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:border-indigo-100">
                         <div>
@@ -1284,6 +1284,7 @@ useEffect(() => {
                 onProcure={handleProcure}
                 onCompleteProcurement={handleCompleteProcurement}
                 onReject={handleReject}
+                onCompletePartial={handleCompletePartial}
                 currentUser={currentUser}
               />
             )}
@@ -1322,7 +1323,7 @@ useEffect(() => {
               />
             )}
 
-            {superadminTab === "stock_catalog" && <RequesterStockList stock={stock} />}
+            {superadminTab === "stock_catalog" && <RequesterStockList />}
 
             {superadminTab === "history" && <HistoryLog logs={logs} />}
           </div>

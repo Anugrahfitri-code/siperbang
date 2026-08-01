@@ -64,7 +64,7 @@ class BarangController extends Controller
 
         $kodePersediaans = KodePersediaan::query()
             ->with('kategoriBarang')
-            ->where('kode', 'like', OfficeInventoryCatalog::codePrefix() . '%')
+            ->where('kode', 'like', OfficeInventoryCatalog::codePrefix().'%')
             ->orderBy('kode')
             ->get();
 
@@ -171,7 +171,7 @@ class BarangController extends Controller
 
         $codeMaster = KodePersediaan::query()
             ->where('kode', $normalizedCode)
-            ->where('kode', 'like', OfficeInventoryCatalog::codePrefix() . '%')
+            ->where('kode', 'like', OfficeInventoryCatalog::codePrefix().'%')
             ->first();
 
         if ($codeMaster === null) {
@@ -237,7 +237,7 @@ class BarangController extends Controller
             $builder->where(
                 'code',
                 'like',
-                OfficeInventoryCatalog::codePrefix() . '%',
+                OfficeInventoryCatalog::codePrefix().'%',
             )->orWhere('code', 'like', '1.01.03.%');
         });
     }
@@ -248,8 +248,8 @@ class BarangController extends Controller
             $builder->where(
                 'code',
                 'like',
-                OfficeInventoryCatalog::codePrefix() . $group . '%',
-            )->orWhere('code', 'like', '1.01.03.' . $group . '%');
+                OfficeInventoryCatalog::codePrefix().$group.'%',
+            )->orWhere('code', 'like', '1.01.03.'.$group.'%');
         });
     }
 
@@ -267,7 +267,7 @@ class BarangController extends Controller
         }
 
         if (auth()->user()->role !== $role) {
-            abort(403, 'Akses ditolak. Halaman ini hanya boleh diakses oleh ' . $role);
+            abort(403, 'Akses ditolak. Halaman ini hanya boleh diakses oleh '.$role);
         }
     }
 }

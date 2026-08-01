@@ -16,8 +16,8 @@ class ReceiptExcelExportService
 {
     public function __construct(
         private readonly SiteBrandingService $branding,
-    ) {
-    }
+    ) {}
+
     /*
      * Sheet contoh tanpa pajak.
      *
@@ -41,8 +41,7 @@ class ReceiptExcelExportService
     private const TAX_TEMPLATE_ITEM_COUNT = 15;
 
     /**
-     * @param Collection<int, Receipt> $receipts
-     *
+     * @param  Collection<int, Receipt>  $receipts
      * @return array{
      *     path: string,
      *     filename: string
@@ -100,10 +99,9 @@ class ReceiptExcelExportService
         ];
 
         foreach (
-            array_reverse($workbook->getSheetNames())
-            as $name
+            array_reverse($workbook->getSheetNames()) as $name
         ) {
-            if (!in_array($name, $keepTemplates, true)) {
+            if (! in_array($name, $keepTemplates, true)) {
                 $sheet = $workbook->getSheetByName($name);
 
                 if ($sheet instanceof Worksheet) {
@@ -122,15 +120,14 @@ class ReceiptExcelExportService
         $usedSheetTitles = [];
 
         foreach (
-            $receipts->values()
-            as $receipt
+            $receipts->values() as $receipt
         ) {
             $receipt->loadMissing('items');
 
             if ($receipt->items->isEmpty()) {
                 throw new RuntimeException(
                     "Kuitansi {$receipt->id} "
-                    . 'tidak mempunyai barang.'
+                    .'tidak mempunyai barang.'
                 );
             }
 
@@ -158,8 +155,8 @@ class ReceiptExcelExportService
 
             if (! $newSheet instanceof Worksheet) {
                 throw new RuntimeException(
-                    "Gagal menduplikasi sheet template "
-                    . "{$templateSheetName}."
+                    'Gagal menduplikasi sheet template '
+                    ."{$templateSheetName}."
                 );
             }
 
@@ -185,8 +182,7 @@ class ReceiptExcelExportService
          * sehingga tidak ikut terhapus.
          */
         foreach (
-            array_reverse($originalSheetNames)
-            as $name
+            array_reverse($originalSheetNames) as $name
         ) {
             $sheet = $workbook->getSheetByName($name);
 
@@ -206,7 +202,7 @@ class ReceiptExcelExportService
         if ($temporaryBase === false) {
             throw new RuntimeException(
                 'Gagal membuat file sementara '
-                . 'untuk ekspor Excel.'
+                .'untuk ekspor Excel.'
             );
         }
 
@@ -217,7 +213,7 @@ class ReceiptExcelExportService
          */
         @unlink($temporaryBase);
 
-        $temporaryPath = $temporaryBase . '.xlsx';
+        $temporaryPath = $temporaryBase.'.xlsx';
 
         $writer = new Xlsx($workbook);
 
@@ -234,7 +230,7 @@ class ReceiptExcelExportService
         $workbook->disconnectWorksheets();
 
         return [
-            'path'     => $temporaryPath,
+            'path' => $temporaryPath,
             'filename' => $filename,
         ];
     }
@@ -295,16 +291,16 @@ class ReceiptExcelExportService
             $column++
         ) {
             $columnStyle = $sheet->getStyle(
-                $column . self::ITEM_START_ROW
+                $column.self::ITEM_START_ROW
             );
 
             $sheet->duplicateStyle(
                 $columnStyle,
                 $column
-                    . self::ITEM_START_ROW
-                    . ':'
-                    . $column
-                    . $itemEndRow,
+                    .self::ITEM_START_ROW
+                    .':'
+                    .$column
+                    .$itemEndRow,
             );
         }
 
@@ -327,7 +323,7 @@ class ReceiptExcelExportService
         $sheet->setCellValue(
             'A2',
             'SUPPLIER : '
-            . $this->formatSupplierName(
+            .$this->formatSupplierName(
                 (string) $receipt->store_name
             ),
         );
@@ -335,14 +331,14 @@ class ReceiptExcelExportService
         foreach ($items as $index => $item) {
             $row = self::ITEM_START_ROW + $index;
 
-            $sheet->setCellValue('A' . $row, $index + 1);
+            $sheet->setCellValue('A'.$row, $index + 1);
 
             /*
              * Kode persediaan disimpan sebagai teks agar Excel
              * tidak mengubahnya menjadi scientific notation.
              */
             $sheet->setCellValueExplicit(
-                'B' . $row,
+                'B'.$row,
                 $this->normaliseInventoryCode(
                     $item->inventory_code
                 ),
@@ -350,22 +346,22 @@ class ReceiptExcelExportService
             );
 
             $sheet->setCellValue(
-                'C' . $row,
+                'C'.$row,
                 trim((string) $item->name),
             );
 
             $sheet->setCellValue(
-                'D' . $row,
+                'D'.$row,
                 (int) $item->qty,
             );
 
             $sheet->setCellValue(
-                'E' . $row,
+                'E'.$row,
                 $this->formatUnit($item->unit),
             );
 
             $sheet->setCellValue(
-                'F' . $row,
+                'F'.$row,
                 round((float) $item->price, 2),
             );
 
@@ -375,17 +371,17 @@ class ReceiptExcelExportService
                  * H = jumlah × harga setelah pajak.
                  */
                 $sheet->setCellValue(
-                    'G' . $row,
+                    'G'.$row,
                     "=F{$row}*\$I\$5",
                 );
 
                 $sheet->setCellValue(
-                    'H' . $row,
+                    'H'.$row,
                     "=D{$row}*G{$row}",
                 );
 
                 $sheet->setCellValue(
-                    'I' . $row,
+                    'I'.$row,
                     null,
                 );
             } else {
@@ -393,7 +389,7 @@ class ReceiptExcelExportService
                  * G = jumlah × harga satuan.
                  */
                 $sheet->setCellValue(
-                    'G' . $row,
+                    'G'.$row,
                     "=D{$row}*F{$row}",
                 );
             }
@@ -424,16 +420,16 @@ class ReceiptExcelExportService
             $column++
         ) {
             $sheet->setCellValue(
-                $column . $totalRow,
+                $column.$totalRow,
                 null,
             );
         }
 
         $sheet->setCellValue(
-            $totalColumn . $totalRow,
+            $totalColumn.$totalRow,
             "=SUM({$totalColumn}"
-                . self::ITEM_START_ROW
-                . ":{$totalColumn}{$itemEndRow})",
+                .self::ITEM_START_ROW
+                .":{$totalColumn}{$itemEndRow})",
         );
 
         $sheet
@@ -446,7 +442,7 @@ class ReceiptExcelExportService
     }
 
     /**
-     * @param array<string, true> $usedTitles
+     * @param  array<string, true>  $usedTitles
      */
     private function makeUniqueSheetTitle(
         Receipt $receipt,
@@ -461,7 +457,7 @@ class ReceiptExcelExportService
                 (string) $receipt->store_name
             );
 
-        $baseTitle = trim($datePart . ' ' . $initials);
+        $baseTitle = trim($datePart.' '.$initials);
 
         /*
          * Microsoft Excel membatasi nama worksheet
@@ -474,13 +470,13 @@ class ReceiptExcelExportService
         while (
             isset($usedTitles[Str::lower($candidate)])
         ) {
-            $suffix    = '-' . $counter;
+            $suffix = '-'.$counter;
             $candidate =
                 Str::limit(
                     $baseTitle,
                     31 - strlen($suffix),
                     '',
-                ) . $suffix;
+                ).$suffix;
 
             $counter++;
         }
@@ -534,8 +530,7 @@ class ReceiptExcelExportService
         )
             ->filter()
             ->reject(
-                fn (string $word): bool =>
-                    in_array($word, $ignoredPrefixes, true)
+                fn (string $word): bool => in_array($word, $ignoredPrefixes, true)
             )
             ->values();
 
@@ -548,7 +543,7 @@ class ReceiptExcelExportService
         }
 
         return substr($words->get(0), 0, 1)
-            . substr($words->get(1), 0, 1);
+            .substr($words->get(1), 0, 1);
     }
 
     private function normaliseInventoryCode(
@@ -593,7 +588,7 @@ class ReceiptExcelExportService
     }
 
     /**
-     * @param Collection<int, Receipt> $receipts
+     * @param  Collection<int, Receipt>  $receipts
      */
     private function makeFilename(
         Collection $receipts,
@@ -617,8 +612,7 @@ class ReceiptExcelExportService
 
         $years = $receipts
             ->map(
-                fn (Receipt $receipt): ?string =>
-                    $receipt->date?->format('Y')
+                fn (Receipt $receipt): ?string => $receipt->date?->format('Y')
             )
             ->filter()
             ->unique()
@@ -626,7 +620,7 @@ class ReceiptExcelExportService
 
         $yearLabel =
             $years->count() === 1
-                ? ' ' . $years->first()
+                ? ' '.$years->first()
                 : '';
 
         return $this->branding->safeFilePrefix()."_BELANJA_PERSEDIAAN{$yearLabel}.xlsx";

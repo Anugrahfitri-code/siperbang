@@ -1,11 +1,15 @@
 <?php
-$doc = App\Models\ReceiptDocument::where('original_filename', 'like', '%260113 Satu Sama 937.142%')->first();
-if (!$doc) {
+
+use App\Jobs\Receipt\ProcessReceiptOcr;
+use App\Models\ReceiptDocument;
+
+$doc = ReceiptDocument::where('original_filename', 'like', '%260113 Satu Sama 937.142%')->first();
+if (! $doc) {
     echo "Document not found\n";
     exit;
 }
 $doc->update(['status' => 'queued', 'error_message' => null]);
-App\Jobs\Receipt\ProcessReceiptOcr::dispatchSync($doc->id);
+ProcessReceiptOcr::dispatchSync($doc->id);
 $doc->refresh();
 
 dump($doc->status);
@@ -15,8 +19,8 @@ $result = $doc->parsed_result;
 if ($result) {
     dump($result['store_name']);
     dump($result['date']);
-    dump('Items count: ' . count($result['items']));
+    dump('Items count: '.count($result['items']));
     dump($result['subtotal']);
 } else {
-    dump("No parsed result");
+    dump('No parsed result');
 }

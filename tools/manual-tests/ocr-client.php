@@ -1,8 +1,9 @@
 <?php
 
 declare(strict_types=1);
+use App\Services\Ocr\OcrServiceClient;
 
-require dirname(__DIR__) . '/bootstrap.php';
+require dirname(__DIR__).'/bootstrap.php';
 
 $file = $argv[1] ?? null;
 
@@ -12,10 +13,10 @@ if ($file === null || ! is_file($file)) {
 }
 
 try {
-    $client = app(App\Services\Ocr\OcrServiceClient::class);
+    $client = app(OcrServiceClient::class);
     $result = $client->processReceipt($file, basename($file));
-    fwrite(STDOUT, json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . PHP_EOL);
+    fwrite(STDOUT, json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE).PHP_EOL);
 } catch (Throwable $exception) {
-    fwrite(STDERR, $exception->getMessage() . PHP_EOL);
+    fwrite(STDERR, $exception->getMessage().PHP_EOL);
     exit(1);
 }

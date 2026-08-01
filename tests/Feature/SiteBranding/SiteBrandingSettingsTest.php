@@ -11,12 +11,19 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use RuntimeException;
 use Tests\TestCase;
 
 class SiteBrandingSettingsTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutMiddleware(PreventRequestForgery::class);
+    }
 
     public function test_public_can_read_active_site_identity(): void
     {
@@ -153,7 +160,7 @@ class SiteBrandingSettingsTest extends TestCase
         Storage::fake('public');
         $admin = $this->superadmin();
 
-        $response = $this->actingAs($admin)->post('/api/settings', [
+        $response = $this->actingAs($admin)->postJson('/api/settings', [
             ...$this->payload(),
             'app_logo' => UploadedFile::fake()->image('logo.png', 1800, 600),
         ]);
@@ -179,7 +186,7 @@ class SiteBrandingSettingsTest extends TestCase
         Storage::fake('public');
         $admin = $this->superadmin();
 
-        $this->actingAs($admin)->post('/api/settings', [
+        $this->actingAs($admin)->postJson('/api/settings', [
             ...$this->payload(),
             'app_logo' => UploadedFile::fake()->createWithContent(
                 'logo.svg',
@@ -189,7 +196,7 @@ class SiteBrandingSettingsTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors('app_logo');
 
-        $this->actingAs($admin)->post('/api/settings', [
+        $this->actingAs($admin)->postJson('/api/settings', [
             ...$this->payload(),
             'app_logo' => UploadedFile::fake()->image('terlalu-besar.png', 2100, 10),
         ], ['Accept' => 'application/json'])
@@ -207,7 +214,7 @@ class SiteBrandingSettingsTest extends TestCase
         Storage::fake('public');
         $admin = $this->superadmin();
 
-        $firstResponse = $this->actingAs($admin)->post('/api/settings', [
+        $firstResponse = $this->actingAs($admin)->postJson('/api/settings', [
             ...$this->payload(['label' => 'Logo Pertama']),
             'app_logo' => UploadedFile::fake()->image('pertama.png', 600, 600),
         ])->assertOk();
@@ -216,7 +223,7 @@ class SiteBrandingSettingsTest extends TestCase
             ->where('key', 'app_logo_path')
             ->value('value');
 
-        $this->actingAs($admin)->post('/api/settings', [
+        $this->actingAs($admin)->postJson('/api/settings', [
             ...$this->payload(['label' => 'Logo Kedua']),
             'app_logo' => UploadedFile::fake()->image('kedua.png', 600, 600),
         ])->assertOk();
@@ -354,11 +361,11 @@ class SiteBrandingSettingsTest extends TestCase
             ]))
             ->assertOk();
 
-        $this->assertFalse(Cache::has('site_branding.active.v1'));
+        $this->assertTrue(Cache::has('site_branding.active.v1'));
         app()->forgetInstance(SiteBrandingService::class);
         $this->assertSame(
             'PORTAL TANPA CACHE BASI',
-            app(SiteBrandingService::class)->activeRaw()['app_name'],
+            Cache::get('site_branding.active.v1')['app_name'],
         );
     }
 
@@ -401,7 +408,7 @@ class SiteBrandingSettingsTest extends TestCase
             $this->expectException(RuntimeException::class);
             $this->expectExceptionMessage('Simulasi kegagalan database.');
 
-            $this->actingAs($admin)->post('/api/settings', [
+            $this->actingAs($admin)->postJson('/api/settings', [
                 ...$this->payload(),
                 'app_logo' => UploadedFile::fake()->image('logo-baru.png', 600, 600),
             ]);

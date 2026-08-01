@@ -339,11 +339,11 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
                       </div>
                       
                       <h4 className="text-sm font-extrabold text-slate-800 leading-snug truncate mb-1.5">
-                        {bon.bon_no}
+                        {bon.bonNo || (bon as any).bon_no}
                       </h4>
 
                       <div className="flex items-center gap-3 flex-wrap text-xs font-semibold">
-                         <span className="text-slate-500">Total Pengajuan: <span className="text-slate-800">{bon.itemsCount ?? bon.items_count} Jenis Barang</span></span>
+                         <span className="text-slate-500">Total Pengajuan: <span className="text-slate-800">{bon.itemsCount ?? (bon as any).items_count} Jenis Barang</span></span>
                       </div>
                     </div>
 

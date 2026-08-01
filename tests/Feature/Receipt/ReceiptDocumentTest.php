@@ -2,17 +2,17 @@
 
 namespace Tests\Feature\Receipt;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\Http;
-use Tests\TestCase;
-use App\Models\User;
-use App\Models\ReceiptDocument;
 use App\Enums\Receipt\ReceiptDocumentStatus;
 use App\Jobs\Receipt\ProcessReceiptOcr;
+use App\Models\ReceiptDocument;
+use App\Models\User;
 use App\Services\Ocr\OcrServiceClient;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
 
 class ReceiptDocumentTest extends TestCase
 {
@@ -25,7 +25,7 @@ class ReceiptDocumentTest extends TestCase
         parent::setUp();
         // create a basic user
         $this->user = User::factory()->create([
-            'role' => 'Petugas Persediaan'
+            'role' => 'Petugas Persediaan',
         ]);
     }
 
@@ -42,7 +42,7 @@ class ReceiptDocumentTest extends TestCase
         $file = UploadedFile::fake()->image('receipt.jpg');
 
         $response = $this->actingAs($this->user)->postJson('/api/receipt-documents', [
-            'document' => $file
+            'document' => $file,
         ]);
 
         $response->assertStatus(202);
@@ -54,7 +54,7 @@ class ReceiptDocumentTest extends TestCase
         $file = UploadedFile::fake()->create('receipt.exe', 100, 'application/x-msdownload');
 
         $response = $this->actingAs($this->user)->postJson('/api/receipt-documents', [
-            'document' => $file
+            'document' => $file,
         ]);
 
         $response->assertStatus(422);
@@ -63,116 +63,111 @@ class ReceiptDocumentTest extends TestCase
     public function test_ocr_client_uses_http_fake_and_updates_status()
     {
         config([
-            'services.ocr.url' =>
-                'http://ocr.test',
+            'services.ocr.url' => 'http://ocr.test',
 
-            'services.ocr.token' =>
-                'test-service-token',
+            'services.ocr.token' => 'test-service-token',
 
-            'services.ocr.timeout' =>
-                10,
+            'services.ocr.timeout' => 10,
 
-            'services.ocr.connect_timeout' =>
-                2,
+            'services.ocr.connect_timeout' => 2,
         ]);
 
         Http::fake([
-            'http://ocr.test/internal/v1/receipt-ocr' =>
-                Http::response([
-                    'success' => true,
-                    'engine' => 'paddleocr',
-                    'engine_version' => '3.7.0',
-                    'paddle_version' => '3.3.1',
-                    'overall_confidence' => 0.98,
-                    'raw_text' => "TOKO A\nTOTAL\n80.000",
+            'http://ocr.test/internal/v1/receipt-ocr' => Http::response([
+                'success' => true,
+                'engine' => 'paddleocr',
+                'engine_version' => '3.7.0',
+                'paddle_version' => '3.3.1',
+                'overall_confidence' => 0.98,
+                'raw_text' => "TOKO A\nTOTAL\n80.000",
 
-                    'pages' => [
-                        [
-                            'page' => 1,
-                            'width' => 1000,
-                            'height' => 1400,
-                            'lines' => [
-                                [
-                                    'text' => 'TOKO A',
-                                    'confidence' => 0.99,
-                                    'box' => [
-                                        [10, 10],
-                                        [100, 10],
-                                        [100, 40],
-                                        [10, 40],
-                                    ],
+                'pages' => [
+                    [
+                        'page' => 1,
+                        'width' => 1000,
+                        'height' => 1400,
+                        'lines' => [
+                            [
+                                'text' => 'TOKO A',
+                                'confidence' => 0.99,
+                                'box' => [
+                                    [10, 10],
+                                    [100, 10],
+                                    [100, 40],
+                                    [10, 40],
                                 ],
-                                [
-                                    'text' => 'TOTAL',
-                                    'confidence' => 0.99,
-                                    'box' => [
-                                        [10, 100],
-                                        [100, 100],
-                                        [100, 130],
-                                        [10, 130],
-                                    ],
+                            ],
+                            [
+                                'text' => 'TOTAL',
+                                'confidence' => 0.99,
+                                'box' => [
+                                    [10, 100],
+                                    [100, 100],
+                                    [100, 130],
+                                    [10, 130],
                                 ],
-                                [
-                                    'text' => '80.000',
-                                    'confidence' => 0.96,
-                                    'box' => [
-                                        [200, 100],
-                                        [300, 100],
-                                        [300, 130],
-                                        [200, 130],
-                                    ],
+                            ],
+                            [
+                                'text' => '80.000',
+                                'confidence' => 0.96,
+                                'box' => [
+                                    [200, 100],
+                                    [300, 100],
+                                    [300, 130],
+                                    [200, 130],
                                 ],
                             ],
                         ],
                     ],
+                ],
 
-                    'document' => [
-                        'store_name' => [
-                            'value' => 'TOKO A',
-                            'confidence' => 0.99,
-                            'source' => 'ocr',
-                        ],
-                        'invoice_no' => [
-                            'value' => null,
-                            'confidence' => null,
-                            'source' => null,
-                        ],
-                        'date' => [
-                            'value' => null,
-                            'confidence' => null,
-                            'source' => null,
-                        ],
-                        'subtotal' => [
-                            'value' => 80000,
-                            'confidence' => 0.96,
-                            'source' => 'ocr',
-                        ],
-                        'tax_rate' => [
-                            'value' => null,
-                            'confidence' => null,
-                            'source' => null,
-                        ],
-                        'tax_amount' => [
-                            'value' => null,
-                            'confidence' => null,
-                            'source' => null,
-                        ],
-                        'total' => [
-                            'value' => 80000,
-                            'confidence' => 0.96,
-                            'source' => 'ocr',
-                        ],
-                        'items' => [],
+                'document' => [
+                    'store_name' => [
+                        'value' => 'TOKO A',
+                        'confidence' => 0.99,
+                        'source' => 'ocr',
                     ],
-
+                    'invoice_no' => [
+                        'value' => null,
+                        'confidence' => null,
+                        'source' => null,
+                    ],
+                    'date' => [
+                        'value' => null,
+                        'confidence' => null,
+                        'source' => null,
+                    ],
+                    'subtotal' => [
+                        'value' => 80000,
+                        'confidence' => 0.96,
+                        'source' => 'ocr',
+                    ],
+                    'tax_rate' => [
+                        'value' => null,
+                        'confidence' => null,
+                        'source' => null,
+                    ],
+                    'tax_amount' => [
+                        'value' => null,
+                        'confidence' => null,
+                        'source' => null,
+                    ],
+                    'total' => [
+                        'value' => 80000,
+                        'confidence' => 0.96,
+                        'source' => 'ocr',
+                    ],
                     'items' => [],
-                    'warnings' => [],
-                ], 200),
+                ],
+
+                'items' => [],
+                'warnings' => [],
+            ], 200),
         ]);
 
-        \Illuminate\Support\Facades\Storage::fake('local');
+        Storage::fake('local');
 
-        \Illuminate\Support\Facades\Storage::disk('local')->put(
+        Storage::disk('local')->put(
             'receipts/test.jpg',
             'fake image content',
         );
@@ -192,7 +187,7 @@ class ReceiptDocumentTest extends TestCase
         );
 
         $job->handle(
-            new OcrServiceClient(),
+            new OcrServiceClient,
         );
 
         $doc->refresh();
@@ -243,7 +238,7 @@ class ReceiptDocumentTest extends TestCase
             $doc->parsed_result['warnings'],
         );
     }
-    
+
     public function test_verify_transaction_and_calculations()
     {
         $doc = ReceiptDocument::create([
@@ -256,6 +251,12 @@ class ReceiptDocumentTest extends TestCase
             'status' => ReceiptDocumentStatus::NEEDS_REVIEW,
         ]);
 
+        \DB::table('kode_persediaan')->insert([
+            'kode' => '1010300001',
+            'nama_barang' => 'Item 1',
+            'kategori_barang_id' => 1,
+        ]);
+
         $payload = [
             'invoiceNo' => 'INV-1',
             'storeName' => 'Toko B',
@@ -263,16 +264,16 @@ class ReceiptDocumentTest extends TestCase
             'isTaxed' => true,
             'taxRate' => 11,
             'items' => [
-                ['name' => 'Item 1', 'qty' => 2, 'price' => 50000]
-            ]
+                ['name' => 'Item 1', 'qty' => 2, 'price' => 50000, 'unit' => 'Pcs', 'inventoryCode' => '1010300001'],
+            ],
         ];
 
         $response = $this->actingAs($this->user)->putJson("/api/receipt-documents/{$doc->id}/verify", $payload);
-        
+
         $response->assertStatus(200);
         $doc->refresh();
         $this->assertEquals(ReceiptDocumentStatus::VERIFIED, $doc->status);
-        
+
         // Assert receipt created
         $this->assertNotNull($doc->receipt_id);
         $receipt = $doc->receipt;
@@ -280,7 +281,7 @@ class ReceiptDocumentTest extends TestCase
         $this->assertEquals(11000, $receipt->tax_amount);
         $this->assertEquals(111000, $receipt->total);
     }
-    
+
     public function test_double_verification_rejected()
     {
         $doc = ReceiptDocument::create([
@@ -300,32 +301,27 @@ class ReceiptDocumentTest extends TestCase
     public function test_ocr_422_response_marks_document_as_failed()
     {
         config([
-            'services.ocr.url' =>
-                'http://ocr.test',
+            'services.ocr.url' => 'http://ocr.test',
 
-            'services.ocr.token' =>
-                'test-service-token',
+            'services.ocr.token' => 'test-service-token',
 
-            'services.ocr.timeout' =>
-                10,
+            'services.ocr.timeout' => 10,
 
-            'services.ocr.connect_timeout' =>
-                2,
+            'services.ocr.connect_timeout' => 2,
         ]);
 
         Http::fake([
-            'http://ocr.test/internal/v1/receipt-ocr' =>
-                Http::response([
-                    'detail' => (
-                        'No readable text was detected '
-                        . 'in the document.'
-                    ),
-                ], 422),
+            'http://ocr.test/internal/v1/receipt-ocr' => Http::response([
+                'detail' => (
+                    'No readable text was detected '
+                    .'in the document.'
+                ),
+            ], 422),
         ]);
 
-        \Illuminate\Support\Facades\Storage::fake('local');
+        Storage::fake('local');
 
-        \Illuminate\Support\Facades\Storage::disk('local')->put(
+        Storage::disk('local')->put(
             'receipts/blank.pdf',
             '%PDF-1.4 blank',
         );
@@ -345,7 +341,7 @@ class ReceiptDocumentTest extends TestCase
         );
 
         $job->handle(
-            new OcrServiceClient(),
+            new OcrServiceClient,
         );
 
         $doc->refresh();
@@ -376,31 +372,26 @@ class ReceiptDocumentTest extends TestCase
     public function test_http_200_with_success_false_is_rejected()
     {
         config([
-            'services.ocr.url' =>
-                'http://ocr.test',
+            'services.ocr.url' => 'http://ocr.test',
 
-            'services.ocr.token' =>
-                'test-service-token',
+            'services.ocr.token' => 'test-service-token',
 
-            'services.ocr.timeout' =>
-                10,
+            'services.ocr.timeout' => 10,
 
-            'services.ocr.connect_timeout' =>
-                2,
+            'services.ocr.connect_timeout' => 2,
         ]);
 
         Http::fake([
-            'http://ocr.test/internal/v1/receipt-ocr' =>
-                Http::response([
-                    'success' => false,
-                    'raw_text' => null,
-                    'pages' => [],
-                ], 200),
+            'http://ocr.test/internal/v1/receipt-ocr' => Http::response([
+                'success' => false,
+                'raw_text' => null,
+                'pages' => [],
+            ], 200),
         ]);
 
-        \Illuminate\Support\Facades\Storage::fake('local');
+        Storage::fake('local');
 
-        \Illuminate\Support\Facades\Storage::disk('local')->put(
+        Storage::disk('local')->put(
             'receipts/test.jpg',
             'fake image',
         );
@@ -420,7 +411,7 @@ class ReceiptDocumentTest extends TestCase
         );
 
         $job->handle(
-            new OcrServiceClient(),
+            new OcrServiceClient,
         );
 
         $doc->refresh();

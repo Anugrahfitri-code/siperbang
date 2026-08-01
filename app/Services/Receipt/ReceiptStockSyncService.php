@@ -117,7 +117,7 @@ class ReceiptStockSyncService
                 throw ValidationException::withMessages([
                     "items.{$index}.stockItemId" => [
                         'Barang master yang dipilih sudah tidak tersedia. '
-                        . 'Pilih kembali barang dari daftar master.',
+                        .'Pilih kembali barang dari daftar master.',
                     ],
                 ]);
             }
@@ -149,7 +149,7 @@ class ReceiptStockSyncService
         $codeMaster = KodePersediaan::query()
             ->with('kategoriBarang:id,nama')
             ->where('kode', $normalisedCode)
-            ->where('kode', 'like', OfficeInventoryCatalog::codePrefix() . '%')
+            ->where('kode', 'like', OfficeInventoryCatalog::codePrefix().'%')
             ->lockForUpdate()
             ->first();
 
@@ -175,8 +175,7 @@ class ReceiptStockSyncService
             ->lockForUpdate()
             ->get()
             ->first(
-                fn (StockItem $candidate): bool =>
-                    $this->normaliseName($candidate->name)
+                fn (StockItem $candidate): bool => $this->normaliseName($candidate->name)
                     === $normalisedName
             );
 
@@ -230,7 +229,7 @@ class ReceiptStockSyncService
     }
 
     /**
-     * @param Collection<int, ReceiptItem> $items
+     * @param  Collection<int, ReceiptItem>  $items
      */
     private function reverseItems(
         Receipt $receipt,
@@ -275,7 +274,7 @@ class ReceiptStockSyncService
             if ($shortfall > 0) {
                 $notes .= sprintf(
                     ' Stok sudah terpakai sebanyak %d sebelum pembalikan; '
-                    . 'stok disetel menjadi 0.',
+                    .'stok disetel menjadi 0.',
                     $shortfall,
                 );
             }

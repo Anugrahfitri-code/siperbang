@@ -2,13 +2,13 @@
 
 namespace App\Services\Inventory;
 
-use App\Models\Barang;
-use App\Models\StokUpload;
-use App\Models\StockHistory;
 use App\Models\AuditLog;
+use App\Models\Barang;
 use App\Models\HistoryLog;
-use Illuminate\Support\Facades\DB;
+use App\Models\StockHistory;
+use App\Models\StokUpload;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class StokFinalizationService
 {
@@ -24,14 +24,14 @@ class StokFinalizationService
      */
     public function finalize(StokUpload $batch): array
     {
-        if ($batch->status === \App\Models\StokUpload::STATUS_SELESAI) {
-            throw new \Exception("Batch upload ini sudah pernah difinalisasi.");
+        if ($batch->status === StokUpload::STATUS_SELESAI) {
+            throw new \Exception('Batch upload ini sudah pernah difinalisasi.');
         }
 
         $approvedRows = $batch->details()->where('status_verification', 'Setuju')->get();
-        
+
         if ($approvedRows->isEmpty()) {
-            throw new \Exception("Tidak ada data yang disetujui untuk difinalisasi. Silakan lakukan verifikasi terlebih dahulu.");
+            throw new \Exception('Tidak ada data yang disetujui untuk difinalisasi. Silakan lakukan verifikasi terlebih dahulu.');
         }
 
         $user = Auth::user();
@@ -47,7 +47,7 @@ class StokFinalizationService
         DB::transaction(function () use ($batch, $approvedRows, $actorName, $userId, &$results) {
             foreach ($approvedRows as $row) {
                 $code = $row->verified_kode_persediaan;
-                
+
                 // Match on BOTH code AND name — one code can cover multiple
                 // distinct products (e.g. Kantong sampah M / XL / L share
                 // code 1010305004).  Case-insensitive name match prevents
@@ -113,7 +113,7 @@ class StokFinalizationService
 
             // Update batch stats
             $rejectedCount = $batch->details()->where('status_verification', 'Tolak')->count();
-            
+
             $batch->update([
                 'rejected_rows_count' => $rejectedCount,
                 'status' => 'Selesai',
@@ -131,7 +131,7 @@ class StokFinalizationService
             HistoryLog::create([
                 'actor' => $actorName,
                 'action' => 'Finalisasi Stok Excel',
-                'details' => "Finalisasi batch upload #{$batch->id} selesai. Total barang ditambahkan/diupdate: " . ($results['inserted'] + $results['updated']),
+                'details' => "Finalisasi batch upload #{$batch->id} selesai. Total barang ditambahkan/diupdate: ".($results['inserted'] + $results['updated']),
             ]);
         });
 

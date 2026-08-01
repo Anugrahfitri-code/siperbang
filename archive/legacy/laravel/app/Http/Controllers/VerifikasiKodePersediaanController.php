@@ -3,12 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\VerifikasiKodePersediaanRequest;
-use App\Models\StokUpload;
-use App\Models\StokUploadDetail;
 use App\Models\AuditLog;
 use App\Models\HistoryLog;
 use App\Models\KodePersediaan;
-use Illuminate\Http\Request;
+use App\Models\StokUpload;
+use App\Models\StokUploadDetail;
 
 class VerifikasiKodePersediaanController extends Controller
 {
@@ -20,6 +19,7 @@ class VerifikasiKodePersediaanController extends Controller
         $this->authorizeRole('Petugas Persediaan');
         $batch = StokUpload::with('details')->findOrFail($id);
         $masterCodes = KodePersediaan::with('kategoriBarang')->get();
+
         return view('stok-upload.verifikasi', compact('batch', 'masterCodes'));
     }
 
@@ -34,9 +34,9 @@ class VerifikasiKodePersediaanController extends Controller
             $detail = StokUploadDetail::where('stok_upload_id', $batch->id)
                 ->where('id', $item['detail_id'])
                 ->firstOrFail();
-            
+
             $action = $item['action'];
-            
+
             if ($action === 'Setuju') {
                 $detail->update([
                     'status_verification' => 'Setuju',

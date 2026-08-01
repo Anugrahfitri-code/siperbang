@@ -41,7 +41,7 @@ class OfficeActivityInventoryCodeSeederTest extends TestCase
         $this->assertSame(
             111,
             KodePersediaan::query()
-                ->where('kode', 'like', OfficeInventoryCatalog::codePrefix() . '%')
+                ->where('kode', 'like', OfficeInventoryCatalog::codePrefix().'%')
                 ->count(),
         );
 
