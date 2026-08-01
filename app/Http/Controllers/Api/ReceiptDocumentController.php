@@ -1077,13 +1077,13 @@ class ReceiptDocumentController extends Controller
                             || ! $sameTotal
                         ) {
                             throw ValidationException::withMessages([
-                                    'invoiceNo' => [
-                                        'Nomor invoice ini sudah '
-                                        .'digunakan untuk toko '
-                                        .'yang sama, tetapi tanggal '
-                                        .'atau totalnya berbeda.',
-                                    ],
-                                ]);
+                                'invoiceNo' => [
+                                    'Nomor invoice ini sudah '
+                                    .'digunakan untuk toko '
+                                    .'yang sama, tetapi tanggal '
+                                    .'atau totalnya berbeda.',
+                                ],
+                            ]);
                         }
 
                         /*
