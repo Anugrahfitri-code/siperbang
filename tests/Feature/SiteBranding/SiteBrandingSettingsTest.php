@@ -5,13 +5,13 @@ namespace Tests\Feature\SiteBranding;
 use App\Models\SiteBrandingVersion;
 use App\Models\User;
 use App\Services\SiteBrandingService;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use RuntimeException;
 use Tests\TestCase;
 

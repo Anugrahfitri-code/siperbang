@@ -6,6 +6,15 @@ import app.ocr_engine
 
 client = TestClient(fastapi_app)
 
+import pytest
+from unittest.mock import patch, PropertyMock
+
+@pytest.fixture(autouse=True)
+def mock_model_ready():
+    with patch('app.main._get_model_state', return_value=("ready", None)), \
+         patch('app.ocr_engine.OcrEngine.is_loaded', new_callable=PropertyMock, return_value=True):
+        yield
+
 def test_health():
     response = client.get("/health")
     assert response.status_code == 200
