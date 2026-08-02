@@ -28,6 +28,18 @@
                 </span>
             </a>
 
+            <a href="/" onclick="localStorage.setItem('superadminTab', 'site_settings');"
+               class="group flex w-full items-center justify-between py-3 pl-6 pr-5 text-left text-sm font-bold transition-all duration-200 border-transparent border-l-4 bg-transparent text-slate-500 hover:bg-emerald-50/70 hover:text-emerald-700">
+                <span class="flex min-w-0 items-center gap-3">
+                    <span class="shrink-0">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>
+                        </svg>
+                    </span>
+                    <span class="truncate">Kelola Identitas Situs</span>
+                </span>
+            </a>
+
             <p class="px-7 pb-2 pt-5 text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Petugas Persediaan</p>
 
             <a href="/" onclick="localStorage.setItem('officerTab', 'dashboard'); localStorage.setItem('superadminTab', 'dashboard'); localStorage.setItem('requesterTab', 'dashboard');"
