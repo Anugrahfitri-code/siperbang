@@ -57,6 +57,7 @@ export interface ItemRequest {
   vendorName?: string;
   distribution?: Distribution;
   procurements?: Procurement[];
+  verifierNotes?: string;
 }
 
 export interface StockItem {
@@ -144,6 +145,25 @@ export interface HistoryLog {
   actor: string;
   action: string;
   details: string;
+  ip_address?: string | null;
+  metadata?: {
+    batch_id?: number;
+    inserted?: number;
+    updated?: number;
+    ip_address?: string;
+    user_agent?: string;
+    waktu_aksi?: string;
+    items?: Array<{
+      action: 'insert' | 'update';
+      name: string;
+      code: string;
+      unit: string;
+      qty?: number;
+      qty_before?: number;
+      qty_added?: number;
+      qty_after?: number;
+    }>;
+  } | null;
 }
 
 export type OcrStatus =

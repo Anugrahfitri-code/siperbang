@@ -14,7 +14,7 @@ class Receipt extends Model
     protected $casts = [
         'is_taxed' => 'boolean',
         'is_verified' => 'boolean',
-        'date' => 'date',
+        'date' => 'date:Y-m-d',
         'bast_date' => 'date',
         'tax_rate' => 'float',
         'subtotal' => 'float',

@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { FileSpreadsheet, AlertCircle, CheckCircle2, History, ArrowRight, Trash2 } from "lucide-react";
 import { AlertDialog } from "../../../shared/components/feedback/AlertDialog";
+import { ConfirmDialog } from "../../../shared/components/feedback/ConfirmDialog";
+import { apiFetch } from "../../../shared/api";
+import { TrashModalReact } from "./TrashModalReact";
 
 interface User {
   id: number;
@@ -26,11 +29,13 @@ interface StokUpload {
 export const UploadHistoryReact: React.FC<{ filterPending?: boolean; onOpenStepper?: (id: number) => void }> = ({ filterPending = false, onOpenStepper }) => {
   const [batches, setBatches] = useState<StokUpload[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showTrashModal, setShowTrashModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{id: number, name: string} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [alertDialog, setAlertDialog] = useState<{ title: string; message: string; variant: "danger" | "warning" | "info" | "success" } | null>(null);
 
-  useEffect(() => {
+  const fetchRiwayat = () => {
+    setLoading(true);
     fetch("/api/stok-upload/riwayat", {
       headers: {
         "Accept": "application/json",
@@ -51,6 +56,10 @@ export const UploadHistoryReact: React.FC<{ filterPending?: boolean; onOpenStepp
         console.error("Failed to fetch riwayat", err);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchRiwayat();
   }, [filterPending]);
 
   const getStatusColor = (status: string) => {
@@ -82,23 +91,9 @@ export const UploadHistoryReact: React.FC<{ filterPending?: boolean; onOpenStepp
       }
     }).then(res => {
       // Re-fetch after delete
-      setLoading(true);
-      fetch("/api/stok-upload/riwayat", {
-        headers: { "Accept": "application/json" },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          let fetchedBatches = data.data || [];
-          if (filterPending) {
-            fetchedBatches = fetchedBatches.filter(
-              (b: StokUpload) => b.status === "Menunggu Verifikasi" || b.status === "Siap Difinalisasi"
-            );
-          }
-          setBatches(fetchedBatches);
-          setLoading(false);
-          setDeleteConfirm(null);
-          setIsDeleting(false);
-        });
+      fetchRiwayat();
+      setDeleteConfirm(null);
+      setIsDeleting(false);
     }).catch(err => {
       setAlertDialog({ title: "Gagal", message: err.message || "Gagal menghapus data.", variant: "danger" });
       setIsDeleting(false);
@@ -109,22 +104,30 @@ export const UploadHistoryReact: React.FC<{ filterPending?: boolean; onOpenStepp
     <>
       <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden animate-fade-in">
         <div className="flex flex-col gap-4 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-            <History size={18} />
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <History size={18} />
+            </div>
+            <div>
+              <h3 className="text-sm font-extrabold text-slate-900">
+                {filterPending ? "Antrean Verifikasi & Finalisasi" : "Riwayat Upload"}
+              </h3>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {filterPending 
+                  ? "Daftar file Excel yang menunggu verifikasi kode atau siap difinalisasi" 
+                  : "Pantau status pemeriksaan dan verifikasi"}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-extrabold text-slate-900">
-              {filterPending ? "Antrean Verifikasi & Finalisasi" : "Riwayat Upload"}
-            </h3>
-            <p className="mt-0.5 text-xs text-slate-500">
-              {filterPending 
-                ? "Daftar file Excel yang menunggu verifikasi kode atau siap difinalisasi" 
-                : "Pantau status pemeriksaan dan verifikasi"}
-            </p>
-          </div>
+          
+          <button
+            onClick={() => setShowTrashModal(true)}
+            className="flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-600 transition-all hover:bg-rose-100 hover:text-rose-700"
+          >
+            <Trash2 size={16} />
+            Recycle Bin
+          </button>
         </div>
-      </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
@@ -255,6 +258,17 @@ export const UploadHistoryReact: React.FC<{ filterPending?: boolean; onOpenStepp
         </div>,
         document.body
       )}
+
+      {showTrashModal && (
+        <TrashModalReact 
+          onClose={() => setShowTrashModal(false)} 
+          onRestored={() => {
+            fetchRiwayat();
+            setShowTrashModal(false);
+          }} 
+        />
+      )}
     </>
   );
 };
+

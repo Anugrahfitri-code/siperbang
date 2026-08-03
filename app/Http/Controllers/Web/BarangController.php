@@ -54,9 +54,9 @@ class BarangController extends Controller
         $barangs->getCollection()->each(function (Barang $barang): void {
             $barang->setAttribute(
                 'canonical_category',
-                OfficeInventoryCatalog::categoryForCode($barang->code)
+                $barang->category
+                    ?? OfficeInventoryCatalog::categoryForCode($barang->code)
                     ?? OfficeInventoryCatalog::canonicalCategory($barang->category)
-                    ?? $barang->category,
             );
         });
 
@@ -119,9 +119,9 @@ class BarangController extends Controller
             return [
                 'kode_persediaan' => OfficeInventoryCatalog::normalizeCode($item->code),
                 'nama_barang' => $item->name,
-                'kategori' => OfficeInventoryCatalog::categoryForCode($item->code)
-                    ?? OfficeInventoryCatalog::canonicalCategory($item->category)
-                    ?? $item->category,
+                'kategori' => $item->category
+                    ?? OfficeInventoryCatalog::categoryForCode($item->code)
+                    ?? OfficeInventoryCatalog::canonicalCategory($item->category),
                 'satuan' => $item->unit,
                 'stok_tersedia' => $stock,
                 'status_ketersediaan' => $status,
@@ -145,6 +145,7 @@ class BarangController extends Controller
             'name' => 'required|string|max:255',
             'kode_persediaan' => 'required|string|max:20',
             'unit' => 'required|string|max:50',
+            'category' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -183,9 +184,9 @@ class BarangController extends Controller
                 ->with('edit_id', $id);
         }
 
-        $category = OfficeInventoryCatalog::categoryForCode($normalizedCode);
+        $category = $validated['category'] ?? OfficeInventoryCatalog::categoryForCode($normalizedCode);
 
-        if ($category === null) {
+        if (empty($category)) {
             return back()
                 ->withErrors([
                     'kode_persediaan' => 'Subkategori kode persediaan tidak dikenali.',

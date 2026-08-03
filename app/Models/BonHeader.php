@@ -14,8 +14,8 @@ class BonHeader extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'date' => 'date',
-        'last_updated' => 'date',
+        'date' => 'date:Y-m-d',
+        'last_updated' => 'date:Y-m-d',
     ];
 
     public function items()

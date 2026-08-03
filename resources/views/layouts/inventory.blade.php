@@ -132,7 +132,7 @@
                             </div>
                         </div>
                         <div class="p-2 bg-white">
-                            <form method="POST" action="/api/logout" onsubmit="event.preventDefault(); fetch('/api/logout', { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } }).then(function(r) { if (r.ok) window.location.href = '/'; });">
+                            <form id="logoutForm" method="POST" action="/api/logout" onsubmit="event.preventDefault(); document.getElementById('logoutModal').classList.remove('hidden');">
                                 @csrf
                                 <button type="submit"
                                     class="w-full flex items-center gap-2 px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors text-sm font-bold"
@@ -229,10 +229,43 @@
     </div>
 </div>
 
+{{-- Logout Modal --}}
+<div id="logoutModal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-all duration-200">
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl w-full max-w-sm animate-in fade-in zoom-in-95 duration-200">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                </svg>
+            </div>
+            <div>
+                <h3 class="font-extrabold text-slate-800 text-[15px]">Keluar dari Sistem</h3>
+            </div>
+        </div>
+        <p class="text-[13px] text-slate-600 font-medium mb-6">
+            Apakah Anda yakin ingin keluar dari akun ini? Anda harus masuk kembali untuk mengakses fitur-fitur sistem.
+        </p>
+        <div class="flex items-center justify-end gap-3 mt-6">
+            <button type="button" onclick="document.getElementById('logoutModal').classList.add('hidden')" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 font-bold text-xs transition-colors">
+                Batal
+            </button>
+            <button type="button" onclick="executeLogout()" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-[0_4px_14px_rgba(225,29,72,0.25)] transition-all">
+                Ya, Keluar Akun
+            </button>
+        </div>
+    </div>
+</div>
+
 {{-- ═══════════════════════════════════════════════════════════
      JAVASCRIPT: Sidebar toggle + Profile dropdown
 ═══════════════════════════════════════════════════════════ --}}
 <script>
+    function executeLogout() {
+        fetch('/api/logout', { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } })
+        .then(function(r) { if (r.ok) window.location.href = '/'; });
+    }
     // ── Sidebar state ──────────────────────────────────────────
     function getSidebar() { return document.getElementById('sidebar'); }
     function getOverlay() { return document.getElementById('sidebarOverlay'); }

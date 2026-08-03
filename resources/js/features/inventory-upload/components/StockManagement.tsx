@@ -495,7 +495,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
 
             <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
               <a
-                href="/stok-upload/template"
+                href="/stok-upload/template?v=2"
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-xs font-extrabold text-slate-600 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
               >
                 <Download size={15} />

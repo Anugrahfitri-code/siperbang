@@ -1264,11 +1264,11 @@ class ReceiptDocumentController extends Controller
             ->whereKey(
                 $receiptDocument->id,
             )
-            ->whereIn(
+            ->whereNotIn(
                 'status',
                 [
-                    ReceiptDocumentStatus::FAILED->value,
-                    ReceiptDocumentStatus::UPLOADED->value,
+                    ReceiptDocumentStatus::QUEUED->value,
+                    ReceiptDocumentStatus::PROCESSING->value,
                 ],
             )
             ->update([
@@ -1287,8 +1287,7 @@ class ReceiptDocumentController extends Controller
         if ($updated === 0) {
             return response()->json([
                 'message' => (
-                    'Hanya dokumen berstatus failed '
-                    .'atau uploaded yang dapat diproses ulang.'
+                    'Dokumen sedang dalam antrean atau sedang diproses. Mohon tunggu hingga selesai.'
                 ),
             ], 409);
         }

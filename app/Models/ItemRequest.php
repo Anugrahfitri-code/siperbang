@@ -17,8 +17,8 @@ class ItemRequest extends Model
         'qty_fulfilled' => 'integer',
         'qty_to_procure' => 'integer',
         'stock_allocated' => 'boolean',
-        'date' => 'date',
-        'last_updated' => 'date',
+        'date' => 'date:Y-m-d',
+        'last_updated' => 'date:Y-m-d',
     ];
 
     // ── Relationships ────────────────────────────────────────────

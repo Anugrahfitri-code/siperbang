@@ -350,6 +350,10 @@ class StokUploadController extends Controller
             ->orderBy('deleted_at', 'desc')
             ->paginate(15);
 
+        if (request()->wantsJson()) {
+            return response()->json($batches);
+        }
+
         return view('stok-upload.trash', compact('batches'));
     }
 
@@ -357,7 +361,7 @@ class StokUploadController extends Controller
     // HAPUS (soft delete — non-finalised only)
     // ──────────────────────────────────────────────────────────────
 
-    public function destroy(int $id)
+    public function destroy($id)
     {
         $this->authorizeRole('Petugas Persediaan');
         $batch = StokUpload::findOrFail($id);
@@ -387,11 +391,15 @@ class StokUploadController extends Controller
     // RESTORE dari sampah
     // ──────────────────────────────────────────────────────────────
 
-    public function restore(int $id)
+    public function restore($id)
     {
         $this->authorizeRole('Petugas Persediaan');
         $batch = StokUpload::onlyTrashed()->findOrFail($id);
         $batch->restore();
+
+        if (request()->wantsJson()) {
+            return response()->json(['message' => 'Upload berhasil dipulihkan.']);
+        }
 
         return redirect()->route('stok-upload.riwayat')
             ->with('success', "Upload \"{$batch->file_name_original}\" berhasil dipulihkan dari sampah.");
@@ -401,7 +409,7 @@ class StokUploadController extends Controller
     // HAPUS PERMANEN
     // ──────────────────────────────────────────────────────────────
 
-    public function forceDelete(int $id)
+    public function forceDelete($id)
     {
         $this->authorizeRole('Petugas Persediaan');
         $batch = StokUpload::onlyTrashed()->findOrFail($id);
@@ -418,6 +426,10 @@ class StokUploadController extends Controller
             'ip_address' => request()->ip(),
         ]);
 
+        if (request()->wantsJson()) {
+            return response()->json(['message' => 'Upload dihapus secara permanen.']);
+        }
+
         return redirect()->route('stok-upload.trash')
             ->with('success', 'Upload dihapus secara permanen.');
     }
@@ -430,7 +442,7 @@ class StokUploadController extends Controller
     {
         $this->authorizeRole('Petugas Persediaan');
 
-        $templatePath = public_path('templates/Belanja Persediaan 2026.xlsx');
+        $templatePath = public_path('templates/Template Excel.xlsx');
 
         if (! File::exists($templatePath)) {
             return redirect()->back()
@@ -439,9 +451,12 @@ class StokUploadController extends Controller
 
         return response()->download(
             $templatePath,
-            'Belanja Persediaan 2026.xlsx',
+            'Template Excel.xlsx',
             [
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
             ]
         );
     }

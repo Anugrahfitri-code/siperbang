@@ -23,7 +23,18 @@ class LogController extends Controller
             });
         }
 
-        return response()->json($query->orderBy('created_at', 'desc')->get());
+        return response()->json(
+            $query->orderBy('created_at', 'desc')->get()
+                ->map(fn ($l) => [
+                    'id'         => $l->id,
+                    'actor'      => $l->actor,
+                    'action'     => $l->action,
+                    'details'    => $l->details,
+                    'ip_address' => $l->ip_address,
+                    'metadata'   => $l->metadata,
+                    'created_at' => $l->created_at,
+                ])
+        );
     }
 
     public function store(Request $request)

@@ -15,7 +15,26 @@ class HistoryLog extends Model
         'actor',
         'action',
         'details',
+        'ip_address',
+        'metadata',
     ];
+
+    protected $casts = [
+        'metadata' => 'array',
+    ];
+
+    /**
+     * Automatically capture IP address on every log creation
+     * so individual controllers don't need to pass it explicitly.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $log) {
+            if (empty($log->ip_address)) {
+                $log->ip_address = request()?->ip();
+            }
+        });
+    }
 
     public function user(): BelongsTo
     {

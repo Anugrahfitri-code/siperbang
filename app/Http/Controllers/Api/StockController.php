@@ -25,9 +25,9 @@ class StockController extends Controller
 
         $items->each(function (StockItem $item): void {
             $item->code = OfficeInventoryCatalog::normalizeCode($item->code);
-            $item->category = OfficeInventoryCatalog::categoryForCode($item->code)
-                ?? OfficeInventoryCatalog::canonicalCategory($item->category)
-                ?? $item->category;
+            $item->category = $item->category
+                ?? OfficeInventoryCatalog::categoryForCode($item->code)
+                ?? OfficeInventoryCatalog::canonicalCategory($item->category);
         });
 
         return response()->json($items);
@@ -79,9 +79,9 @@ class StockController extends Controller
             'id' => $item->id,
             'kode' => OfficeInventoryCatalog::normalizeCode($item->code),
             'nama' => $item->name,
-            'kategori' => OfficeInventoryCatalog::categoryForCode($item->code)
+            'kategori' => $item->category
+                ?? OfficeInventoryCatalog::categoryForCode($item->code)
                 ?? OfficeInventoryCatalog::canonicalCategory($item->category)
-                ?? $item->category
                 ?? '-',
             'satuan' => $item->unit,
             'stok' => $item->qty,

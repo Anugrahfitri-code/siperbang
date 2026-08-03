@@ -80,6 +80,15 @@ class StokFinalizationService
                     ]);
 
                     $results['updated']++;
+                    $results['details'][] = [
+                        'action'    => 'update',
+                        'name'      => $barang->name,
+                        'code'      => $code,
+                        'unit'      => $barang->unit,
+                        'qty_before'=> $qtyBefore,
+                        'qty_added' => $row->qty,
+                        'qty_after' => $qtyAfter,
+                    ];
                 } else {
                     // Create new item in stock_items
                     $category = $this->kodeService->getCategoryByCode($code);
@@ -108,6 +117,13 @@ class StokFinalizationService
                     ]);
 
                     $results['inserted']++;
+                    $results['details'][] = [
+                        'action' => 'insert',
+                        'name'   => $newBarang->name,
+                        'code'   => $code,
+                        'unit'   => $newBarang->unit,
+                        'qty'    => $row->qty,
+                    ];
                 }
             }
 
@@ -119,19 +135,45 @@ class StokFinalizationService
                 'status' => 'Selesai',
             ]);
 
-            // Save Audit Log
+            // Build per-item detail for log
+            $itemDetails = collect($results['details'])->map(function ($d) {
+                $label = $d['action'] === 'insert'
+                    ? "[BARU] {$d['name']} (Kode: {$d['code']}) → Stok: {$d['qty']} {$d['unit']}"
+                    : "[UPDATE] {$d['name']} (Kode: {$d['code']}) → Stok: {$d['qty_before']} + {$d['qty_added']} = {$d['qty_after']} {$d['unit']}";
+                return $label;
+            })->implode("\n");
+
+            $summary = "Finalisasi Batch #{$batch->id} oleh {$actorName}. "
+                . "Barang baru: {$results['inserted']}, Stok diperbarui: {$results['updated']}.\n"
+                . "Detail:\n{$itemDetails}";
+
+            $ipAddress = request()->ip();
+            $userAgent = request()->userAgent();
+
+            // Save Audit Log (admin-level)
             AuditLog::create([
-                'user_id' => $userId,
-                'action' => 'Finalisasi Stok Excel',
-                'description' => "Memfinalisasi batch upload #{$batch->id}. Menambahkan {$results['inserted']} barang baru dan mengupdate {$results['updated']} barang.",
-                'ip_address' => request()->ip(),
+                'user_id'     => $userId,
+                'action'      => 'FINALISASI_STOK',
+                'description' => $summary,
+                'ip_address'  => $ipAddress,
             ]);
 
-            // Sync with existing prototype history log
+            // Save History Log (visible in UI timeline) with full metadata
             HistoryLog::create([
-                'actor' => $actorName,
-                'action' => 'Finalisasi Stok Excel',
-                'details' => "Finalisasi batch upload #{$batch->id} selesai. Total barang ditambahkan/diupdate: ".($results['inserted'] + $results['updated']),
+                'actor'      => $actorName,
+                'user_id'    => $userId,
+                'action'     => 'Finalisasi Stok Excel',
+                'details'    => $summary,
+                'ip_address' => $ipAddress,
+                'metadata'   => [
+                    'batch_id'     => $batch->id,
+                    'inserted'     => $results['inserted'],
+                    'updated'      => $results['updated'],
+                    'ip_address'   => $ipAddress,
+                    'user_agent'   => $userAgent,
+                    'items'        => $results['details'],
+                    'waktu_aksi'   => now()->toIso8601String(),
+                ],
             ]);
         });
 

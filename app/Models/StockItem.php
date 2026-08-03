@@ -13,7 +13,7 @@ class StockItem extends Model
 
     protected $casts = [
         'qty' => 'integer',
-        'last_updated' => 'date',
+        'last_updated' => 'date:Y-m-d',
         'is_active' => 'boolean',
     ];
 
