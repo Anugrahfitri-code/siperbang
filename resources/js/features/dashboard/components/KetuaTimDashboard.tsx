@@ -90,8 +90,8 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
                 Dashboard Ketua Tim
               </span>
             </div>
-            <h1 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
-              Selamat Datang Kembali, {currentUser.split(" (")[0]}
+            <h1 className="text-base font-extrabold text-slate-900 tracking-wide">
+              Selamat datang, {currentUser.split(" (")[0]}
             </h1>
             <p className="text-sm font-medium text-slate-500 mt-0.5">
               Unit Kerja: <span className="font-bold text-slate-700">{sectionName}</span>
@@ -313,7 +313,7 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
                       )}
                     </td>
                     <td className="py-4 px-5">
-                      <span className={`px-2.5 py-0.5 rounded text-xs font-extrabold border ${getStatusBadgeClass(req.status)}`}>
+                      <span className={`inline-block whitespace-nowrap px-2.5 py-0.5 rounded text-xs font-extrabold border ${getStatusBadgeClass(req.status)}`}>
                         {req.status}
                       </span>
                     </td>

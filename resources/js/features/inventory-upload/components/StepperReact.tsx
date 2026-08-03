@@ -500,6 +500,44 @@ export const StepperReact: React.FC<StepperProps> = ({ batchId, onClose }) => {
            </div>
         </div>
       )}
+
+      {step === 4 && details.approved && details.approved.length > 0 && (
+        <div className="mt-8 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden animate-fade-in">
+          <div className="p-5 border-b border-slate-100 bg-slate-50 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+              <ListChecks size={18} />
+            </div>
+            <div>
+              <h3 className="text-sm font-extrabold text-slate-800">Daftar Barang Masuk</h3>
+              <p className="text-xs text-slate-500">Barang yang akan ditambahkan ke sistem setelah finalisasi.</p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="px-5 py-3">Nama Barang</th>
+                  <th className="px-5 py-3">Kode Master</th>
+                  <th className="px-5 py-3 text-right">Jumlah</th>
+                  <th className="px-5 py-3 text-right">Harga Satuan</th>
+                  <th className="px-5 py-3 text-right">Total Harga</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {details.approved.map((item: any) => (
+                  <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-5 py-4 font-semibold text-slate-700">{item.nama_barang_excel || item.nama_barang}</td>
+                    <td className="px-5 py-4 font-mono text-slate-600">{item.verified_kode_persediaan || item.kode_persediaan_excel}</td>
+                    <td className="px-5 py-4 text-right font-medium">{item.qty} {item.satuan}</td>
+                    <td className="px-5 py-4 text-right font-medium">Rp{parseFloat(item.price_unit_taxed || item.price_unit || 0).toLocaleString('id-ID')}</td>
+                    <td className="px-5 py-4 text-right font-bold text-slate-800">Rp{parseFloat(item.total_calculated || 0).toLocaleString('id-ID')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

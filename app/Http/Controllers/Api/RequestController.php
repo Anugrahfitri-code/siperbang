@@ -72,15 +72,30 @@ class RequestController extends Controller
                 }
             }
 
-            // Generate BON Number
-            $prefix = 'BON/'.now()->format('Y/m/d').'/';
+            // Generate BON Number (Sequential per day)
+            $datePrefix = now()->format('Y/m/d');
+            $prefix = 'BON/'.$datePrefix.'/';
+            
+            $lastBon = BonHeader::where('bon_no', 'like', $prefix.'%')
+                ->orderBy('bon_no', 'desc')
+                ->first();
+                
+            $nextNum = 1;
+            if ($lastBon) {
+                $lastNumStr = substr($lastBon->bon_no, strrpos($lastBon->bon_no, '/') + 1);
+                if (is_numeric($lastNumStr)) {
+                    $nextNum = intval($lastNumStr) + 1;
+                }
+            }
+
             $bonNo = null;
             $attempts = 0;
             do {
-                $randomNum = str_pad(mt_rand(1, 999), 3, '0', STR_PAD_LEFT);
-                $tempNo = $prefix.$randomNum;
-                if (! ItemRequest::where('bon_no', $tempNo)->exists()) {
+                $tempNo = $prefix . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+                if (! BonHeader::where('bon_no', $tempNo)->exists()) {
                     $bonNo = $tempNo;
+                } else {
+                    $nextNum++;
                 }
                 $attempts++;
             } while ($bonNo === null && $attempts < 10);
@@ -472,7 +487,7 @@ class RequestController extends Controller
         $query = BonHeader::with(['items' => function ($q) {
             // Sertakan stock_item_id agar frontend bisa pre-fill barang_id
             $q->select('id', 'bon_header_id', 'stock_item_id', 'item_name',
-                'unit', 'qty_requested', 'qty_fulfilled', 'status', 'notes');
+                'unit', 'qty_requested', 'qty_fulfilled', 'status', 'notes', 'verifier_notes');
         }])
             ->withCount('items')
             ->orderBy('date', 'desc')

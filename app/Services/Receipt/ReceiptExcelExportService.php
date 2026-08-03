@@ -10,6 +10,7 @@ use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 use RuntimeException;
 
 class ReceiptExcelExportService
@@ -431,6 +432,24 @@ class ReceiptExcelExportService
                 .self::ITEM_START_ROW
                 .":{$totalColumn}{$itemEndRow})",
         );
+
+        $sheet->getStyle("A4:{$lastColumn}{$itemEndRow}")->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FF000000'],
+                ],
+            ],
+        ]);
+
+        $sheet->getStyle("{$totalColumn}{$totalRow}:{$lastColumn}{$totalRow}")->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FF000000'],
+                ],
+            ],
+        ]);
 
         $sheet
             ->getPageSetup()

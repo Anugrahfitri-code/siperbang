@@ -21,6 +21,7 @@ import { KetuaTimDashboard } from "./features/dashboard/components/KetuaTimDashb
 import { BonMonitoringList, type BonHeaderRow } from "./features/requests/components/BonMonitoringList";
 import type { BonDraft } from "./features/requests/components/BonDigitalForm";
 import { AlertDialog } from "./shared/components/feedback/AlertDialog";
+import { ConfirmDialog } from "./shared/components/feedback/ConfirmDialog";
 import { LayoutDashboard, FileSpreadsheet, ClipboardList, Package, Receipt, History, AlertCircle, Info, ChevronRight, CheckSquare, Loader2, Bell, User, FileText, Search } from "lucide-react";
 import { apiFetch } from "./shared/api";
 import { useSettings } from "./shared/context/SettingsContext";
@@ -163,7 +164,79 @@ useEffect(() => {
     cancelled = true;
   };
 }, []);
-  
+
+  // ── URL ROUTING SYNC ─────────────────────────
+  const [initialRouteProcessed, setInitialRouteProcessed] = useState(false);
+
+  // 1. Baca URL saat pertama kali login
+  useEffect(() => {
+    if (!isLoggedIn || initialRouteProcessed) return;
+
+    const path = window.location.pathname;
+    const parts = path.split('/').filter(Boolean);
+    if (parts.length >= 2) {
+      const rolePart = parts[0];
+      const tabPart = parts[1].replace(/-/g, '_');
+
+      if (rolePart === "admin" && currentRole === UserRole.SUPERADMIN) {
+        setSuperadminTab(tabPart as any);
+      } else if (rolePart === "petugas" && currentRole === UserRole.PETUGAS_PERSERDIAN) {
+        setOfficerTab(tabPart as any);
+      } else if (rolePart === "ketua-tim" && currentRole === UserRole.KETUA_TIM) {
+        setRequesterTab(tabPart as any);
+      }
+    }
+    setInitialRouteProcessed(true);
+  }, [isLoggedIn, currentRole, initialRouteProcessed]);
+
+  // 2. Update URL saat tab berubah
+  useEffect(() => {
+    if (!isLoggedIn || !initialRouteProcessed) return;
+
+    let basePath = "";
+    let activeTab = "";
+
+    if (currentRole === UserRole.SUPERADMIN) {
+      basePath = "/admin";
+      activeTab = superadminTab;
+    } else if (currentRole === UserRole.PETUGAS_PERSERDIAN) {
+      basePath = "/petugas";
+      activeTab = officerTab;
+    } else if (currentRole === UserRole.KETUA_TIM) {
+      basePath = "/ketua-tim";
+      activeTab = requesterTab;
+    }
+
+    const newUrl = `${basePath}/${activeTab.replace(/_/g, '-')}`;
+    
+    if (window.location.pathname !== newUrl) {
+      window.history.pushState({}, "", newUrl);
+    }
+  }, [isLoggedIn, initialRouteProcessed, currentRole, superadminTab, officerTab, requesterTab]);
+
+  // 3. Tangani tombol back/forward browser
+  useEffect(() => {
+    const handlePopState = () => {
+      if (!isLoggedIn) return;
+      const path = window.location.pathname;
+      const parts = path.split('/').filter(Boolean);
+      if (parts.length >= 2) {
+        const rolePart = parts[0];
+        const tabPart = parts[1].replace(/-/g, '_');
+
+        if (rolePart === "admin" && currentRole === UserRole.SUPERADMIN) {
+          setSuperadminTab(tabPart as any);
+        } else if (rolePart === "petugas" && currentRole === UserRole.PETUGAS_PERSERDIAN) {
+          setOfficerTab(tabPart as any);
+        } else if (rolePart === "ketua-tim" && currentRole === UserRole.KETUA_TIM) {
+          setRequesterTab(tabPart as any);
+        }
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isLoggedIn, currentRole]);
+
   // Fetch initial data from API
   const loadData = async () => {
     setRequestsLoading(true);
@@ -438,6 +511,7 @@ useEffect(() => {
   };
 
   const [alertMsg, setAlertMsg] = useState<{ title: string; message: string; variant?: "danger" | "warning" | "info" | "success" } | null>(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Log activity helper
   // Helper: tulis log ke frontend state DAN backend DB
@@ -880,7 +954,13 @@ useEffect(() => {
     );
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutConfirm(false);
+    
     try {
       const response = await apiFetch("/api/logout", {
         method: "POST",
@@ -1348,6 +1428,19 @@ useEffect(() => {
         message={alertMsg.message}
         variant={alertMsg.variant}
         onClose={() => setAlertMsg(null)}
+      />
+    )}
+
+    {showLogoutConfirm && (
+      <ConfirmDialog
+        open
+        title="Keluar dari Sistem"
+        message="Apakah Anda yakin ingin keluar dari akun ini? Anda harus masuk kembali untuk mengakses fitur-fitur sistem."
+        variant="danger"
+        confirmText="Ya, Keluar Akun"
+        cancelText="Batal"
+        onConfirm={confirmLogout}
+        onClose={() => setShowLogoutConfirm(false)}
       />
     )}
     </>

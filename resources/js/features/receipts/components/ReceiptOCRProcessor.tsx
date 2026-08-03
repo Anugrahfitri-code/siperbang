@@ -1020,6 +1020,44 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
     }
   };
 
+  const handleRetryOCR = async () => {
+    if (!activeDocumentId || isScanning) return;
+
+    const requestToken = beginDocumentRequest();
+    setIsScanning(true);
+    setOcrStatus("uploading");
+    setActiveDraft(null);
+    setOcrWarnings([]);
+
+    try {
+      const res = await apiFetch(`/api/receipt-documents/${activeDocumentId}/retry`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        let errMsg = "Retry failed";
+        try {
+          const errData = await res.json();
+          errMsg = errData.message || JSON.stringify(errData);
+        } catch {
+          errMsg = `HTTP ${res.status} ${res.statusText}`;
+        }
+        throw new Error(errMsg);
+      }
+
+      void pollDocumentStatus(activeDocumentId, Date.now(), requestToken);
+    } catch (e: any) {
+      console.error(e);
+      setIsScanning(false);
+      setOcrStatus("error");
+      setDialogAlert({
+        title: "Gagal Coba Lagi",
+        message: "Gagal memulai ulang proses OCR: " + (e.message || "Kesalahan tidak diketahui"),
+        variant: "danger",
+      });
+    }
+  };
+
   const handleFileUpload = async (file: File) => {
     if (isScanning) return;
 
@@ -2502,7 +2540,24 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
 
 
             {/* Form Actions */}
-            <div className="flex flex-col sm:flex-row sm:justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-2.5 pt-3 border-t border-slate-100">
+              {/* Left: Retry button */}
+              <div className="flex items-center gap-2">
+                {activeDocumentId && (
+                  <button
+                    type="button"
+                    onClick={handleRetryOCR}
+                    disabled={isSavingDraft || isVerifying || isScanning}
+                    className="px-3.5 py-2 rounded text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    title="Baca ulang dokumen ini dengan mesin OCR"
+                  >
+                    <RefreshCw size={13} className={isScanning ? "animate-spin" : ""} />
+                    {isScanning ? "Membaca Ulang..." : "Coba Lagi OCR"}
+                  </button>
+                )}
+              </div>
+              {/* Right: Save & Verify actions */}
+              <div className="flex flex-col sm:flex-row gap-2.5">
               <button
                 type="button"
                 onClick={closeWorkspace}
@@ -2530,6 +2585,7 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                 {isVerifying ? <RefreshCw size={13} className="animate-spin" /> : <CheckCircle size={13} />}
                 {isVerifying ? "Menyimpan Verifikasi..." : "Selesaikan & Verifikasi Dokumen"}
               </button>
+              </div>
             </div>
           </div>
         </div>

@@ -60,6 +60,8 @@ export interface BonHeaderItem {
   notes:        string | null;
   stockItemId?: number | null;
   stock_item_id?: number | null;
+  verifierNotes?: string | null;
+  verifier_notes?: string | null;
 }
 
 interface BonMonitoringListProps {
@@ -437,14 +439,21 @@ export const BonMonitoringList: React.FC<BonMonitoringListProps> = ({
                                 const fulfQty = it.qtyFulfilled ?? it.qty_fulfilled;
                                 return (
                                 <tr key={it.id} className="hover:bg-slate-50/50">
-                                  <td className="px-4 py-3 font-bold text-slate-800">{name}</td>
-                                  <td className="px-4 py-3 text-right font-mono font-semibold text-slate-600">
+                                  <td className="px-4 py-3 font-bold text-slate-800">
+                                    {name}
+                                    {it.status === "Ditolak" && (it.verifierNotes || it.verifier_notes) && (
+                                      <div className="mt-1 text-[10px] font-normal text-rose-600 bg-rose-50/50 p-1.5 rounded border border-rose-100">
+                                        <span className="font-semibold">Alasan Penolakan:</span> {it.verifierNotes || it.verifier_notes}
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 text-right font-mono font-semibold text-slate-600 align-top">
                                     {reqQty} {it.unit}
                                   </td>
-                                  <td className="px-4 py-3 text-right font-mono font-bold text-emerald-600 bg-emerald-50/30">
+                                  <td className="px-4 py-3 text-right font-mono font-bold text-emerald-600 bg-emerald-50/30 align-top">
                                     {fulfQty} {it.unit}
                                   </td>
-                                  <td className="px-4 py-3">
+                                  <td className="px-4 py-3 align-top">
                                     <span className={`font-bold ${itemStatusColor[it.status] ?? "text-slate-500"}`}>
                                       {it.status}
                                     </span>
