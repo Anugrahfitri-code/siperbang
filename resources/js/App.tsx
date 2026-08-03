@@ -1067,7 +1067,15 @@ useEffect(() => {
         {/* Stats Section */}
         {currentRole !== UserRole.KETUA_TIM && (
           <div className="space-y-6 animate-fade-in">
-            <DashboardStats requests={requests} receipts={receipts} currentUser={currentUser} />
+            <DashboardStats 
+              requests={requests} 
+              receipts={receipts} 
+              currentUser={currentUser} 
+              showWelcome={
+                (currentRole === UserRole.PETUGAS_PERSERDIAN && officerTab === "dashboard") ||
+                (currentRole === UserRole.SUPERADMIN && superadminTab === "users")
+              }
+            />
           </div>
         )}
 
