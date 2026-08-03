@@ -861,21 +861,27 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 github: "https://github.com/Isnadia52"
               },
             ].map((member, i) => (
-              <div key={i} className="flex flex-col items-center text-center group transition-transform duration-500 ease-out transform scale-100 group-hover:scale-90 group-hover:opacity-80 hover:scale-[1.35] hover:opacity-100 hover:z-20 cursor-pointer">
-                <div className="w-28 h-28 rounded-full overflow-hidden bg-slate-100 mb-5 relative shadow-sm border border-slate-200 transition-all duration-500 ease-out transform hover:-translate-y-3 hover:border-blue-300 hover:shadow-[0_32px_64px_rgba(0,85,165,0.2)]">
-                  <div className="absolute inset-0 rounded-full border border-transparent transition-all duration-500 ease-out hover:border-blue-300" />
-                  <img 
-                    src={member.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=0055A5&color=fff&size=128&font-size=0.33`} 
-                    alt={member.name}
-                    className="w-full h-full object-cover transition-transform duration-500 ease-out hover:scale-[1.4]"
-                  />
-                </div>
-                <h4 className="text-lg font-bold text-slate-900 leading-tight mb-1">{member.name}</h4>
-                <p className="text-sm text-slate-500 font-semibold mb-4">{member.role}</p>
-                <div className="flex items-center gap-3 text-slate-400">
-                  <a href={member.instagram || "#"} target="_blank" rel="noopener noreferrer" className="hover:text-[#E1306C] transition-colors"><Instagram size={20} /></a>
-                  <a href={member.linkedin || "#"} target="_blank" rel="noopener noreferrer" className="hover:text-[#0077b5] transition-colors"><Linkedin size={20} /></a>
-                  <a href={member.github || "#"} target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 transition-colors"><Github size={20} /></a>
+              <div key={i} className="relative flex flex-col group transition-all duration-500 ease-out cursor-pointer rounded-2xl overflow-hidden shadow-md border border-slate-200 aspect-[3/4] hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,85,165,0.3)] hover:z-20">
+                <img 
+                  src={member.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=0055A5&color=fff&size=128&font-size=0.33`} 
+                  alt={member.name}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                />
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                {/* Content Overlay */}
+                <div className="absolute inset-x-0 bottom-0 p-4 flex flex-col z-10 text-left transition-transform duration-300 ease-in-out translate-y-[46px] group-hover:translate-y-0">
+                  <h4 className="text-sm xl:text-base font-bold text-white leading-snug mb-1 drop-shadow-md">{member.name}</h4>
+                  
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
+                    <p className="text-xs text-blue-200 font-medium mb-3 drop-shadow-md">{member.role}</p>
+                    <div className="flex items-center gap-3 text-white/80">
+                      <a href={member.instagram || "#"} target="_blank" rel="noopener noreferrer" className="hover:text-pink-400 hover:scale-110 transition-all"><Instagram size={18} /></a>
+                      <a href={member.linkedin || "#"} target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 hover:scale-110 transition-all"><Linkedin size={18} /></a>
+                      <a href={member.github || "#"} target="_blank" rel="noopener noreferrer" className="hover:text-white hover:scale-110 transition-all"><Github size={18} /></a>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
