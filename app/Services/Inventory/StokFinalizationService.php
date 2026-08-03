@@ -81,11 +81,11 @@ class StokFinalizationService
 
                     $results['updated']++;
                     $results['details'][] = [
-                        'action'    => 'update',
-                        'name'      => $barang->name,
-                        'code'      => $code,
-                        'unit'      => $barang->unit,
-                        'qty_before'=> $qtyBefore,
+                        'action' => 'update',
+                        'name' => $barang->name,
+                        'code' => $code,
+                        'unit' => $barang->unit,
+                        'qty_before' => $qtyBefore,
                         'qty_added' => $row->qty,
                         'qty_after' => $qtyAfter,
                     ];
@@ -119,10 +119,10 @@ class StokFinalizationService
                     $results['inserted']++;
                     $results['details'][] = [
                         'action' => 'insert',
-                        'name'   => $newBarang->name,
-                        'code'   => $code,
-                        'unit'   => $newBarang->unit,
-                        'qty'    => $row->qty,
+                        'name' => $newBarang->name,
+                        'code' => $code,
+                        'unit' => $newBarang->unit,
+                        'qty' => $row->qty,
                     ];
                 }
             }
@@ -140,39 +140,40 @@ class StokFinalizationService
                 $label = $d['action'] === 'insert'
                     ? "[BARU] {$d['name']} (Kode: {$d['code']}) → Stok: {$d['qty']} {$d['unit']}"
                     : "[UPDATE] {$d['name']} (Kode: {$d['code']}) → Stok: {$d['qty_before']} + {$d['qty_added']} = {$d['qty_after']} {$d['unit']}";
+
                 return $label;
             })->implode("\n");
 
             $summary = "Finalisasi Batch #{$batch->id} oleh {$actorName}. "
-                . "Barang baru: {$results['inserted']}, Stok diperbarui: {$results['updated']}.\n"
-                . "Detail:\n{$itemDetails}";
+                ."Barang baru: {$results['inserted']}, Stok diperbarui: {$results['updated']}.\n"
+                ."Detail:\n{$itemDetails}";
 
             $ipAddress = request()->ip();
             $userAgent = request()->userAgent();
 
             // Save Audit Log (admin-level)
             AuditLog::create([
-                'user_id'     => $userId,
-                'action'      => 'FINALISASI_STOK',
+                'user_id' => $userId,
+                'action' => 'FINALISASI_STOK',
                 'description' => $summary,
-                'ip_address'  => $ipAddress,
+                'ip_address' => $ipAddress,
             ]);
 
             // Save History Log (visible in UI timeline) with full metadata
             HistoryLog::create([
-                'actor'      => $actorName,
-                'user_id'    => $userId,
-                'action'     => 'Finalisasi Stok Excel',
-                'details'    => $summary,
+                'actor' => $actorName,
+                'user_id' => $userId,
+                'action' => 'Finalisasi Stok Excel',
+                'details' => $summary,
                 'ip_address' => $ipAddress,
-                'metadata'   => [
-                    'batch_id'     => $batch->id,
-                    'inserted'     => $results['inserted'],
-                    'updated'      => $results['updated'],
-                    'ip_address'   => $ipAddress,
-                    'user_agent'   => $userAgent,
-                    'items'        => $results['details'],
-                    'waktu_aksi'   => now()->toIso8601String(),
+                'metadata' => [
+                    'batch_id' => $batch->id,
+                    'inserted' => $results['inserted'],
+                    'updated' => $results['updated'],
+                    'ip_address' => $ipAddress,
+                    'user_agent' => $userAgent,
+                    'items' => $results['details'],
+                    'waktu_aksi' => now()->toIso8601String(),
                 ],
             ]);
         });

@@ -75,11 +75,11 @@ class RequestController extends Controller
             // Generate BON Number (Sequential per day)
             $datePrefix = now()->format('Y/m/d');
             $prefix = 'BON/'.$datePrefix.'/';
-            
+
             $lastBon = BonHeader::where('bon_no', 'like', $prefix.'%')
                 ->orderBy('bon_no', 'desc')
                 ->first();
-                
+
             $nextNum = 1;
             if ($lastBon) {
                 $lastNumStr = substr($lastBon->bon_no, strrpos($lastBon->bon_no, '/') + 1);
@@ -91,7 +91,7 @@ class RequestController extends Controller
             $bonNo = null;
             $attempts = 0;
             do {
-                $tempNo = $prefix . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+                $tempNo = $prefix.str_pad($nextNum, 3, '0', STR_PAD_LEFT);
                 if (! BonHeader::where('bon_no', $tempNo)->exists()) {
                     $bonNo = $tempNo;
                 } else {
