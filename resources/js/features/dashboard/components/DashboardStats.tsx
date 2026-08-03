@@ -14,12 +14,14 @@ interface DashboardStatsProps {
   requests: ItemRequest[];
   receipts: ReceiptData[];
   currentUser?: string;
+  showWelcome?: boolean;
 }
 
 export const DashboardStats: React.FC<DashboardStatsProps> = ({
   requests,
   receipts,
   currentUser,
+  showWelcome = true,
 }) => {
   const [excelStats, setExcelStats] = useState({
     total_belanja: 0,
@@ -67,25 +69,27 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Welcome Banner */}
-      <div className="relative bg-gradient-to-r from-[#f8faff] to-[#f0f4ff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="absolute -top-24 -left-24 w-64 h-64 bg-blue-100/40 rounded-full blur-3xl pointer-events-none"></div>
-        
-        <div className="relative z-10 flex-1 flex items-center gap-4">
-          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-indigo-100 text-indigo-600">
-            <LayoutDashboard size={28} strokeWidth={2.5} />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="bg-indigo-100/50 text-indigo-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                Dashboard {roleStr}
-              </span>
+      {showWelcome && (
+        <div className="relative bg-gradient-to-r from-[#f8faff] to-[#f0f4ff] rounded-2xl border border-indigo-50/50 p-6 shadow-sm overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="absolute -top-24 -left-24 w-64 h-64 bg-blue-100/40 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <div className="relative z-10 flex-1 flex items-center gap-4">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-indigo-100 text-indigo-600">
+              <LayoutDashboard size={28} strokeWidth={2.5} />
             </div>
-            <h1 className="text-base font-extrabold text-slate-900 tracking-wide">
-              Selamat datang, {name}
-            </h1>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="bg-indigo-100/50 text-indigo-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                  Dashboard {roleStr}
+                </span>
+              </div>
+              <h1 className="text-base font-extrabold text-slate-900 tracking-wide">
+                Selamat datang, {name}
+              </h1>
+            </div>
           </div>
         </div>
-      </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
       {/* Total Belanja Kuitansi */}
