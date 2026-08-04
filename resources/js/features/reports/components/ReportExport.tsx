@@ -13,12 +13,25 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
   const { settings } = useSettings();
   const [filterMonth, setFilterMonth] = useState("All");
   const [alertMsg, setAlertMsg] = useState<{ title: string; message: string } | null>(null);
-  const [filterYear, setFilterYear] = useState("2026");
+  const [filterYear, setFilterYear] = useState(() => new Date().getFullYear().toString());
   const [searchQuery, setSearchQuery] = useState("");
   const [isAnnualRecap, setIsAnnualRecap] = useState(false);
   const [exportMode, setExportMode] = useState<"rekap_ta" | "per_kuitansi">("rekap_ta");
   const [isExporting, setIsExporting] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
+
+  const availableYears = React.useMemo(() => {
+    const years = receipts
+      .filter((r) => r.isVerified || (r as any).is_verified)
+      .map((r) => (r.date || "").split("-")[0])
+      .filter((year) => year && year.length === 4);
+    
+    const uniqueYears = Array.from(new Set(years)).sort((a, b) => Number(b) - Number(a));
+    if (uniqueYears.length === 0) {
+      uniqueYears.push(new Date().getFullYear().toString());
+    }
+    return uniqueYears;
+  }, [receipts]);
 
   // 1. DEKLARASIKAN HELPER DI PALING ATAS AGAR SIAP DIPAKAI
   const formatDate = (dateStr: string | null | undefined) => {
@@ -505,8 +518,10 @@ export const ReportExport: React.FC<ReportExportProps> = ({ receipts }) => {
                 onChange={(e) => setFilterYear(e.target.value)}
                 className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
-                <option value="2026">2026</option>
                 <option value="All">Semua Tahun</option>
+                {availableYears.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
               </select>
             </div>
 

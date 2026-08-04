@@ -54,37 +54,66 @@
                     </button>
 
                     {{-- SiperbangLogo --}}
-                    <a href="/" class="flex items-center gap-2">
-                        <div class="relative w-12 h-12 flex-shrink-0">
+                    <a href="/" class="flex items-center">
+                        <div class="relative w-10 h-10 flex-shrink-0">
                             <img
                                 src="{{ $siteSettings['app_logo_url'] ?? asset('images/brand/siperbang-logo.png') }}"
                                 alt="Logo Aplikasi"
                                 class="w-full h-full object-contain select-none pointer-events-none"
                             >
                         </div>
-                        <div class="flex-col select-none hidden sm:flex">
-                            <div class="text-2xl font-bold tracking-tight leading-none text-[#0055A5] font-bold">
-                                {{ $siteSettings['app_name'] ?? 'SIPERBANG' }}
+                        <div class="flex-col select-none justify-center ml-2 hidden sm:flex">
+                            <div class="text-sm font-extrabold tracking-wider leading-none text-[#4A4A4A] flex items-center">
+                                @php
+                                    $appName = $siteSettings['app_name'] ?? 'SIPERBANG';
+                                    $appColors = [];
+                                    if (!empty($siteSettings['app_name_colors'])) {
+                                        $decoded = json_decode($siteSettings['app_name_colors'], true);
+                                        if (is_array($decoded)) {
+                                            $appColors = $decoded;
+                                        }
+                                    }
+                                @endphp
+                                @if(empty($appColors) && $appName === 'SIPERBANG')
+                                    S<span class="text-[#a0258b]">I</span>
+                                    <span class="text-[#1a50a1]">P</span>
+                                    <span class="text-[#00b5e9]">E</span>
+                                    <span class="text-[#2b3d88]">R</span>
+                                    <span class="text-[#f7941d]">B</span>
+                                    <span class="text-[#f26522]">A</span>
+                                    <span class="text-[#ef4136]">N</span>
+                                    <span class="text-[#d7195d]">G</span>
+                                @elseif(!empty($appColors))
+                                    @foreach(mb_str_split($appName) as $i => $char)
+                                        @if(isset($appColors[$i]) && !empty($appColors[$i]))
+                                            <span style="color: {{ $appColors[$i] }}">{{ $char }}</span>
+                                        @else
+                                            <span>{{ $char }}</span>
+                                        @endif
+                                    @endforeach
+                                @else
+                                    {{ $appName }}
+                                @endif
                             </div>
-                            <span class="text-xs font-medium tracking-wide mt-1 leading-none uppercase text-[#7A7A7A]">
+                            <div class="text-[10px] text-left font-semibold tracking-tight mt-0.5 leading-tight text-[#7A7A7A]">
                                 {{ $siteSettings['app_subtitle'] ?? 'Sistem Informasi Persediaan Barang' }}
-                            </span>
+                            </div>
                         </div>
                     </a>
 
                     <div class="hidden md:block h-8 w-px bg-slate-200"></div>
 
                     {{-- KomdigiLogo --}}
-                    <div class="items-center gap-4 hidden md:flex">
+                    <div class="items-center hidden md:flex">
                         <div class="relative w-9 h-9 flex-shrink-0">
                             <img src="{{ $siteSettings['instansi_logo_url'] ?? asset('images/brand/komdigi-logo.png') }}" alt="Logo Instansi" class="w-full h-full object-contain select-none pointer-events-none">
                         </div>
-                        <div class="flex-col select-none hidden md:flex text-left">
+                        <div class="flex-col select-none hidden md:flex text-left ml-2">
                             <span class="text-sm font-extrabold text-[#4A4A4A] tracking-wider leading-none">
                                 {{ $siteSettings['instansi_name'] ?? 'KOMDIGI' }}
                             </span>
                             <span class="text-[10px] text-[#7A7A7A] font-semibold tracking-tight leading-tight mt-0.5">
-                                {!! nl2br(e($siteSettings['instansi_sub'] ?? 'Kementerian Komunikasi dan Digital')) !!}
+                                {!! nl2br(e($siteSettings['instansi_sub'] ?? 'Kementerian Komunikasi dan Digital Republik Indonesia')) !!}
                             </span>
                         </div>
                     </div>
