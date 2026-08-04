@@ -109,6 +109,16 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
       });
 
       const stockItem = stockList.find((s) => s.id === selectedStockItem);
+      let remainingStock = stockItem ? stockItem.qty : 0;
+      
+      if (stockItem) {
+        if (!request.stockAllocated) {
+          remainingStock -= qtyDistributed;
+        } else if (qtyDistributed > request.qtyFulfilled) {
+          remainingStock -= (qtyDistributed - request.qtyFulfilled);
+        }
+      }
+
       setSuccessInfo({
         title: "Distribusi Berhasil",
         lines: [
@@ -116,7 +126,7 @@ export const DistributionProcurement: React.FC<DistributionProcurementProps> = (
           `Jumlah didistribusikan: ${qtyDistributed} ${request.unit}`,
           `Kepada: ${request.section}`,
           `Oleh: ${currentUser}`,
-          stockItem ? `Stok tersisa: ${Math.max(0, stockItem.qty - qtyDistributed)} ${stockItem.unit}` : "",
+          stockItem ? `Stok tersisa: ${Math.max(0, remainingStock)} ${stockItem.unit}` : "",
         ].filter(Boolean),
       });
     } catch (err: any) {
