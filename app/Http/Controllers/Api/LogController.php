@@ -13,7 +13,8 @@ class LogController extends Controller
     {
         $user = $request->user();
 
-        $query = HistoryLog::where('action', 'not like', '%Login%');
+        $query = HistoryLog::where('action', 'not like', '%Login%')
+                           ->where('action', 'not like', 'BRANDING_%');
 
         if ($user && ! in_array(strtolower($user->role), ['admin', 'superadmin', 'petugas persediaan'])) {
             $query->where(function ($q) use ($user) {
