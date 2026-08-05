@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { UserRole, UserAccount } from "../../../shared/types";
-import { Users, ShieldCheck, KeyRound, Plus, MoreVertical, Search, Edit2, Trash2 } from "lucide-react";
+import { Users, ShieldCheck, KeyRound, Plus, MoreVertical, Search, Edit2, Trash2, Eye, EyeOff } from "lucide-react";
 import { ConfirmDialog } from "../../../shared/components/feedback/ConfirmDialog";
 
 interface UserManagementProps {
@@ -15,6 +15,7 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<UserAccount | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<Omit<UserAccount, "id">>({
@@ -40,6 +41,7 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
       onAddUser(formData);
     }
     setShowAddForm(false);
+    setShowPassword(false);
     setFormData({
       name: "",
       username: "",
@@ -105,6 +107,7 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
           onClick={() => {
             setEditingId(null);
             setFormData({ name: "", username: "", password: "", role: UserRole.PETUGAS_PERSERDIAN, status: "Aktif", section: "" });
+            setShowPassword(false);
             setShowAddForm(true);
           }}
           className="relative z-10 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2"
@@ -146,15 +149,24 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
             {!editingId && (
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">Password</label>
-                <input
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  value={formData.password || ""}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all shadow-sm"
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    autoComplete="new-password"
+                    value={formData.password || ""}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all shadow-sm"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
             )}
 
