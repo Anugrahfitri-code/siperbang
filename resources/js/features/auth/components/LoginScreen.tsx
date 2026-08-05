@@ -199,7 +199,7 @@ function LoginModal({
       if (res.ok) {
         onLogin(data.user as AuthenticatedUser);
       } else {
-        setError(data.message || "Login gagal. Periksa kembali username dan password Anda.");
+        setError(data.message || "Password atau username salah, mohon coba lagi.");
       }
     } catch {
       setError("Terjadi kesalahan jaringan.");
