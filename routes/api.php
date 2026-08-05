@@ -55,7 +55,7 @@ Route::post('/api/login', function (Request $request) {
         return response()->json(['message' => 'Login successful', 'user' => $user]);
     }
 
-    return response()->json(['message' => 'Kredensial tidak valid'], 401);
+    return response()->json(['message' => 'Password atau username salah, mohon coba lagi.'], 401);
 });
 
 Route::post('/api/logout', function (Request $request) {
