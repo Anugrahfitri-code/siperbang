@@ -22,7 +22,7 @@ class UserController extends Controller
             'role' => 'required|string',
             'section' => 'nullable|string',
             'status' => 'required|string',
-            'password' => 'nullable|string|min:6',
+            'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->symbols()],
         ]);
 
         $password = $request->input('password');
@@ -40,7 +40,14 @@ class UserController extends Controller
             'role' => 'sometimes|required|string',
             'section' => 'nullable|string',
             'status' => 'sometimes|required|string',
+            'password' => ['nullable', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->symbols()],
         ]);
+
+        if (!empty($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
+        }
 
         $user->update($validated);
 

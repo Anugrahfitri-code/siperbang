@@ -756,7 +756,7 @@ export const SiteSettings: React.FC<SiteSettingsProps> = ({ onSettingsUpdated })
               <FieldError errors={validationErrors} name="app_name" />
             </div>
             <div><label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-600">Subtitle aplikasi</label><input value={form.app_subtitle} onChange={(e) => updateField("app_subtitle", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" /><FieldError errors={validationErrors} name="app_subtitle" /></div>
-            <LogoPicker id="appLogoInput" label={`Logo utama ${form.app_name || "aplikasi"}`} preview={appLogoPreview} file={appLogoFile} onFile={setAppLogoFile} onInvalid={(message) => setClientFileError("app_logo", message)} inputRef={appLogoInputRef} errors={validationErrors} errorName="app_logo" />
+            <LogoPicker id="appLogoInput" label={`Logo utama ${form.app_name || "aplikasi"}`} preview={appLogoPreview} file={appLogoFile} onFile={(f) => { setAppLogoFile(f); if (!faviconFile) setFaviconFile(f); }} onInvalid={(message) => setClientFileError("app_logo", message)} inputRef={appLogoInputRef} errors={validationErrors} errorName="app_logo" />
             <LogoPicker id="faviconInput" label="Favicon browser" preview={faviconPreview} file={faviconFile} onFile={setFaviconFile} onInvalid={(message) => setClientFileError("favicon", message)} inputRef={faviconInputRef} favicon errors={validationErrors} errorName="favicon" />
           </section>
 
