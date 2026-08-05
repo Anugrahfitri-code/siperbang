@@ -146,13 +146,17 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
               />
             </div>
 
-            {!editingId && (
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Password</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Password {editingId && <span className="text-slate-400 font-medium font-normal ml-1">(Kosongkan jika tidak diubah)</span>}
+                </label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    required
+                    required={!editingId}
+                    minLength={formData.password ? 8 : undefined}
+                    pattern={formData.password ? "^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$" : undefined}
+                    title="Password minimal 8 karakter, harus mengandung huruf besar, huruf kecil, dan simbol khusus."
                     autoComplete="new-password"
                     value={formData.password || ""}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -168,7 +172,6 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
                   </button>
                 </div>
               </div>
-            )}
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">Peran Akses</label>
