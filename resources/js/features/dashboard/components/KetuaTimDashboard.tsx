@@ -163,7 +163,7 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
         {/* Menunggu Verifikasi */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col justify-between transition-all hover:border-amber-300 hover:shadow-sm">
           <span className="text-2xs text-slate-400 font-bold tracking-wider uppercase block">
-            Menunggu Verif
+            Menunggu Verifikasi
           </span>
           <div className="flex items-baseline gap-1 mt-3">
             <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
