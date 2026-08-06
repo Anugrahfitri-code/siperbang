@@ -36,7 +36,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 Selamat Datang di <br /> Portal SIPERBANG.
               </h2>
               <p className="text-sm text-indigo-100 leading-relaxed font-medium">
-                Pusat pengelolaan persediaan barang secara digital, dilengkapi fitur verifikasi nota otomatis menggunakan teknologi OCR AI, dan pemantauan stok real-time.
+                Pusat pengelolaan persediaan barang secara digital, dilengkapi fitur verifikasi nota otomatis menggunakan teknologi OCR, dan pemantauan stok real-time.
               </p>
             </div>
           </div>

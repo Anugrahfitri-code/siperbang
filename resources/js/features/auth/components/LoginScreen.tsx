@@ -386,7 +386,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   );
   const descriptionHtml = sanitizeHtml(
     settings.login_description ||
-      `${appName} membantu instansi pemerintah dalam mengelola persediaan barang secara digital, dilengkapi verifikasi nota otomatis menggunakan OCR AI dan pemantauan stok real-time.`
+      `${appName} membantu instansi pemerintah dalam mengelola persediaan barang secara digital, dilengkapi verifikasi nota otomatis menggunakan OCR dan pemantauan stok real-time.`
   );
 
   /* Scroll-spy: update active nav when scrolling */
@@ -598,7 +598,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   <SiperbangLogo iconOnly />
                 </div>
                 <p className="text-[13px] text-slate-600 leading-relaxed font-medium pt-0.5">
-                  <span className="font-bold text-slate-800"><ColoredText text={appName} colorsJson={settings.app_name_colors} /></span> dirancang untuk membantu instansi pemerintah mengelola persediaan barang secara digital, akurat, dan real-time. Dilengkapi teknologi OCR AI untuk verifikasi otomatis, pemantauan stok, dan pelaporan yang lebih mudah.
+                  <span className="font-bold text-slate-800"><ColoredText text={appName} colorsJson={settings.app_name_colors} /></span> dirancang untuk membantu instansi pemerintah mengelola persediaan barang secara digital, akurat, dan real-time. Dilengkapi teknologi OCR untuk verifikasi otomatis, pemantauan stok, dan pelaporan yang lebih mudah.
                 </p>
               </div>
 
@@ -608,7 +608,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   {
                     icon: <Target size={22} strokeWidth={2.5} />,
                     title: "Akurasi\nLebih Tinggi",
-                    desc: "Verifikasi otomatis berbasis OCR AI mengurangi kesalahan manusia.",
+                    desc: "Verifikasi otomatis berbasis OCR mengurangi kesalahan manusia.",
                   },
                   {
                     icon: <Clock size={22} strokeWidth={2.5} />,
@@ -656,8 +656,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             {[
               {
                 icon: <ScanLine size={28} />,
-                title: "Verifikasi Nota OCR AI",
-                desc: "Ekstraksi data otomatis dari nota menggunakan OCR AI dengan akurasi tinggi.",
+                title: "Verifikasi Nota OCR",
+                desc: "Ekstraksi data otomatis dari nota menggunakan OCR dengan akurasi tinggi.",
                 color: "text-white",
                 bg: "bg-[#1d4ed8]", // Blue
                 shadow: "shadow-blue-500/40"
@@ -715,7 +715,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6 relative">
             {[
               { step: "01", icon: <FileText size={32} strokeWidth={1.5} />, title: "Upload Nota", desc: "Unggah nota atau dokumen pengadaan barang.", iconBg: "bg-blue-50/80", iconColor: "text-blue-600" },
-              { step: "02", icon: <ScanLine size={32} strokeWidth={1.5} />, title: "OCR AI", desc: "Sistem membaca dan mengekstrak data dari nota secara otomatis.", iconBg: "bg-emerald-50/80", iconColor: "text-emerald-600" },
+              { step: "02", icon: <ScanLine size={32} strokeWidth={1.5} />, title: "OCR", desc: "Sistem membaca dan mengekstrak data dari nota secara otomatis.", iconBg: "bg-emerald-50/80", iconColor: "text-emerald-600" },
               { step: "03", icon: <CheckCircle2 size={32} strokeWidth={1.5} />, title: "Verifikasi Data", desc: "Data diverifikasi sebelum disimpan ke sistem.", iconBg: "bg-amber-50/80", iconColor: "text-amber-500" },
               { step: "04", icon: <Package size={32} strokeWidth={1.5} />, title: "Barang Masuk", desc: "Data tersimpan dan stok barang otomatis bertambah.", iconBg: "bg-blue-50/80", iconColor: "text-blue-600" },
               { step: "05", icon: <Monitor size={32} strokeWidth={1.5} />, title: "Monitoring & Laporan", desc: "Pantau stok dan buat laporan kapan saja.", iconBg: "bg-purple-50/80", iconColor: "text-purple-600" },
@@ -935,7 +935,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <div>
               <h4 className="text-white font-bold text-lg mb-6">Fitur</h4>
               <ul className="space-y-4">
-                {["Verifikasi Nota OCR AI", "Manajemen Barang", "Monitoring Stok", "Laporan & Analitik", "Dashboard"].map(l => (
+                {["Verifikasi Nota OCR", "Manajemen Barang", "Monitoring Stok", "Laporan & Analitik", "Dashboard"].map(l => (
                   <li key={l}>
                     <a href="#" className="text-slate-400 hover:text-white transition-colors text-[15px] cursor-default pointer-events-none">
                       {l}

@@ -9,7 +9,7 @@ return [
         'instansi_name' => 'KOMDIGI',
         'instansi_sub' => 'Kementerian Komunikasi dan Digital Republik Indonesia',
         'login_heading' => 'Selamat Datang di Portal SIPERBANG.',
-        'login_description' => 'Pusat pengelolaan persediaan barang secara digital, dilengkapi fitur verifikasi nota otomatis menggunakan teknologi OCR AI, dan pemantauan stok real-time.',
+        'login_description' => 'Pusat pengelolaan persediaan barang secara digital, dilengkapi fitur verifikasi nota otomatis menggunakan teknologi OCR, dan pemantauan stok real-time.',
         'footer_copyright' => '© {year} {instansi_name}. Seluruh hak cipta dilindungi.',
         'app_logo_path' => '/images/brand/siperbang-symbol.png',
         'instansi_logo_path' => '/images/brand/komdigi-logo.png',
