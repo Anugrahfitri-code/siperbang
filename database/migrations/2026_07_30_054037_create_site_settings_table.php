@@ -23,7 +23,7 @@ return new class extends Migration
             ['key' => 'instansi_name', 'value' => 'KOMDIGI'],
             ['key' => 'instansi_sub', 'value' => 'Kementerian Komunikasi dan Digital Republik Indonesia'],
             ['key' => 'login_heading', 'value' => 'Selamat Datang di Portal SIPERBANG.'],
-            ['key' => 'login_description', 'value' => 'Pusat pengelolaan persediaan barang secara digital, dilengkapi fitur verifikasi nota otomatis menggunakan teknologi OCR AI, dan pemantauan stok real-time.'],
+            ['key' => 'login_description', 'value' => 'Pusat pengelolaan persediaan barang secara digital, dilengkapi fitur verifikasi nota otomatis menggunakan teknologi OCR, dan pemantauan stok real-time.'],
             ['key' => 'footer_copyright', 'value' => '© {year} {instansi_name}. Seluruh hak cipta dilindungi.'],
             ['key' => 'app_logo_path', 'value' => '/images/brand/siperbang-symbol.png'],
             ['key' => 'instansi_logo_path', 'value' => '/images/brand/komdigi-logo.png'],
