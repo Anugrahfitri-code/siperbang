@@ -58,6 +58,7 @@ export interface ItemRequest {
   distribution?: Distribution;
   procurements?: Procurement[];
   verifierNotes?: string;
+  userId?: string;
 }
 
 export interface StockItem {

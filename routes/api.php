@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\BonRecapController;
 use App\Http\Controllers\Api\InventoryCodeController;
 use App\Http\Controllers\Api\LogController;
 use App\Http\Controllers\Api\ReceiptController;
@@ -100,6 +101,15 @@ Route::middleware('auth')->prefix('api')->group(function () {
         Route::get('/stocks', [StockController::class, 'index']);
         Route::post('/stocks/bulk', [StockController::class, 'bulkStore']);
 
+        // Preview rekap pengadaan
+        Route::get(
+            '/requests/recap/procurement',
+            [
+                BonRecapController::class,
+                'procurementPreview',
+            ]
+        );
+
         // Request Actions
         Route::put('/requests/{itemRequest}/status', [RequestController::class, 'updateStatus']);
         Route::post('/requests/{itemRequest}/distribute', [RequestController::class, 'distribute']);
@@ -194,6 +204,15 @@ Route::middleware('auth')->prefix('api')->group(function () {
         Route::post('/settings/versions/{brandingVersion}/publish', [SiteSettingController::class, 'publish']);
         Route::post('/settings/versions/{brandingVersion}/rollback', [SiteSettingController::class, 'rollback']);
         Route::delete('/settings/versions/{brandingVersion}', [SiteSettingController::class, 'destroy']);
+
+        // BON recap PDF - Superadmin only
+        Route::get(
+            '/requests/recap/pdf',
+            [
+                BonRecapController::class,
+                'exportPdf',
+            ]
+        );
 
         // Users
         Route::get('/users', [UserController::class, 'index']);

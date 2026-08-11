@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -50,6 +51,79 @@ class ItemRequest extends Model
 
     // ── Helpers ──────────────────────────────────────────────────
 
+    /**
+     * Batasi data pada pengajuan yang benar-benar berasal dari Ketua Tim.
+     */
+    public function scopeForTeamLeaders(Builder $query): Builder
+    {
+        return $query->whereHas('user', function (Builder $userQuery) {
+            $userQuery->whereIn('role', ['Ketua Tim', 'Ketua Tim Kerja', 'Superadmin']);
+        });
+    }
+
+    /**
+     * Item yang sudah disetujui/diproses oleh petugas untuk rekap BON.
+     *
+     * Item Ditolak tetap masuk hanya jika sebelumnya sudah ada bagian
+     * yang benar-benar terpenuhi. Contoh: sebagian barang sudah diberikan,
+     * kemudian sisa yang belum tersedia dibatalkan.
+     */
+    public function scopeApprovedForBonRecap(Builder $query): Builder
+    {
+        return $query->where(function (Builder $approvedQuery) {
+            $approvedQuery
+                ->whereIn('status', [
+                    'Terpenuhi',
+                    'Terpenuhi Sebagian',
+                    'Siap Didistribusikan',
+                    'Perlu Pengadaan',
+                    'Dalam Pengadaan',
+                    'Selesai',
+                ])
+                ->orWhere(function (Builder $partiallyApprovedQuery) {
+                    $partiallyApprovedQuery
+                        ->where('status', 'Ditolak')
+                        ->where('qty_fulfilled', '>', 0);
+                });
+        });
+    }
+
+    /**
+     * Item yang masih mempunyai sisa kebutuhan untuk dibeli petugas.
+     */
+    public function scopeNeedsProcurement(Builder $query): Builder
+    {
+        return $query
+            ->where('qty_to_procure', '>', 0)
+            ->whereNotIn('status', [
+                'Draft',
+                'Diajukan',
+                'Ditolak',
+                'Selesai',
+            ]);
+    }
+
+    /**
+     * Jumlah yang dicetak pada rekap BON yang disetujui.
+     *
+     * Jika sebagian sudah dipenuhi lalu sisanya dibatalkan,
+     * yang dicetak hanya jumlah yang benar-benar disetujui/terpenuhi.
+     */
+    public function getApprovedRecapQtyAttribute(): int
+    {
+        if ($this->status === 'Ditolak') {
+            return max(0, (int) $this->qty_fulfilled);
+        }
+
+        if (
+            $this->status === 'Terpenuhi Sebagian'
+            && (int) $this->qty_to_procure === 0
+        ) {
+            return max(0, (int) $this->qty_fulfilled);
+        }
+
+        return max(0, (int) $this->qty_requested);
+    }
     /** Qty still unfulfilled from stock, needing procurement */
     public function getQtyUnfulfilledAttribute(): int
     {

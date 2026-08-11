@@ -8,6 +8,10 @@ import { UserRole, UserAccount, ItemRequest, StockItem, ReceiptData, HistoryLog 
 import { Navbar } from "./shared/components/layout/Navbar";
 import { DashboardStats } from "./features/dashboard/components/DashboardStats";
 import { BonDigitalForm } from "./features/requests/components/BonDigitalForm";
+
+import {
+  BonRecapPanel,
+} from "./features/requests/components/BonRecapPanel";
 import { StockManagement } from "./features/inventory-upload/components/StockManagement";
 import { StockChecking } from "./features/inventory/components/StockChecking";
 import { ReceiptOCRProcessor } from "./features/receipts/components/ReceiptOCRProcessor";
@@ -1161,18 +1165,52 @@ useEffect(() => {
               )}
 
               {officerTab === "checking" && (
-                <StockChecking
-                  requests={requests}
-                  stockList={stock}
-                  bons={bons}
-                  onUpdateStatus={handleUpdateStatus}
-                  onDistribute={handleDistribute}
-                  onProcure={handleProcure}
-                  onCompleteProcurement={handleCompleteProcurement}
-                  onReject={handleReject}
-                  onCompletePartial={handleCompletePartial}
-                  currentUser={currentUser}
-                />
+
+                <div className="space-y-6">
+
+                  {/*
+                    Preview rekap barang yang
+                    masih perlu dibeli petugas.
+                  */}
+                  <BonRecapPanel requests={requests} />
+
+
+                  <StockChecking
+                    requests={requests}
+                    stockList={stock}
+                    bons={bons}
+
+                    onUpdateStatus={
+                      handleUpdateStatus
+                    }
+
+                    onDistribute={
+                      handleDistribute
+                    }
+
+                    onProcure={
+                      handleProcure
+                    }
+
+                    onCompleteProcurement={
+                      handleCompleteProcurement
+                    }
+
+                    onReject={
+                      handleReject
+                    }
+
+                    onCompletePartial={
+                      handleCompletePartial
+                    }
+
+                    currentUser={
+                      currentUser
+                    }
+                  />
+
+                </div>
+
               )}
 
               {officerTab === "stock" && (
@@ -1363,18 +1401,22 @@ useEffect(() => {
             )}
 
             {superadminTab === "checking" && (
-              <StockChecking
-                requests={requests}
-                stockList={stock}
-                bons={bons}
-                onUpdateStatus={handleUpdateStatus}
-                onDistribute={handleDistribute}
-                onProcure={handleProcure}
-                onCompleteProcurement={handleCompleteProcurement}
-                onReject={handleReject}
-                onCompletePartial={handleCompletePartial}
-                currentUser={currentUser}
-              />
+              <div className="space-y-6">
+                <BonRecapPanel requests={requests} />
+
+                <StockChecking
+                  requests={requests}
+                  stockList={stock}
+                  bons={bons}
+                  onUpdateStatus={handleUpdateStatus}
+                  onDistribute={handleDistribute}
+                  onProcure={handleProcure}
+                  onCompleteProcurement={handleCompleteProcurement}
+                  onReject={handleReject}
+                  onCompletePartial={handleCompletePartial}
+                  currentUser={currentUser}
+                />
+              </div>
             )}
 
             {superadminTab === "stock_manage" && (
@@ -1394,7 +1436,40 @@ useEffect(() => {
             {superadminTab === "report" && <ReportExport receipts={receipts} />}
 
             {superadminTab === "bon" && (
-              <BonDigitalForm onSubmit={handleAddRequest} currentUser={currentUser} />
+
+              <div className="space-y-6">
+
+                <BonDigitalForm
+                  onSubmit={
+                    handleAddRequest
+                  }
+
+                  currentUser={
+                    currentUser
+                  }
+                />
+
+
+                {/*
+                  Rekap ini menggunakan data users
+                  yang sudah dimuat App.tsx.
+
+                  Tidak request /api/users lagi.
+                */}
+                <BonRecapPanel
+                  teamLeaders={
+                    users.filter(
+                      (user) =>
+                        user.role
+                        === UserRole.KETUA_TIM
+                    )
+                  }
+                  requests={requests}
+                  hidePreview={true}
+                />
+
+              </div>
+
             )}
 
             {superadminTab === "monitoring" && (

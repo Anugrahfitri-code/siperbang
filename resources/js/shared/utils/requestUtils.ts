@@ -50,4 +50,5 @@ export const normalizeRequest = (r: any): ItemRequest => ({
   distribution:     r.distribution   ?? undefined,
   procurements:     r.procurements   ?? [],
   verifierNotes:    r.verifier_notes ?? undefined,
+  userId:           r.user_id ? String(r.user_id) : undefined,
 });
