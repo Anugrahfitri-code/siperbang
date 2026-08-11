@@ -69,8 +69,7 @@ class BonRecapController extends Controller
 
                     'requesters' => $group
                         ->map(
-                            fn (ItemRequest $item) =>
-                                $item->user?->name
+                            fn (ItemRequest $item) => $item->user?->name
                                 ?: $item->requester
                         )
                         ->filter()
@@ -79,8 +78,7 @@ class BonRecapController extends Controller
                 ];
             })
             ->sortBy(
-                fn (array $row) =>
-                    strtolower($row['item_name'])
+                fn (array $row) => strtolower($row['item_name'])
             )
             ->values();
 
@@ -148,12 +146,11 @@ class BonRecapController extends Controller
                 'status',
             ])
             ->filter(
-                fn (ItemRequest $item) =>
-                    $item->approved_recap_qty > 0
+                fn (ItemRequest $item) => $item->approved_recap_qty > 0
             )
             ->values();
 
-        $options = new Options();
+        $options = new Options;
 
         /*
          * DejaVu Sans sudah mendukung karakter yang lebih aman
@@ -207,16 +204,13 @@ class BonRecapController extends Controller
             $dompdf->output(),
             200,
             [
-                'Content-Type' =>
-                    'application/pdf',
+                'Content-Type' => 'application/pdf',
 
-                'Content-Disposition' =>
-                    'attachment; filename="'
+                'Content-Disposition' => 'attachment; filename="'
                     .$fileName
                     .'"',
 
-                'Cache-Control' =>
-                    'private, no-store, max-age=0',
+                'Cache-Control' => 'private, no-store, max-age=0',
             ]
         );
     }

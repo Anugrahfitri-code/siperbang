@@ -124,6 +124,7 @@ class ItemRequest extends Model
 
         return max(0, (int) $this->qty_requested);
     }
+
     /** Qty still unfulfilled from stock, needing procurement */
     public function getQtyUnfulfilledAttribute(): int
     {

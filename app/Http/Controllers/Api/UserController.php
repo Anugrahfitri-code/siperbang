@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -22,7 +23,7 @@ class UserController extends Controller
             'role' => 'required|string',
             'section' => 'nullable|string',
             'status' => 'required|string',
-            'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'string', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
         ]);
 
         $password = $request->input('password');
@@ -40,10 +41,10 @@ class UserController extends Controller
             'role' => 'sometimes|required|string',
             'section' => 'nullable|string',
             'status' => 'sometimes|required|string',
-            'password' => ['nullable', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'password' => ['nullable', 'string', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
         ]);
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         } else {
             unset($validated['password']);
