@@ -987,6 +987,14 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
           </div>
 
+          <div className="flex flex-wrap justify-center items-center gap-6 mb-12">
+            <img src="/images/footer-logos/bangga melayani bangsa.png" alt="Bangga Melayani Bangsa" className="h-10 w-auto object-contain" />
+            <img src="/images/footer-logos/berakhlak.png" alt="Berakhlak" className="h-10 w-auto object-contain" />
+            <img src="/images/footer-logos/berani jujur.png" alt="Berani Jujur" className="h-10 w-auto object-contain" />
+            <img src="/images/footer-logos/lapor.png" alt="Lapor" className="h-10 w-auto object-contain" />
+            <img src="/images/footer-logos/no korupsi.webp" alt="No Korupsi" className="h-10 w-auto object-contain" />
+          </div>
+
           <div className="pt-8 border-t border-white/10 text-center text-slate-500 text-[13px]">
             {renderBrandingTemplate(settings.footer_copyright, settings)}
           </div>

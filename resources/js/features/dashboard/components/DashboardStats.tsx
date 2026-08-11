@@ -169,7 +169,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
               {pendingCheck}
             </h3>
             <p className="text-[10px] text-slate-500 mt-1.5 uppercase whitespace-nowrap">
-              Cek Stok
+              Pengajuan
             </p>
           </div>
           <div className="w-px h-6 bg-slate-200 self-center" />
@@ -179,15 +179,6 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
             </h3>
             <p className="text-[10px] text-slate-500 mt-1.5 uppercase whitespace-nowrap">
               Pengadaan
-            </p>
-          </div>
-          <div className="w-px h-6 bg-slate-200 self-center" />
-          <div>
-            <h3 className="text-lg font-extrabold text-rose-500 tracking-tight leading-none">
-              {excelStats.pending_verify}
-            </h3>
-            <p className="text-[10px] text-slate-500 mt-1.5 uppercase whitespace-nowrap">
-              Verifikasi
             </p>
           </div>
         </div>

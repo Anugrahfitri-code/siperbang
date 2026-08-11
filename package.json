@@ -28,6 +28,7 @@
         "vite": "^8.0.0"
     },
     "dependencies": {
-        "exceljs": "^4.4.0"
+        "exceljs": "^4.4.0",
+        "react-select": "^5.10.2"
     }
 }

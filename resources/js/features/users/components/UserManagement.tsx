@@ -3,6 +3,19 @@ import { UserRole, UserAccount } from "../../../shared/types";
 import { Users, ShieldCheck, KeyRound, Plus, MoreVertical, Search, Edit2, Trash2, Eye, EyeOff } from "lucide-react";
 import { ConfirmDialog } from "../../../shared/components/feedback/ConfirmDialog";
 
+const getPasswordTitle = (pwd?: string) => {
+  if (!pwd) return "Password minimal 8 karakter, harus mengandung huruf besar, huruf kecil, angka, dan simbol khusus.";
+  const missing = [];
+  if (pwd.length < 8) missing.push("minimal 8 karakter");
+  if (!/[A-Z]/.test(pwd)) missing.push("huruf besar");
+  if (!/[a-z]/.test(pwd)) missing.push("huruf kecil");
+  if (!/[0-9]/.test(pwd)) missing.push("angka");
+  if (!/[^a-zA-Z0-9]/.test(pwd)) missing.push("simbol khusus");
+  
+  if (missing.length === 0) return "Format password sudah sesuai.";
+  return `Kekurangan password: ${missing.join(", ")}.`;
+};
+
 interface UserManagementProps {
   users: UserAccount[];
   onAddUser: (user: Omit<UserAccount, "id">) => void;
@@ -155,8 +168,8 @@ export function UserManagement({ users, onAddUser, onUpdateUser, onDeleteUser }:
                     type={showPassword ? "text" : "password"}
                     required={!editingId}
                     minLength={formData.password ? 8 : undefined}
-                    pattern={formData.password ? "^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$" : undefined}
-                    title="Password minimal 8 karakter, harus mengandung huruf besar, huruf kecil, dan simbol khusus."
+                    pattern={formData.password ? "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,}$" : undefined}
+                    title={getPasswordTitle(formData.password)}
                     autoComplete="new-password"
                     value={formData.password || ""}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}

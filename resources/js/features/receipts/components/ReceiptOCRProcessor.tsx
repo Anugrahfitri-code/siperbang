@@ -3,7 +3,7 @@ import { ReceiptData, ReceiptItem, ProcurementMethod, RequestStatus, ItemRequest
 import { apiFetch } from "../../../shared/api";
 import { FileDown, UploadCloud, FileText, CheckCircle, RefreshCw, Plus, Trash2, Edit3, Settings, Calculator, Percent, Sparkles, Receipt, AlertTriangle, ShieldCheck, ShieldAlert, Cpu, Save, FolderOpen, X, Download, TableProperties, Pencil } from "lucide-react";
 import { ConfirmDialog } from "../../../shared/components/feedback/ConfirmDialog";
-
+import Select from "react-select";
 function nameSimilarity(left: string, right: string): number {
   const leftNormalised = left.toLowerCase().replace(/\s+/g, ' ').trim();
   const rightNormalised = right.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -2417,42 +2417,58 @@ export const ReceiptOCRProcessor: React.FC<ReceiptOCRProcessorProps> = ({
                           })()}
                         </td>
                         <td className="px-3 py-1.5">
-                          <select
-                            value={it.inventoryCode}
-                            onChange={(e) =>
+                          <Select
+                            value={
+                              it.inventoryCode
+                                ? {
+                                    value: it.inventoryCode,
+                                    label: inventoryCodes.find((opt) => opt.code === it.inventoryCode)
+                                      ? `${inventoryCodes.find((opt) => opt.code === it.inventoryCode)?.formatted_code} - ${inventoryCodes.find((opt) => opt.code === it.inventoryCode)?.description}`
+                                      : it.inventoryCode,
+                                  }
+                                : null
+                            }
+                            onChange={(selectedOption: any) =>
                               handleInventoryCodeChange(
                                 it.id,
-                                e.target.value
+                                selectedOption ? selectedOption.value : ""
                               )
                             }
-                            title={
-                              it.inventoryCodeDescription
-                              ?? "Pilih kode persediaan resmi kategori 1.01.03"
-                            }
-                            className={`w-full bg-white border rounded px-2 py-1 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
-                              it.inventoryCode
-                                ? "border-slate-200"
-                                : "border-amber-300 bg-amber-50"
-                            }`}
-                          >
-                            <option value="">
-                              {inventoryCodesLoading
+                            options={inventoryCodes.map((option) => ({
+                              value: option.code,
+                              label: `${option.formatted_code} - ${option.description}`,
+                            }))}
+                            placeholder={
+                              inventoryCodesLoading
                                 ? "Memuat kode..."
-                                : "Pilih kode 1.01.03"}
-                            </option>
-                            {inventoryCodes.map(
-                              (option) => (
-                                <option
-                                  key={option.code}
-                                  value={option.code}
-                                >
-                                  {option.formatted_code}
-                                  {" - "}
-                                  {option.description}
-                                </option>
-                              )
-                            )}
-                          </select>
+                                : "Pilih kode 1.01.03"
+                            }
+                            isSearchable
+                            isClearable
+                            menuPortalTarget={document.body}
+                            styles={{
+                              menuPortal: base => ({ ...base, zIndex: 9999 }),
+                              control: (base, state) => ({
+                                ...base,
+                                minHeight: "30px",
+                                fontSize: "12px",
+                                borderColor: state.isFocused ? "#6366f1" : (it.inventoryCode ? "#e2e8f0" : "#fcd34d"),
+                                backgroundColor: it.inventoryCode ? "white" : "#fffbeb",
+                                boxShadow: state.isFocused ? "0 0 0 1px #6366f1" : "none",
+                                "&:hover": {
+                                  borderColor: state.isFocused ? "#6366f1" : "#cbd5e1",
+                                }
+                              }),
+                              option: (base) => ({
+                                ...base,
+                                fontSize: "12px",
+                              }),
+                              singleValue: (base) => ({
+                                ...base,
+                                color: "#1e293b",
+                              })
+                            }}
+                          />
                           {it.inventoryCodeDescription && (
                             <p className="mt-1 max-w-[310px] truncate text-2xs text-slate-500">
                               {it.inventoryCodeDescription}
