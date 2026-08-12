@@ -330,17 +330,6 @@ export const StepperReact: React.FC<StepperProps> = ({ batchId, onClose }) => {
                   <p className="text-xs text-indigo-700 mt-0.5">Tentukan aksi untuk setiap barang: Setuju, Perbaiki, atau Tolak.</p>
                 </div>
               </div>
-              <div className="flex gap-4">
-                <div className="text-center">
-                  <span className="block text-[10px] font-bold text-indigo-500 uppercase">Menunggu</span>
-                  <span className="block text-xl font-extrabold text-indigo-800">{stats.pending_count}</span>
-                </div>
-                <div className="w-px bg-indigo-200"></div>
-                <div className="text-center">
-                  <span className="block text-[10px] font-bold text-emerald-600 uppercase">Setuju</span>
-                  <span className="block text-xl font-extrabold text-emerald-700">{stats.approved_count}</span>
-                </div>
-              </div>
            </div>
 
            <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">

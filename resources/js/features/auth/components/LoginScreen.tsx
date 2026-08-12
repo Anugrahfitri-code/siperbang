@@ -915,6 +915,13 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 <a href="https://www.instagram.com/bblsdm.komdigi.makassar?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition-all"><Instagram size={18} /></a>
                 <a href="https://www.youtube.com/channel/UCwL_s6xZlIwdVrr4uFKjfLA/about" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all"><Youtube size={18} /></a>
               </div>
+              <div className="flex flex-wrap items-center gap-4 mt-10">
+                <img src="/images/footer-logos/bangga melayani bangsa.png" alt="Bangga Melayani Bangsa" className="h-9 w-auto object-contain" />
+                <img src="/images/footer-logos/berani jujur.png" alt="Berani Jujur" className="h-9 w-auto object-contain" />
+                <img src="/images/footer-logos/lapor.png" alt="Lapor" className="h-9 w-auto object-contain" />
+                <img src="/images/footer-logos/berakhlak.png" alt="Berakhlak" className="h-9 w-auto object-contain" />
+                <img src="/images/footer-logos/no korupsi.webp" alt="No Korupsi" className="h-9 w-auto object-contain" />
+              </div>
             </div>
 
             {/* Navigasi */}
@@ -987,13 +994,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
           </div>
 
-          <div className="flex flex-wrap justify-center items-center gap-6 mb-12">
-            <img src="/images/footer-logos/bangga melayani bangsa.png" alt="Bangga Melayani Bangsa" className="h-10 w-auto object-contain" />
-            <img src="/images/footer-logos/berakhlak.png" alt="Berakhlak" className="h-10 w-auto object-contain" />
-            <img src="/images/footer-logos/berani jujur.png" alt="Berani Jujur" className="h-10 w-auto object-contain" />
-            <img src="/images/footer-logos/lapor.png" alt="Lapor" className="h-10 w-auto object-contain" />
-            <img src="/images/footer-logos/no korupsi.webp" alt="No Korupsi" className="h-10 w-auto object-contain" />
-          </div>
+
 
           <div className="pt-8 border-t border-white/10 text-center text-slate-500 text-[13px]">
             {renderBrandingTemplate(settings.footer_copyright, settings)}
