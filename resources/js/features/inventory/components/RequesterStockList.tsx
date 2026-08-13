@@ -125,6 +125,7 @@ export function RequesterStockList() {
     cat: string,
     st: string,
     pg: number,
+    pp: number,
   ) => {
     setLoading(true);
     setError(null);
@@ -135,7 +136,7 @@ export function RequesterStockList() {
       if (cat) params.set("category", cat);
       if (st)  params.set("status",   st);
       params.set("page",     String(pg));
-      params.set("per_page", String(perPage));
+      params.set("per_page", String(pp));
 
       const res = await apiFetch(`/api/stocks/search?${params.toString()}`);
 
@@ -170,9 +171,9 @@ export function RequesterStockList() {
 
   // Initial load + re-fetch when filter/page changes
   useEffect(() => {
-    fetchData(query, category, statusFilter, page);
+    fetchData(query, category, statusFilter, page, perPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, statusFilter, page]);
+  }, [category, statusFilter, page, perPage]);
 
   // Debounced search — wait 400ms after user stops typing
   const handleQueryChange = (value: string) => {
@@ -180,7 +181,7 @@ export function RequesterStockList() {
     setPage(1);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      fetchData(value, category, statusFilter, 1);
+      fetchData(value, category, statusFilter, 1, perPage);
     }, 400);
   };
 
@@ -191,7 +192,7 @@ export function RequesterStockList() {
     setCategory("");
     setStatus("");
     setPage(1);
-    fetchData("", "", "", 1);
+    fetchData("", "", "", 1, perPage);
   };
 
   const isFiltered = query !== "" || category !== "" || statusFilter !== "";
@@ -351,7 +352,7 @@ export function RequesterStockList() {
               <p className="text-xs text-slate-500 mt-1">{error}</p>
             </div>
             <button
-              onClick={() => fetchData(query, category, statusFilter, page)}
+              onClick={() => fetchData(query, category, statusFilter, page, perPage)}
               className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-colors"
             >
               <RefreshCw size={13} />
@@ -462,7 +463,6 @@ export function RequesterStockList() {
                       onChange={(e) => {
                         setPerPage(Number(e.target.value));
                         setPage(1);
-                        fetchData(query, category, statusFilter, 1);
                       }}
                       className="py-2 pl-4 pr-8 text-xs border border-slate-200 rounded-lg bg-white text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     >

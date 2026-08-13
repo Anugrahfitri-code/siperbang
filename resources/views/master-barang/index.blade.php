@@ -86,7 +86,7 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-slate-100">
                     @forelse($barangs as $barang)
-                    <tr class="hover:bg-slate-50/50 transition-colors" data-id="{{ $barang->id }}" data-code="{{ $barang->code }}" data-name="{{ $barang->name }}" data-unit="{{ $barang->unit }}" data-category="{{ $barang->canonical_category }}">
+                    <tr class="hover:bg-slate-50/50 transition-colors" data-id="{{ $barang->id }}" data-code="{{ $barang->code }}" data-name="{{ $barang->name }}" data-unit="{{ $barang->unit }}" data-category="{{ $barang->canonical_category }}" data-qty="{{ $barang->qty }}">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-800">
                             {{ $barang->code }}
                         </td>
@@ -361,6 +361,16 @@
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                             </div>
                         </div>
+                        <p id="editErrorUnit" class="mt-1.5 text-xs font-medium text-rose-600 hidden"></p>
+                    </div>
+
+                    {{-- Stok --}}
+                    <div>
+                        <label for="editQty" class="block text-sm font-bold text-slate-700 mb-1.5">Stok Tersedia</label>
+                        <input type="number" name="qty" id="editQty" required min="0"
+                               class="block w-full px-3.5 py-2.5 text-sm font-medium text-slate-900 border border-slate-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm"
+                               placeholder="Masukkan jumlah stok">
+                        <p id="editErrorQty" class="mt-1.5 text-xs font-medium text-rose-600 hidden"></p>
                     </div>
 
                 </div>
@@ -437,14 +447,30 @@ function openEditModal(button) {
         code: tr.dataset.code,
         name: tr.dataset.name,
         unit: tr.dataset.unit,
-        category: tr.dataset.category
+        category: tr.dataset.category,
+        qty: tr.dataset.qty
     };
 
     document.getElementById('editId').value = data.id;
     document.getElementById('editKodePersediaan').value = data.code;
     document.getElementById('editName').value = data.name;
-    document.getElementById('editUnit').value = data.unit;
+    
+    var unitSelect = document.getElementById('editUnit');
+    var unitValue = (data.unit || '').toLowerCase();
+    var matched = false;
+    for (var i = 0; i < unitSelect.options.length; i++) {
+        if (unitSelect.options[i].value.toLowerCase() === unitValue) {
+            unitSelect.selectedIndex = i;
+            matched = true;
+            break;
+        }
+    }
+    if (!matched) {
+        unitSelect.value = '';
+    }
+    
     document.getElementById('editCategory').value = data.category;
+    document.getElementById('editQty').value = data.qty;
     document.getElementById('editForm').action = '/master-barang/' + data.id + '/update';
 
     var errEl = document.getElementById('editErrorName');
@@ -454,6 +480,18 @@ function openEditModal(button) {
     var codeErrEl = document.getElementById('editErrorCode');
     codeErrEl.classList.add('hidden');
     codeErrEl.textContent = '';
+    
+    var unitErrEl = document.getElementById('editErrorUnit');
+    if (unitErrEl) {
+        unitErrEl.classList.add('hidden');
+        unitErrEl.textContent = '';
+    }
+
+    var qtyErrEl = document.getElementById('editErrorQty');
+    if (qtyErrEl) {
+        qtyErrEl.classList.add('hidden');
+        qtyErrEl.textContent = '';
+    }
 
     var modal = document.getElementById('editModal');
     var panel = document.getElementById('editModalPanel');
@@ -492,6 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('editKodePersediaan').value = '{{ old('kode_persediaan', '') }}';
     document.getElementById('editName').value = '{{ old('name', '') }}';
     document.getElementById('editUnit').value = '{{ old('unit', '') }}';
+    document.getElementById('editQty').value = '{{ old('qty', '') }}';
     autoFillKategori(document.getElementById('editKodePersediaan'));
     document.getElementById('editForm').action = '/master-barang/' + editId + '/update';
 
@@ -507,6 +546,14 @@ document.addEventListener('DOMContentLoaded', function() {
     codeErrEl.classList.remove('hidden');
     @endif
 
+    @if($errors->has('qty'))
+    var qtyErrEl = document.getElementById('editErrorQty');
+    if (qtyErrEl) {
+        qtyErrEl.textContent = @json($errors->first('qty'));
+        qtyErrEl.classList.remove('hidden');
+    }
+    @endif
+
     var modal = document.getElementById('editModal');
     var panel = document.getElementById('editModalPanel');
     modal.classList.remove('hidden');
@@ -516,6 +563,125 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 @endif
+
+document.addEventListener('DOMContentLoaded', function() {
+    var editForm = document.getElementById('editForm');
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            var form = this;
+            var action = form.action;
+            var formData = new FormData(form);
+            
+            var submitBtn = form.querySelector('button[type="submit"]');
+            var originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Menyimpan...';
+
+            var errEls = form.querySelectorAll('.text-rose-600');
+            errEls.forEach(function(el) {
+                el.classList.add('hidden');
+                el.textContent = '';
+            });
+
+            fetch(action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(function(response) {
+                return response.json().then(function(data) {
+                    return { status: response.status, body: data };
+                });
+            })
+            .then(function(res) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+
+                if (res.status === 422) {
+                    var errors = res.body.errors;
+                    if (errors.name) {
+                        var el = document.getElementById('editErrorName');
+                        el.textContent = errors.name[0];
+                        el.classList.remove('hidden');
+                    }
+                    if (errors.kode_persediaan) {
+                        var el = document.getElementById('editErrorCode');
+                        el.textContent = errors.kode_persediaan[0];
+                        el.classList.remove('hidden');
+                    }
+                    if (errors.unit) {
+                        var el = document.getElementById('editErrorUnit');
+                        if (el) {
+                            el.textContent = errors.unit[0];
+                            el.classList.remove('hidden');
+                        }
+                    }
+                    if (errors.qty) {
+                        var el = document.getElementById('editErrorQty');
+                        if (el) {
+                            el.textContent = errors.qty[0];
+                            el.classList.remove('hidden');
+                        }
+                    }
+                } else if (res.status === 200 && res.body.success) {
+                    closeEditModal();
+                    
+                    var updatedData = res.body.data;
+                    var editId = form.querySelector('#editId').value;
+                    var tr = document.querySelector('tr[data-id="' + editId + '"]');
+                    if (tr) {
+                        tr.dataset.code = updatedData.code;
+                        tr.dataset.name = updatedData.name;
+                        tr.dataset.unit = updatedData.unit;
+                        tr.dataset.category = updatedData.canonical_category;
+                        tr.dataset.qty = updatedData.qty;
+                        
+                        var cols = tr.querySelectorAll('td');
+                        if (cols.length > 3) {
+                            cols[0].textContent = updatedData.code;
+                            
+                            var nameContainer = cols[1].querySelector('.flex');
+                            if (nameContainer) {
+                                nameContainer.querySelector('span:first-child').textContent = updatedData.name;
+                                var catBadge = nameContainer.querySelector('span:last-child');
+                                if (catBadge) {
+                                    catBadge.textContent = updatedData.canonical_category || '';
+                                }
+                            }
+                            
+                            cols[2].textContent = updatedData.unit;
+                            
+                            var qtyVal = parseInt(updatedData.qty);
+                            cols[3].textContent = new Intl.NumberFormat('id-ID').format(qtyVal);
+                            cols[3].className = 'px-6 py-4 whitespace-nowrap text-center text-sm font-extrabold ' + (qtyVal > 0 ? 'text-emerald-600' : 'text-rose-600');
+                            
+                            var statusCol = cols[4];
+                            if (qtyVal > 5) {
+                                statusCol.innerHTML = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-700"><span class="size-1.5 rounded-full bg-emerald-500"></span>Tersedia</span>';
+                            } else if (qtyVal > 0) {
+                                statusCol.innerHTML = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-700"><span class="size-1.5 rounded-full bg-amber-500"></span>Stok Terbatas</span>';
+                            } else {
+                                statusCol.innerHTML = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-rose-50 text-rose-700"><span class="size-1.5 rounded-full bg-rose-500"></span>Tidak Tersedia</span>';
+                            }
+                        }
+                    }
+                } else {
+                    alert('Terjadi kesalahan yang tidak terduga.');
+                }
+            })
+            .catch(function(error) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                alert('Terjadi kesalahan jaringan.');
+            });
+        });
+    }
+});
 </script>
 @endpush
 

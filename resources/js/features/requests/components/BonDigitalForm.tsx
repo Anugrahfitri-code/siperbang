@@ -54,6 +54,7 @@ interface BonItem {
   stok_tersedia: number;
   jumlah_diminta: number;
   catatan:       string;
+  kategori?:     string;
 }
 
 export interface BonSubmitPayload {
@@ -174,6 +175,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
       stok_tersedia:  0,
       jumlah_diminta: it.jumlahDiminta,
       catatan:        it.catatan ?? "",
+      kategori:       "",
     }));
     setItems(baseItems);
 
@@ -201,6 +203,7 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
                   nama_barang:   match.nama ?? match.name ?? item.nama_barang,
                   satuan:        match.satuan ?? match.unit ?? item.satuan,
                   stok_tersedia: Number(match.stok ?? match.qty ?? 0),
+                  kategori:      match.kategori ?? match.category ?? "",
                 };
               }
               return item;
@@ -310,7 +313,8 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
         satuan: result.satuan || "Buah",
         stok_tersedia: result.stok,
         jumlah_diminta: 1,
-        catatan: ""
+        catatan: "",
+        kategori: result.kategori
       },
     ]);
     setSearchQuery(""); setSearchResults([]); setShowDropdown(false);
@@ -334,7 +338,8 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
         satuan: "Buah",
         stok_tersedia: 0,
         jumlah_diminta: 1,
-        catatan: "Barang baru (Belum ada di Master Barang)"
+        catatan: "Barang baru (Belum ada di Master Barang)",
+        kategori: "Barang Baru"
       },
     ]);
     setSearchQuery(""); setSearchResults([]); setShowDropdown(false);
@@ -804,16 +809,8 @@ export const BonDigitalForm: React.FC<BonDigitalFormProps> = ({
                   <span className="text-xs font-bold text-slate-600">Kategori</span>
                 </div>
                 <span className="text-sm font-extrabold text-slate-800">
-                  {new Set(items.map(it => searchResults.find(s => s.id === it.barang_id)?.kategori).filter(Boolean)).size}
+                  {new Set(items.map(it => it.kategori).filter(Boolean)).size}
                 </span>
-              </div>
-
-              <div className="flex items-center justify-between p-3.5 bg-slate-50/50 border border-slate-100 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="size-8 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center"><CircleDollarSign size={16} /></div>
-                  <span className="text-xs font-bold text-slate-600">Estimasi Nilai</span>
-                </div>
-                <span className="text-sm font-extrabold text-slate-800">Rp 0</span>
               </div>
             </div>
 

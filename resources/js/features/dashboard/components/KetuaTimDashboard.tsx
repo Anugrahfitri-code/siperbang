@@ -19,6 +19,7 @@ interface KetuaTimDashboardProps {
   error: string | null;
   onRefresh: () => Promise<void>;
   currentUser: string;
+  currentUserData?: { section?: string | null };
   /** Called when user clicks Lanjutkan Draft on a draft row */
   onEditDraft?: (bonNo: string) => void;
 }
@@ -29,10 +30,11 @@ export const KetuaTimDashboard: React.FC<KetuaTimDashboardProps> = ({
   error,
   onRefresh,
   currentUser,
+  currentUserData,
   onEditDraft,
 }) => {
-  // Extract user section from currentUser string (e.g., "Budi Santoso (Ketua Tim TU)" -> "Tata Usaha" or similar)
-  const sectionName = requests.length > 0 ? requests[0].section : "Unit Kerja Anda";
+  // Extract user section from currentUserData, fallback to "-" if empty
+  const sectionName = currentUserData?.section || "-";
 
   // Calculate statistics based on status
   const totalCount = requests.length;

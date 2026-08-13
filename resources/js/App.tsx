@@ -49,6 +49,7 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [currentRole, setCurrentRole] = useState<UserRole>(UserRole.PETUGAS_PERSERDIAN);
   const [currentUser, setCurrentUser] = useState("Iwan Setiawan (Petugas Persediaan)");
+  const [currentUserData, setCurrentUserData] = useState<AuthenticatedUser | null>(null);
 
   // Active database states loaded from localStorage or fallback to defaults
   const [requests, setRequests] = useState<ItemRequest[]>([]);
@@ -151,6 +152,7 @@ useEffect(() => {
       if (!cancelled) {
         setCurrentRole(user.role);
         setCurrentUser(`${user.name} (${user.role})`);
+        setCurrentUserData(user);
         setIsLoggedIn(true);
       }
     } catch (error) {
@@ -1025,6 +1027,7 @@ useEffect(() => {
             setCurrentUser(
               `${user.name} (${user.role})`
             );
+            setCurrentUserData(user);
             setIsLoggedIn(true);
 
             addLog(
@@ -1243,6 +1246,7 @@ useEffect(() => {
                 error={requestsError}
                 onRefresh={loadData}
                 currentUser={currentUser}
+                currentUserData={currentUserData}
                 onEditDraft={(bonNo) => {
                   // Cari BonHeader dari bons state berdasarkan bonNo
                   const bon = (bons as any[]).find((b) => b.bon_no === bonNo || b.bonNo === bonNo);

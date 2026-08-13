@@ -146,9 +146,13 @@ class BarangController extends Controller
             'kode_persediaan' => 'required|string|max:20',
             'unit' => 'required|string|max:50',
             'category' => 'nullable|string|max:255',
+            'qty' => 'required|integer|min:0',
         ]);
 
         if ($validator->fails()) {
+            if ($request->wantsJson()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
             return back()
                 ->withErrors($validator)
                 ->withInput()
@@ -162,6 +166,9 @@ class BarangController extends Controller
         );
 
         if (! OfficeInventoryCatalog::isOfficeCode($normalizedCode)) {
+            if ($request->wantsJson()) {
+                return response()->json(['errors' => ['kode_persediaan' => ['Kode persediaan wajib berasal dari kelompok 1.01.03.']]], 422);
+            }
             return back()
                 ->withErrors([
                     'kode_persediaan' => 'Kode persediaan wajib berasal dari kelompok 1.01.03.',
@@ -176,6 +183,9 @@ class BarangController extends Controller
             ->first();
 
         if ($codeMaster === null) {
+            if ($request->wantsJson()) {
+                return response()->json(['errors' => ['kode_persediaan' => ['Kode persediaan tidak ditemukan pada master resmi 1.01.03.']]], 422);
+            }
             return back()
                 ->withErrors([
                     'kode_persediaan' => 'Kode persediaan tidak ditemukan pada master resmi 1.01.03.',
@@ -187,6 +197,9 @@ class BarangController extends Controller
         $category = $validated['category'] ?? OfficeInventoryCatalog::categoryForCode($normalizedCode);
 
         if (empty($category)) {
+            if ($request->wantsJson()) {
+                return response()->json(['errors' => ['kode_persediaan' => ['Subkategori kode persediaan tidak dikenali.']]], 422);
+            }
             return back()
                 ->withErrors([
                     'kode_persediaan' => 'Subkategori kode persediaan tidak dikenali.',
@@ -203,6 +216,9 @@ class BarangController extends Controller
             ->exists();
 
         if ($duplicate) {
+            if ($request->wantsJson()) {
+                return response()->json(['errors' => ['name' => ['Nama barang sudah ada.']]], 422);
+            }
             return back()
                 ->withErrors(['name' => 'Nama barang sudah ada.'])
                 ->withInput()
@@ -214,7 +230,28 @@ class BarangController extends Controller
             'code' => $normalizedCode,
             'unit' => trim($validated['unit']),
             'category' => $category,
+            'qty' => $validated['qty'],
         ]);
+
+        if ($request->wantsJson()) {
+            $canonicalCategory = $barang->category
+                ?? OfficeInventoryCatalog::categoryForCode($barang->code)
+                ?? OfficeInventoryCatalog::canonicalCategory($barang->category);
+                
+            return response()->json([
+                'success' => true,
+                'message' => 'Barang berhasil diperbarui.',
+                'data' => [
+                    'id' => $barang->id,
+                    'code' => $barang->code,
+                    'name' => $barang->name,
+                    'unit' => $barang->unit,
+                    'category' => $barang->category,
+                    'qty' => $barang->qty,
+                    'canonical_category' => $canonicalCategory,
+                ]
+            ]);
+        }
 
         return back()->with('success', 'Barang berhasil diperbarui.');
     }
