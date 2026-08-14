@@ -332,7 +332,7 @@ class ReceiptDocumentController extends Controller
 
         $file = $request->file('document');
 
-        $path = $file->store('receipts', 'local');
+        $path = $file->store('private/receipts', 'local');
 
         $fullPath = Storage::disk('local')->path($path);
         $sha256 = hash_file('sha256', $fullPath);
@@ -350,7 +350,7 @@ class ReceiptDocumentController extends Controller
 
         $document = ReceiptDocument::create([
             'uploaded_by' => $request->user()?->id,
-            'original_filename' => $file->getClientOriginalName(),
+            'original_filename' => basename($file->getClientOriginalName()),
             'storage_path' => $path,
             'mime_type' => $file->getMimeType(),
             'size_bytes' => $file->getSize(),

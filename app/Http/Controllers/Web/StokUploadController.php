@@ -39,8 +39,8 @@ class StokUploadController extends Controller
     public function upload(UploadStokExcelRequest $request)
     {
         $file = $request->file('file_excel');
-        $originalName = $file->getClientOriginalName();
-        $extension = strtolower($file->getClientOriginalExtension());
+        $originalName = basename($file->getClientOriginalName());
+        $extension = strtolower($file->extension());
         $storedName = now()->format('YmdHis').'_'.Str::uuid().'.'.$extension;
         $path = $file->storeAs('private/uploads', $storedName);
         $fullPath = Storage::path($path);
