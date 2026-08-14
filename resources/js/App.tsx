@@ -1246,7 +1246,7 @@ useEffect(() => {
                 error={requestsError}
                 onRefresh={loadData}
                 currentUser={currentUser}
-                currentUserData={currentUserData}
+                currentUserData={currentUserData ?? undefined}
                 onEditDraft={(bonNo) => {
                   // Cari BonHeader dari bons state berdasarkan bonNo
                   const bon = (bons as any[]).find((b) => b.bon_no === bonNo || b.bonNo === bonNo);

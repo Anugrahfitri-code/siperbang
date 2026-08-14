@@ -153,6 +153,7 @@ class BarangController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['errors' => $validator->errors()], 422);
             }
+
             return back()
                 ->withErrors($validator)
                 ->withInput()
@@ -169,6 +170,7 @@ class BarangController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['errors' => ['kode_persediaan' => ['Kode persediaan wajib berasal dari kelompok 1.01.03.']]], 422);
             }
+
             return back()
                 ->withErrors([
                     'kode_persediaan' => 'Kode persediaan wajib berasal dari kelompok 1.01.03.',
@@ -186,6 +188,7 @@ class BarangController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['errors' => ['kode_persediaan' => ['Kode persediaan tidak ditemukan pada master resmi 1.01.03.']]], 422);
             }
+
             return back()
                 ->withErrors([
                     'kode_persediaan' => 'Kode persediaan tidak ditemukan pada master resmi 1.01.03.',
@@ -200,6 +203,7 @@ class BarangController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['errors' => ['kode_persediaan' => ['Subkategori kode persediaan tidak dikenali.']]], 422);
             }
+
             return back()
                 ->withErrors([
                     'kode_persediaan' => 'Subkategori kode persediaan tidak dikenali.',
@@ -219,6 +223,7 @@ class BarangController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['errors' => ['name' => ['Nama barang sudah ada.']]], 422);
             }
+
             return back()
                 ->withErrors(['name' => 'Nama barang sudah ada.'])
                 ->withInput()
@@ -237,7 +242,7 @@ class BarangController extends Controller
             $canonicalCategory = $barang->category
                 ?? OfficeInventoryCatalog::categoryForCode($barang->code)
                 ?? OfficeInventoryCatalog::canonicalCategory($barang->category);
-                
+
             return response()->json([
                 'success' => true,
                 'message' => 'Barang berhasil diperbarui.',
@@ -249,7 +254,7 @@ class BarangController extends Controller
                     'category' => $barang->category,
                     'qty' => $barang->qty,
                     'canonical_category' => $canonicalCategory,
-                ]
+                ],
             ]);
         }
 
