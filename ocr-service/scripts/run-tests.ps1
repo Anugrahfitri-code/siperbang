@@ -12,10 +12,9 @@ if (-not (Test-Path $python)) {
     exit 1
 }
 
-$newAgung = Join-Path $fixtureDirectory "receipt-new-agung.pdf"
-$nirmana = Join-Path $fixtureDirectory "receipt-nirmana-aqsha.pdf"
+$syntheticReceipt = Join-Path $fixtureDirectory "synthetic-smoke-receipt.png"
 
-foreach ($fixture in @($newAgung, $nirmana)) {
+foreach ($fixture in @($syntheticReceipt)) {
     if (-not (Test-Path $fixture)) {
         Write-Error "Fixture OCR tidak ditemukan: $fixture"
         exit 1
@@ -45,23 +44,14 @@ try {
     Write-Host "`n--- Health Check ---"
     curl.exe http://127.0.0.1:8001/health
 
-    Write-Host "`n`n--- Test New Agung ---"
-    $newAgungOutput = Join-Path $outputDirectory "fastapi-new-agung.json"
+    Write-Host "`n`n--- Test Synthetic Receipt ---"
+    $syntheticOutput = Join-Path $outputDirectory "fastapi-synthetic.json"
     curl.exe -X POST `
         -H "X-Service-Token: $env:OCR_SERVICE_TOKEN" `
-        -F "document=@$newAgung;type=application/pdf" `
+        -F "document=@$syntheticReceipt;type=image/png" `
         http://127.0.0.1:8001/internal/v1/receipt-ocr `
-        --output $newAgungOutput
-    Get-Content $newAgungOutput -Encoding utf8
-
-    Write-Host "`n`n--- Test Nirmana ---"
-    $nirmanaOutput = Join-Path $outputDirectory "fastapi-nirmana.json"
-    curl.exe -X POST `
-        -H "X-Service-Token: $env:OCR_SERVICE_TOKEN" `
-        -F "document=@$nirmana;type=application/pdf" `
-        http://127.0.0.1:8001/internal/v1/receipt-ocr `
-        --output $nirmanaOutput
-    Get-Content $nirmanaOutput -Encoding utf8 | Select-Object -First 20
+        --output $syntheticOutput
+    Get-Content $syntheticOutput -Encoding utf8 | Select-Object -First 20
 
     Write-Host "`n`n--- Fake File Rejection ---"
     $fakeFile = Join-Path $outputDirectory "fake.pdf"
@@ -74,7 +64,7 @@ try {
     Write-Host "`n`n--- Invalid Token Test ---"
     curl.exe -i -X POST `
         -H "X-Service-Token: token-salah" `
-        -F "document=@$newAgung;type=application/pdf" `
+        -F "document=@$syntheticReceipt;type=image/png" `
         http://127.0.0.1:8001/internal/v1/receipt-ocr
 } finally {
     Write-Host "`nStopping FastAPI..."

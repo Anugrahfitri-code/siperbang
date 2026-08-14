@@ -18,7 +18,7 @@ Contoh:
 ```bash
 php tools/diagnostics/php-upload-limits.php
 php tools/diagnostics/mime-type.php path/to/file.pdf
-php tools/manual-tests/ocr-client.php ocr-service/tests/fixtures/receipt-new-agung.pdf
+php tools/manual-tests/ocr-client.php ocr-service/tests/fixtures/synthetic-smoke-receipt.png
 ```
 
 Baca kode sebelum menjalankan file pada `legacy/`. Sebagian script mengubah data secara langsung dan dibuat untuk kasus tertentu.
