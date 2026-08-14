@@ -16,7 +16,6 @@
 - Composer 2.x
 - Node.js 22.x (hanya untuk build, tidak perlu di server production)
 - MySQL 8+ atau PostgreSQL 15+
-- Python 3.10+ (untuk OCR service)
 - Nginx atau Apache
 - Supervisor (untuk menjalankan queue worker sebagai daemon)
 
@@ -47,12 +46,29 @@ rm -f public/hot
 
 ### 3. Konfigurasi Environment
 
+Pertama, buat file environment untuk Laravel dan OCR dari template yang tersedia:
+
 ```bash
 cp .env.example .env
-php artisan key:generate
+cp ocr-service/.env.example ocr-service/.env
 ```
 
-Edit `.env` untuk production:
+Lakukan pre-flight check sederhana untuk memastikan kedua file environment telah terbuat dengan sukses sebelum OCR dijalankan (misal dengan docker compose up):
+
+```bash
+test -f .env && echo "Laravel .env exists"
+test -f ocr-service/.env && echo "OCR .env exists"
+```
+
+Untuk keamanan OCR, buat **satu rahasia/token acak yang kuat**. Anda dapat men-generate token dengan perintah berikut (contoh pada Linux):
+
+```bash
+openssl rand -hex 32
+```
+
+> **PENTING:** Simpan hasil dari perintah di atas. Jangan commit hasilnya ke Git.
+
+Edit `.env` (utama Laravel) untuk production:
 
 ```env
 APP_ENV=production
@@ -69,10 +85,26 @@ DB_PASSWORD=<strong-password>
 QUEUE_CONNECTION=database
 
 OCR_SERVICE_URL=http://127.0.0.1:8001
-OCR_SERVICE_TOKEN=<strong-random-token>
+OCR_SERVICE_TOKEN=<GENERATE_RANDOM_SECRET>
 
 SESSION_DRIVER=database
 CACHE_STORE=database
+```
+
+> **Catatan `OCR_SERVICE_URL`**: `http://127.0.0.1:8001` digunakan karena konfigurasi ini berlaku ketika Laravel berjalan langsung pada host/server dan container OCR mempublikasikan port 8001 pada host yang sama. Port OCR sengaja dibatasi hanya pada localhost (`127.0.0.1:8001`) agar tidak dapat diakses langsung dari jaringan publik/luar, karena hanya Laravel yang perlu mengaksesnya. Konfigurasi localhost ini berlaku untuk arsitektur saat ini: Laravel di host + OCR di Docker pada server yang sama. Jika Laravel nantinya juga dijalankan di dalam Docker, `127.0.0.1` dari container Laravel tidak menunjuk ke container OCR. Pada arsitektur tersebut Docker networking/service name harus digunakan.
+
+Kemudian edit `ocr-service/.env`:
+
+```env
+OCR_SERVICE_TOKEN=<GENERATE_RANDOM_SECRET>
+```
+
+> **PERINGATAN:** Nilai `OCR_SERVICE_TOKEN` pada file `.env` Laravel dan `ocr-service/.env` HARUS SAMA / IDENTIK. Token ini diperlukan agar Laravel dan FastAPI dapat berkomunikasi dengan aman.
+
+Generate application key untuk Laravel:
+
+```bash
+php artisan key:generate
 ```
 
 ### 4. Migrasi Database
@@ -143,11 +175,13 @@ autorestart=true
 stopasgroup=true
 killasgroup=true
 user=www-data
-numprocs=2
+numprocs=1
 redirect_stderr=true
 stdout_logfile=/var/www/siperbang/storage/logs/worker.log
 stopwaitsecs=120
 ```
+
+> **Catatan Concurrency:** OCR service saat ini mempunyai satu PaddleOCR inference slot. Queue OCR production sengaja menggunakan `numprocs=1` (satu worker) agar request OCR diserialisasi dari sisi Laravel dan tidak saling bertabrakan dengan inference lock 5 detik. Dengan satu worker, dokumen OCR diproses secara serial dan dokumen tambahan tetap aman menunggu di queue. Ini adalah pengaturan kapasitas default yang disengaja (intentional capacity setting) untuk arsitektur saat ini.
 
 ```bash
 supervisorctl reread
@@ -174,36 +208,113 @@ Tanpa cron tersebut, versi terjadwal tetap tersimpan tetapi tidak akan aktif oto
 
 ### 10. Deploy OCR Service
 
-```bash
-cd /var/www/siperbang/ocr-service
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+> **Catatan Migration:** OCR production pada panduan ini dijalankan menggunakan Docker Compose. Jangan menjalankan instance systemd OCR lama secara bersamaan pada port yang sama. Pastikan tidak ada service OCR lama yang masih menggunakan port 8001 sebelum mengaktifkan container Docker OCR.
 
-Buat systemd service `/etc/systemd/system/siperbang-ocr.service`:
+#### OCR First-Boot Network Requirement
 
-```ini
-[Unit]
-Description=SIPERBANG OCR Service
-After=network.target
+> **PERHATIAN:** Current OCR deployment is NOT designed as a fully air-gapped installation when starting from a fresh server with no pre-existing dependencies/model cache.
 
-[Service]
-Type=simple
-User=www-data
-WorkingDirectory=/var/www/siperbang/ocr-service
-Environment="PATH=/var/www/siperbang/ocr-service/.venv/bin"
-ExecStart=/var/www/siperbang/ocr-service/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001
-Restart=on-failure
+Pastikan server memiliki outbound network yang diperlukan untuk proses Docker build/dependency retrieval dan initial PaddleOCR model retrieval.
 
-[Install]
-WantedBy=multi-user.target
-```
+Saat `siperbang_ocr_models` masih kosong pada fresh deployment, PaddleOCR belum memiliki model pretrained lokal. Saat OCR engine pertama kali diinisialisasi:
+- PaddleOCR memeriksa model/cache lokal
+- model belum tersedia
+- mengambil model dari configured remote source
+- menyimpan cache ke `/root/.paddlex`
+
+Variabel `PADDLE_PDX_MODEL_SOURCE=BOS` menentukan remote model source untuk Paddle/PaddleX. Ini BUKAN offline mode. Model source is remote and requires outbound network when required model files are not yet cached. Tim infrastruktur harus memverifikasi endpoint outbound aktual yang digunakan versi Paddle/PaddleX yang dipasang.
+
+Jalankan container OCR di latar belakang dan build image menggunakan source code terbaru:
 
 ```bash
-systemctl enable siperbang-ocr
-systemctl start siperbang-ocr
+docker compose up -d --build ocr
 ```
+
+> **Perhatian Volume:** Persistent cache untuk model Paddle/PaddleX OCR disimpan dalam named volume `siperbang_ocr_models` (mounted ke `/root/.paddlex`). JANGAN gunakan `docker compose down -v` untuk normal deployment/redeploy karena `-v` dapat menghapus named volume, termasuk cache model OCR.
+
+#### Verifikasi dan Troubleshooting
+
+Container dapat terlihat running sebelum OCR engine benar-benar ready. Deployment OCR belum boleh dianggap ready hanya karena container berstatus running. Operator harus memastikan health endpoint berhasil.
+
+Lakukan pemeriksaan container setelah start:
+
+```bash
+docker compose ps ocr
+```
+
+Lakukan verifikasi healthcheck OCR:
+
+```bash
+curl -f http://127.0.0.1:8001/health
+```
+
+> **Peringatan Healthcheck:** Healthcheck memastikan service/model OCR siap menurut endpoint `/health`. Healthcheck ini belum membuktikan autentikasi token dan proses OCR end-to-end berhasil.
+
+#### OCR Smoke Test
+
+Setelah service OCR berjalan dan `/health` menyatakan ready, jalankan smoke test resmi untuk memverifikasi konektivitas localhost dari host ke OCR Docker container, autentikasi `X-Service-Token`, multipart upload, dan pemrosesan endpoint OCR secara end-to-end.
+
+**Prasyarat HOST untuk Smoke Test:**
+- `bash`, `curl`, dan `php` CLI (sudah tercakup oleh requirement host Laravel).
+- Script ini dijalankan pada **HOST LINUX**, BUKAN di dalam OCR Docker container.
+- Fixture resmi yang digunakan adalah `ocr-service/tests/fixtures/synthetic-smoke-receipt.png` (sepenuhnya sintetis, tidak menggunakan data transaksi nyata perusahaan).
+
+Jalankan perintah berikut di direktori root aplikasi (misalnya `/var/www/siperbang`). Skrip ini akan secara otomatis memuat `OCR_SERVICE_TOKEN` dari file Laravel `.env` menggunakan PHP CLI. Token tidak ditampilkan ke layar, tidak menetap di parent shell, dan berjalan secara aman di dalam scoped subshell.
+
+```bash
+cd /var/www/siperbang
+(
+    export OCR_SERVICE_TOKEN="$(php -r '
+        $lines = file(".env", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            if (strpos(trim($line), "OCR_SERVICE_TOKEN=") === 0) {
+                echo trim(explode("=", $line, 2)[1], " \"'\t\n\r\0\x0B");
+                exit(0);
+            }
+        }
+        exit(1);
+    ')"
+
+    if [ -z "${OCR_SERVICE_TOKEN:-}" ]; then
+        echo "ERROR: OCR_SERVICE_TOKEN is not configured in Laravel .env." >&2
+        exit 1
+    fi
+
+    bash ./scripts/ocr-smoke-test.sh
+)
+```
+
+**Expected Output (PASS):**
+```text
+Checking OCR health...
+PASS: OCR health endpoint is ready.
+
+Running authenticated OCR smoke test...
+PASS: OCR authenticated smoke test succeeded.
+```
+
+**Panduan Kegagalan (Troubleshooting):**
+- **401**: periksa kesamaan `OCR_SERVICE_TOKEN` Laravel dan OCR service.
+- **422**: synthetic fixture mencapai service tetapi input/result ditolak.
+- **500**: periksa OCR container logs.
+- **503**: periksa docker compose ps/logs dan readiness/model initialization.
+- **transport**: periksa container running dan localhost binding.
+
+Jika `/health` atau smoke test gagal, JANGAN langsung menjalankan perintah destruktif seperti `docker volume rm siperbang_ocr_models` atau `docker compose down -v`. Lakukan observasi log terlebih dahulu:
+
+```bash
+docker compose logs --tail=100 ocr
+```
+
+Beberapa kemungkinan gagal:
+- model masih dalam proses initialization;
+- remote model download gagal;
+- outbound network/DNS bermasalah;
+- OCR engine gagal load.
+
+#### Migrasi Server
+
+Git repository tidak menyimpan Docker named volume. Melakukan `git clone` pada server baru tidak membawa cache `siperbang_ocr_models` dari server lama. Pada server baru, model perlu diperoleh kembali melalui normal first-boot download atau prosedur perpindahan cache manual.
 
 ---
 
@@ -234,18 +345,53 @@ php artisan storage:link
 php artisan optimize:clear
 php artisan optimize
 
-# 6. Restart queue worker
+# 6. Rebuild OCR Image & Recreate Container
+# Catatan Cache: model sudah berada di named volume -> image OCR direbuild ->
+# container direcreate -> named volume tetap dipasang -> cached model dapat digunakan kembali.
+# Model tidak seharusnya perlu diunduh ulang selama cache yang diperlukan
+# masih tersedia dan kompatibel pada named volume.
+docker compose up -d --build ocr
+
+# 7. OCR Verification
+docker compose ps ocr
+curl -f http://127.0.0.1:8001/health
+
+# 8. Authenticated OCR Smoke Test
+# Wajib dipastikan sukses sebelum merestart queue worker OCR
+(
+    export OCR_SERVICE_TOKEN="$(php -r '
+        $lines = file(".env", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            if (strpos(trim($line), "OCR_SERVICE_TOKEN=") === 0) {
+                echo trim(explode("=", $line, 2)[1], " \"'\t\n\r\0\x0B");
+                exit(0);
+            }
+        }
+        exit(1);
+    ')"
+
+    if [ -z "${OCR_SERVICE_TOKEN:-}" ]; then
+        echo "ERROR: OCR_SERVICE_TOKEN is not configured in Laravel .env." >&2
+        exit 1
+    fi
+
+    bash ./scripts/ocr-smoke-test.sh
+)
+
+# 9. Restart queue worker Laravel
 supervisorctl restart siperbang-ocr-worker:*
 
-# 7. Validasi route, scheduler, dan health endpoint
+# 10. Validasi route, scheduler, dan health endpoint Laravel
 php artisan route:list --path=settings
 php artisan schedule:list
 php artisan branding:publish-due
 curl -f http://127.0.0.1/up
 
-# 8. Nonaktifkan maintenance mode
+# 11. Nonaktifkan maintenance mode
 php artisan up
 ```
+
+> **Catatan Environment OCR:** Jika Anda mengubah `ocr-service/.env`, container OCR harus direcreate agar konfigurasi environment baru digunakan. Command `docker compose up -d --build ocr` pada urutan redeploy di atas sudah memfasilitasi hal ini.
 
 ---
 
