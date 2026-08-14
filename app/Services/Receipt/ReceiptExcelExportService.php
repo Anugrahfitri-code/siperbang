@@ -59,13 +59,13 @@ class ReceiptExcelExportService
             );
         }
 
-        $templatePath = public_path(
-            'templates/Belanja Persediaan 2026.xlsx'
+        $templatePath = resource_path(
+            'templates/belanja-persediaan.xlsx'
         );
 
         if (! is_file($templatePath)) {
             throw new RuntimeException(
-                'Template Belanja Persediaan 2026.xlsx tidak ditemukan.'
+                'Template ekspor kuitansi tidak ditemukan.'
             );
         }
 
