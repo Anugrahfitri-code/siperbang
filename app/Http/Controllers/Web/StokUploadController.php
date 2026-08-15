@@ -234,14 +234,14 @@ class StokUploadController extends Controller
         $this->authorizeRole('Petugas Persediaan');
         $batch = StokUpload::findOrFail($id);
 
-        $request->validate([
+        $validated = $request->validate([
             'items' => 'required|array',
             'items.*.detail_id' => 'required|integer|exists:stok_upload_details,id',
             'items.*.action' => 'required|string|in:Setuju,Perbaiki,Tolak',
             'items.*.kode_persediaan' => 'nullable|string|max:50',
         ]);
 
-        foreach ($request->input('items', []) as $item) {
+        foreach ($validated['items'] as $item) {
             $detail = StokUploadDetail::where('stok_upload_id', $batch->id)
                 ->where('id', $item['detail_id'])
                 ->firstOrFail();
@@ -316,7 +316,10 @@ class StokUploadController extends Controller
         $this->authorizeRole('Petugas Persediaan');
         $batch = StokUpload::findOrFail($id);
 
-        $reason = $request->input('cancellation_reason', 'Alasan tidak diberikan');
+        $validated = $request->validate([
+            'cancellation_reason' => 'nullable|string|max:500',
+        ]);
+        $reason = $validated['cancellation_reason'] ?? 'Alasan tidak diberikan';
 
         try {
             $results = $this->cancellationService->cancel($batch, $reason);

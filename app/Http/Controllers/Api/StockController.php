@@ -39,10 +39,17 @@ class StockController extends Controller
      */
     public function search(Request $request)
     {
-        $search = trim((string) $request->input('q', ''));
-        $requestedCategory = trim((string) $request->input('category', ''));
-        $status = (string) $request->input('status', '');
-        $perPage = max(1, min((int) $request->input('per_page', 20), 100));
+        $validated = $request->validate([
+            'q' => 'nullable|string|max:255',
+            'category' => 'nullable|string|max:255',
+            'status' => 'nullable|string|max:50',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+
+        $search = trim((string) ($validated['q'] ?? ''));
+        $requestedCategory = trim((string) ($validated['category'] ?? ''));
+        $status = (string) ($validated['status'] ?? '');
+        $perPage = (int) ($validated['per_page'] ?? 20);
 
         $query = Barang::query()->where('is_active', true);
         $this->applyOfficeCodeScope($query);

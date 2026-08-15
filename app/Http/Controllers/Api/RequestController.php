@@ -59,18 +59,18 @@ class RequestController extends Controller
         DB::beginTransaction();
         try {
             $user = $request->user();
-            $requester = $request->input('requester') ?? $user->name;
-
-            $actualUser = User::where('name', $requester)->first();
-            $section = $actualUser ? ($actualUser->section ?? 'Tata Usaha') : ($user->section ?? 'Tata Usaha');
-
+            $requester = $user->name;
+            $section = $user->section ?? 'Tata Usaha';
             $targetUserId = $user->id;
-            if (in_array(strtolower($user->role), ['admin', 'superadmin']) && $request->has('requester')) {
+
+            if (in_array(strtolower($user->role), ['admin', 'superadmin']) && $request->filled('requester')) {
                 $targetUser = User::where('username', $request->input('requester'))
                     ->orWhere('name', $request->input('requester'))
                     ->first();
                 if ($targetUser) {
                     $targetUserId = $targetUser->id;
+                    $requester = $targetUser->name;
+                    $section = $targetUser->section ?? 'Tata Usaha';
                 }
             }
 
@@ -501,6 +501,14 @@ class RequestController extends Controller
 
     public function indexBons(Request $request)
     {
+        $validated = $request->validate([
+            'bon_no' => 'nullable|string|max:100',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'status' => 'nullable|string|max:50',
+            'all' => 'nullable|in:true,false',
+        ]);
+
         $query = BonHeader::with(['items' => function ($q) {
             // Sertakan stock_item_id agar frontend bisa pre-fill barang_id
             $q->select('id', 'bon_header_id', 'stock_item_id', 'item_name',
@@ -521,22 +529,22 @@ class RequestController extends Controller
             });
         }
 
-        if ($request->filled('bon_no')) {
-            $query->where('bon_no', 'like', '%'.$request->input('bon_no').'%');
+        if (! empty($validated['bon_no'])) {
+            $query->where('bon_no', 'like', '%'.$validated['bon_no'].'%');
         }
 
-        if ($request->filled('start_date')) {
-            $query->whereDate('date', '>=', $request->input('start_date'));
+        if (! empty($validated['start_date'])) {
+            $query->whereDate('date', '>=', $validated['start_date']);
         }
-        if ($request->filled('end_date')) {
-            $query->whereDate('date', '<=', $request->input('end_date'));
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
+        if (! empty($validated['end_date'])) {
+            $query->whereDate('date', '<=', $validated['end_date']);
         }
 
-        if ($request->input('all') === 'true') {
+        if (! empty($validated['status'])) {
+            $query->where('status', $validated['status']);
+        }
+
+        if (isset($validated['all']) && $validated['all'] === 'true') {
             return response()->json($query->get());
         }
 
@@ -574,7 +582,7 @@ class RequestController extends Controller
         $bonHeader = BonHeader::findOrFail($id);
         $user = $request->user();
 
-        if ($bonHeader->user_id !== $user->id) {
+        if ($bonHeader->user_id !== $user->id && strtolower($user->role) !== 'superadmin') {
             abort(403, 'Anda bukan pemilik draft ini.');
         }
 
@@ -585,9 +593,18 @@ class RequestController extends Controller
         DB::beginTransaction();
         try {
             $oldStatus = $bonHeader->status;
-            $requester = $request->input('requester') ?? $bonHeader->requester;
-            $actualUser = User::where('name', $requester)->first();
-            $section = $actualUser ? ($actualUser->section ?? 'Tata Usaha') : $bonHeader->section;
+            $requester = $bonHeader->requester;
+            $section = $bonHeader->section;
+
+            if (in_array(strtolower($user->role), ['admin', 'superadmin']) && $request->filled('requester')) {
+                $targetUser = User::where('username', $request->input('requester'))
+                    ->orWhere('name', $request->input('requester'))
+                    ->first();
+                if ($targetUser) {
+                    $requester = $targetUser->name;
+                    $section = $targetUser->section ?? 'Tata Usaha';
+                }
+            }
 
             $bonHeader->update([
                 'status' => $statusVal,
@@ -661,7 +678,8 @@ class RequestController extends Controller
     {
         $bonHeader = BonHeader::findOrFail($id);
 
-        if ($bonHeader->user_id !== $request->user()->id) {
+        $user = $request->user();
+        if ($bonHeader->user_id !== $user->id && strtolower($user->role) !== 'superadmin') {
             abort(403, 'Anda bukan pemilik draft ini.');
         }
 

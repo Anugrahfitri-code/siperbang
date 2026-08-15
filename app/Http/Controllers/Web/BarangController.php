@@ -22,8 +22,14 @@ class BarangController extends Controller
         $query = Barang::query()->where('is_active', true);
         $this->applyOfficeCodeScope($query);
 
-        if ($request->filled('search')) {
-            $search = trim((string) $request->input('search'));
+        $validated = $request->validate([
+            'search' => 'nullable|string|max:255',
+            'kategori_id' => 'nullable|string|max:255',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+
+        if (! empty($validated['search'])) {
+            $search = trim((string) $validated['search']);
 
             $query->where(function (Builder $builder) use ($search): void {
                 $builder->where('name', 'ilike', "%{$search}%")
@@ -31,7 +37,7 @@ class BarangController extends Controller
             });
         }
 
-        $requestedCategory = trim((string) $request->input('kategori_id', ''));
+        $requestedCategory = trim((string) ($validated['kategori_id'] ?? ''));
         $selectedCategory = OfficeInventoryCatalog::canonicalCategory(
             $requestedCategory,
         );
@@ -45,7 +51,7 @@ class BarangController extends Controller
             $this->applyCategoryCodeScope($query, $selectedGroup);
         }
 
-        $perPage = max(1, min((int) $request->input('per_page', 10), 100));
+        $perPage = (int) ($validated['per_page'] ?? 10);
         $barangs = $query
             ->orderBy('name')
             ->paginate($perPage)
@@ -91,7 +97,10 @@ class BarangController extends Controller
             return response()->json(['message' => 'Akses ditolak.'], 403);
         }
 
-        $queryString = trim((string) $request->input('query', ''));
+        $validated = $request->validate([
+            'query' => 'nullable|string|max:255',
+        ]);
+        $queryString = trim((string) ($validated['query'] ?? ''));
         $query = Barang::query()->where('is_active', true);
         $this->applyOfficeCodeScope($query);
 
