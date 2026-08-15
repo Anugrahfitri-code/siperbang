@@ -12,7 +12,9 @@ use App\Http\Controllers\Api\StokUploadController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 Route::get('/api/settings', [SiteSettingController::class, 'index']);
 
@@ -41,6 +43,16 @@ Route::post('/api/login', function (Request $request) {
         'password' => 'required|string',
     ]);
 
+    $throttleKey = Str::transliterate(Str::lower($credentials['username']).'|'.$request->ip());
+
+    if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+        $seconds = RateLimiter::availableIn($throttleKey);
+
+        return response()->json([
+            'message' => 'Terlalu banyak percobaan login. Silakan coba lagi dalam '.$seconds.' detik.',
+        ], 429);
+    }
+
     if (Auth::attempt($credentials)) {
         $user = Auth::user();
         if (strtolower($user->status) === 'nonaktif') {
@@ -51,10 +63,14 @@ Route::post('/api/login', function (Request $request) {
             return response()->json(['message' => 'Akun Anda tidak aktif. Silakan hubungi Administrator.'], 403);
         }
 
+        RateLimiter::clear($throttleKey);
+
         $request->session()->regenerate();
 
         return response()->json(['message' => 'Login successful', 'user' => $user]);
     }
+
+    RateLimiter::hit($throttleKey, 60);
 
     return response()->json(['message' => 'Password atau username salah, mohon coba lagi.'], 401);
 });
