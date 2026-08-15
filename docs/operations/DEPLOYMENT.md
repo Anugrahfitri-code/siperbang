@@ -156,6 +156,11 @@ server {
         try_files $uri $uri/ /index.php?$query_string;
     }
 
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
     location ~ \.php$ {
         fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
@@ -175,7 +180,7 @@ Buat file `/etc/supervisor/conf.d/siperbang-ocr-worker.conf`:
 ```ini
 [program:siperbang-ocr-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php /var/www/siperbang/artisan queue:work database --queue=ocr --sleep=3 --tries=1 --timeout=120
+command=php /var/www/siperbang/artisan queue:work database --queue=ocr --sleep=3 --tries=1 --timeout=140
 autostart=true
 autorestart=true
 stopasgroup=true
@@ -437,8 +442,8 @@ php artisan migrate:rollback --step=3
 ### Database
 
 ```bash
-# MySQL backup harian
-mysqldump -u siperbang_user -p siperbang_prod > backup_$(date +%Y%m%d).sql
+# MySQL backup harian (gunakan konfigurasi credential file ~/.my.cnf, jangan pass -p langsung)
+mysqldump --defaults-extra-file=~/.my.cnf siperbang_prod > backup_$(date +%Y%m%d).sql
 
 # Simpan ke storage jangka panjang (S3, GCS, dll.)
 ```
@@ -453,6 +458,36 @@ tar -czf storage_backup_$(date +%Y%m%d).tar.gz /var/www/siperbang/storage/app/pr
 **Jadwal yang direkomendasikan:**
 - Database: backup harian, simpan 30 hari
 - Storage files: backup mingguan, simpan 3 bulan
+
+---
+
+## Restore Strategy & Rehearsal
+
+Backup keberadaannya belum cukup jika tidak diuji. Diperlukan simulasi restore secara berkala.
+
+### Prasyarat Restore Test
+- Jangan mengeksekusi restore destruktif pada database production atau development aktif.
+- Lakukan pada disposable STAGING/TEST database server.
+
+### Langkah Restore MySQL (Contoh)
+```bash
+# 1. Pastikan database target (siperbang_staging) kosong atau dapat ditimpa
+mysql --defaults-extra-file=~/.my.cnf -e "DROP DATABASE IF EXISTS siperbang_staging; CREATE DATABASE siperbang_staging;"
+
+# 2. Lakukan import dari file SQL
+mysql --defaults-extra-file=~/.my.cnf siperbang_staging < backup_YYYYMMDD.sql
+```
+
+### Langkah Restore File
+```bash
+# Ekstrak backup tarball ke direktori staging storage
+tar -xzf storage_backup_YYYYMMDD.tar.gz -C /var/www/staging_siperbang/storage/app/private --strip-components=5
+```
+
+### Smoke Test Pasc-Restore
+- Jalankan login.
+- Lakukan upload dokumen receipt ke OCR (memastikan permission folder private valid).
+- Uji download file excel atau PDF export.
 
 ---
 
