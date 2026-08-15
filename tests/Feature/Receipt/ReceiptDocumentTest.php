@@ -60,6 +60,47 @@ class ReceiptDocumentTest extends TestCase
         $response->assertStatus(422);
     }
 
+    public function test_oversized_is_rejected()
+    {
+        // Max size is 10240 KB (10MB), so we create 11MB file
+        $file = UploadedFile::fake()->create('receipt.jpg', 11000, 'image/jpeg');
+
+        $response = $this->actingAs($this->user)->postJson('/api/receipt-documents', [
+            'document' => $file,
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_svg_is_rejected()
+    {
+        $file = UploadedFile::fake()->create('receipt.svg', 100, 'image/svg+xml');
+
+        $response = $this->actingAs($this->user)->postJson('/api/receipt-documents', [
+            'document' => $file,
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_dangerous_filename_is_safe_because_of_random_storage()
+    {
+        Queue::fake();
+
+        $file = UploadedFile::fake()->image('../../../etc/passwd.jpg');
+
+        $response = $this->actingAs($this->user)->postJson('/api/receipt-documents', [
+            'document' => $file,
+        ]);
+
+        $response->assertStatus(202);
+
+        $doc = ReceiptDocument::latest()->first();
+        // Path storage harus berupa hash, bukan path traversal
+        $this->assertStringNotContainsString('../', $doc->storage_path);
+        $this->assertStringStartsWith('private/receipts/', $doc->storage_path);
+    }
+
     public function test_ocr_client_uses_http_fake_and_updates_status()
     {
         config([

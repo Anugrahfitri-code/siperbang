@@ -471,103 +471,93 @@ async def process_receipt(
 
     request_started_at = perf_counter()
 
-    extension = Path(
-        filename
-    ).suffix.lower()
+    file_size = 0
+    file_header = b""
+    chunks: list[bytes] = []
 
-    if extension not in ALLOWED_EXTENSIONS:
+    while True:
+        chunk = await document.read(
+            1024 * 1024
+        )
+
+        if not chunk:
+            break
+
+        file_size += len(chunk)
+
+        if (
+            file_size
+            > settings.max_upload_size
+        ):
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+                ),
+                detail=(
+                    "Uploaded file exceeds "
+                    "the maximum allowed size."
+                ),
+            )
+
+        if len(file_header) < 16:
+            remaining = (
+                16 - len(file_header)
+            )
+
+            file_header += chunk[
+                :remaining
+            ]
+
+        chunks.append(chunk)
+
+    if file_size == 0:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_422_UNPROCESSABLE_ENTITY
+            ),
+            detail="Uploaded file is empty.",
+        )
+
+    detected_mime = detect_mime_type(
+        file_header
+    )
+
+    mime_to_ext = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "application/pdf": ".pdf",
+        "image/tiff": ".tif",
+    }
+
+    if (
+        detected_mime is None
+        or detected_mime not in mime_to_ext
+    ):
         raise HTTPException(
             status_code=(
                 status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
             ),
             detail=(
-                "File extension is not supported."
+                "File content does not match "
+                "the supported document format."
             ),
         )
 
+    canonical_extension = mime_to_ext[detected_mime]
+
     file_descriptor, temporary_path = (
         tempfile.mkstemp(
-            suffix=extension
+            suffix=canonical_extension
         )
     )
 
     try:
-        file_size = 0
-        file_header = b""
-
         with os.fdopen(
             file_descriptor,
             "wb",
         ) as temporary_file:
-            while True:
-                chunk = await document.read(
-                    1024 * 1024
-                )
-
-                if not chunk:
-                    break
-
-                file_size += len(chunk)
-
-                if (
-                    file_size
-                    > settings.max_upload_size
-                ):
-                    raise HTTPException(
-                        status_code=(
-                            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
-                        ),
-                        detail=(
-                            "Uploaded file exceeds "
-                            "the maximum allowed size."
-                        ),
-                    )
-
-                if len(file_header) < 16:
-                    remaining = (
-                        16 - len(file_header)
-                    )
-
-                    file_header += chunk[
-                        :remaining
-                    ]
-
-                temporary_file.write(
-                    chunk
-                )
-
-        if file_size == 0:
-            raise HTTPException(
-                status_code=(
-                    status.HTTP_422_UNPROCESSABLE_ENTITY
-                ),
-                detail="Uploaded file is empty.",
-            )
-
-        detected_mime = detect_mime_type(
-            file_header
-        )
-
-        expected_mimes = (
-            EXTENSION_MIME_TYPES[
-                extension
-            ]
-        )
-
-        if (
-            detected_mime is None
-            or detected_mime
-            not in expected_mimes
-        ):
-            raise HTTPException(
-                status_code=(
-                    status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
-                ),
-                detail=(
-                    "File content does not match "
-                    "the supported document format."
-                ),
-            )
+            for chunk in chunks:
+                temporary_file.write(chunk)
 
         if detected_mime == "application/pdf":
             try:
