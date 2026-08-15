@@ -145,6 +145,19 @@ if ($root === false || $outputArgument === null || str_starts_with($outputArgume
     exit(1);
 }
 
+exec('git rev-parse --is-inside-work-tree 2>&1', $gitOut, $gitCode);
+if ($gitCode !== 0) {
+    fwrite(STDERR, "Release packaging requires a valid Git repository.\n");
+    exit(1);
+}
+
+exec('git rev-parse HEAD 2>&1', $headOut, $headCode);
+if ($headCode !== 0 || empty($headOut)) {
+    fwrite(STDERR, "Gagal mendapatkan Git HEAD SHA.\n");
+    exit(1);
+}
+$headSha = trim($headOut[0]);
+
 if (is_file($root.'/public/hot')) {
     fwrite(STDERR, "Gagal: public/hot ditemukan. Hapus file development Vite sebelum membuat rilis.\n");
     exit(1);
@@ -199,9 +212,8 @@ if ($includeBuild) {
     }
 }
 
-$output = str_starts_with($outputArgument, DIRECTORY_SEPARATOR)
-    ? $outputArgument
-    : getcwd().DIRECTORY_SEPARATOR.$outputArgument;
+$isAbsolute = str_starts_with($outputArgument, DIRECTORY_SEPARATOR) || preg_match('~^[a-zA-Z]:[\\\\/]~', $outputArgument);
+$output = $isAbsolute ? $outputArgument : getcwd().DIRECTORY_SEPARATOR.$outputArgument;
 $outputDirectory = dirname($output);
 
 if (! is_dir($outputDirectory) && ! mkdir($outputDirectory, 0775, true) && ! is_dir($outputDirectory)) {
@@ -213,9 +225,9 @@ $excludedPrefixes = [
     '.git/', '.idea/', '.vscode/', '.cursor/', '.codex/', '.pytest_cache/',
     'vendor/', 'node_modules/', 'archive/', 'scratch/', 'desain_temp/', 'ocr-test/',
     'database/database.sqlite', 'public/hot', 'public/storage', 'public/fonts-manifest.dev.json',
-    'bootstrap/cache/', 'storage/app/', 'storage/logs/', 'storage/framework/',
+    'bootstrap/cache/', 'storage/app/', 'storage/logs/', 'storage/framework/', 'storage/app/private/',
     'ocr-service/.venv/', 'ocr-service/.pytest_cache/', 'ocr-service/debug-output/',
-    'opencode.json', 'RELEASE_MANIFEST.sha256',
+    'opencode.json', 'RELEASE_MANIFEST.sha256', 'RELEASE_COMMIT_SHA',
 ];
 
 if (! $includeBuild) {
@@ -242,7 +254,7 @@ $shouldExclude = static function (string $relative) use ($excludedPrefixes, $exc
         return true;
     }
 
-    if (preg_match('/\.(zip|pyc|pyo)$/i', $relative)) {
+    if (preg_match('/\.(zip|pyc|pyo|pem|key|p12|pfx|sqlite|sqlite3|db|sql|dump|bak|backup|log)$/i', $relative)) {
         return true;
     }
 
@@ -277,51 +289,126 @@ $shouldExclude = static function (string $relative) use ($excludedPrefixes, $exc
     return realpath($absolute) === realpath($output);
 };
 
+$tempZip = sys_get_temp_dir().DIRECTORY_SEPARATOR.'siperbang_release_'.uniqid('', true).'.zip';
+exec('git archive --format=zip --prefix=siperbang/ HEAD -o '.escapeshellarg($tempZip).' 2>&1', $archiveOut, $archiveCode);
+if ($archiveCode !== 0) {
+    @unlink($tempZip);
+    fwrite(STDERR, "Gagal membuat git archive dari HEAD.\n");
+    exit(1);
+}
+
+if (! copy($tempZip, $output)) {
+    @unlink($tempZip);
+    fwrite(STDERR, "Gagal menyalin temp zip ke output.\n");
+    exit(1);
+}
+@unlink($tempZip);
+
 $zip = new ZipArchive;
-if ($zip->open($output, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+if ($zip->open($output) !== true) {
     fwrite(STDERR, "Gagal membuka output ZIP.\n");
     exit(1);
 }
 
-$iterator = new RecursiveIteratorIterator(
-    new RecursiveDirectoryIterator($root, RecursiveDirectoryIterator::SKIP_DOTS),
-    RecursiveIteratorIterator::LEAVES_ONLY,
-);
-
 $added = 0;
 $manifest = [];
 
-foreach ($iterator as $file) {
-    if (! $file->isFile() || $file->isLink()) {
+for ($i = 0; $i < $zip->numFiles; $i++) {
+    $stat = $zip->statIndex($i);
+    $name = $stat['name'];
+
+    // Skip directories in zip listing
+    if (str_ends_with($name, '/')) {
         continue;
     }
 
-    $absolute = $file->getPathname();
-    $relative = ltrim(str_replace('\\', '/', substr($absolute, strlen($root))), '/');
+    $relative = substr($name, 10); // remove 'siperbang/' prefix
 
     if ($shouldExclude($relative)) {
+        $zip->deleteIndex($i);
+
         continue;
     }
 
-    $entry = 'siperbang/'.$relative;
-    if (! $zip->addFile($absolute, $entry)) {
-        $zip->close();
-        @unlink($output);
-        fwrite(STDERR, "Gagal menambahkan {$relative}.\n");
-        exit(1);
+    $stream = $zip->getStream($name);
+    if ($stream !== false) {
+        $ctx = hash_init('sha256');
+        hash_update_stream($ctx, $stream);
+        fclose($stream);
+        $hash = hash_final($ctx);
+        $manifest[] = $hash.'  '.$relative;
+        $added++;
     }
+}
 
-    $manifest[] = hash_file('sha256', $absolute).'  '.$relative;
-    $added++;
+if ($includeBuild) {
+    $buildRoot = $root.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'build';
+    if (is_dir($buildRoot)) {
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($buildRoot, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::LEAVES_ONLY,
+        );
+
+        foreach ($iterator as $file) {
+            if (! $file->isFile() || $file->isLink()) {
+                continue; // Safe symlink handling
+            }
+
+            $absolute = $file->getPathname();
+            $relative = ltrim(str_replace('\\', '/', substr($absolute, strlen($root))), '/');
+
+            if ($shouldExclude($relative)) {
+                continue;
+            }
+
+            $entry = 'siperbang/'.$relative;
+            if ($zip->addFile($absolute, $entry)) {
+                $manifest[] = hash_file('sha256', $absolute).'  '.$relative;
+                $added++;
+            }
+        }
+    }
 }
 
 sort($manifest);
+
+$requiredAssets = [
+    '.env.example',
+    'ocr-service/.env.example',
+    'composer.json',
+    'composer.lock',
+    'package.json',
+    'package-lock.json',
+    'docker-compose.yml',
+    'ocr-service/Dockerfile',
+    'ocr-service/requirements.txt',
+    'resources/templates/belanja-persediaan.xlsx',
+    'public/templates/Template Excel.xlsx',
+    'scripts/ocr-smoke-test.sh',
+    'ocr-service/tests/fixtures/synthetic-smoke-receipt.png',
+];
+
+$manifestPaths = array_map(function ($line) {
+    return explode('  ', $line)[1] ?? '';
+}, $manifest);
+
+foreach ($requiredAssets as $requiredAsset) {
+    if (! in_array($requiredAsset, $manifestPaths, true)) {
+        $zip->close();
+        @unlink($output);
+        fwrite(STDERR, "Gagal: Berkas esensial rilis {$requiredAsset} hilang dari arsip.\n");
+        exit(1);
+    }
+}
+
 $zip->addFromString(
     'siperbang/RELEASE_MANIFEST.sha256',
     implode("\n", $manifest)."\n",
 );
+$zip->addFromString('siperbang/RELEASE_COMMIT_SHA', $headSha."\n");
 $zip->close();
 
 fwrite(STDOUT, "Paket dibuat: {$output}\n");
+fwrite(STDOUT, "Commit SHA: {$headSha}\n");
 fwrite(STDOUT, "Berkas source: {$added}\n");
 fwrite(STDOUT, 'Build frontend: '.($includeBuild ? 'disertakan' : 'tidak disertakan')."\n");
