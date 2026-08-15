@@ -27,7 +27,7 @@ class ExcelPersediaanImportService
     public function import(string $filePath, string $originalFileName, string $storedFileName): StokUpload
     {
         if (! file_exists($filePath)) {
-            throw new \Exception('File excel tidak ditemukan.');
+            throw new \DomainException('File excel tidak ditemukan.');
         }
 
         $spreadsheet = IOFactory::load($filePath);

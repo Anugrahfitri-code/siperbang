@@ -25,13 +25,13 @@ class StokFinalizationService
     public function finalize(StokUpload $batch): array
     {
         if ($batch->status === StokUpload::STATUS_SELESAI) {
-            throw new \Exception('Batch upload ini sudah pernah difinalisasi.');
+            throw new \DomainException('Batch upload ini sudah pernah difinalisasi.');
         }
 
         $approvedRows = $batch->details()->where('status_verification', 'Setuju')->get();
 
         if ($approvedRows->isEmpty()) {
-            throw new \Exception('Tidak ada data yang disetujui untuk difinalisasi. Silakan lakukan verifikasi terlebih dahulu.');
+            throw new \DomainException('Tidak ada data yang disetujui untuk difinalisasi. Silakan lakukan verifikasi terlebih dahulu.');
         }
 
         $user = Auth::user();

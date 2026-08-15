@@ -14,6 +14,7 @@ use App\Services\Inventory\StokCancellationService;
 use App\Services\Inventory\StokFinalizationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -72,8 +73,8 @@ class StokUploadController extends Controller
                 ->with('upload_rejected', true);
         } catch (\Exception $e) {
             Storage::delete($path);
-            \Illuminate\Support\Facades\Log::error('Error StokUpload Web', ['exception' => $e]);
-            $msg = get_class($e) === 'Exception' ? $e->getMessage() : 'Terjadi kesalahan saat memproses file.';
+            Log::error('Error StokUpload Web', ['exception' => $e]);
+            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan saat memproses file.';
 
             if ($request->wantsJson()) {
                 return response()->json([
@@ -298,8 +299,9 @@ class StokUploadController extends Controller
             return redirect()->route('stok-upload.riwayat')
                 ->with('success', "Finalisasi berhasil! {$results['inserted']} barang baru ditambahkan, {$results['updated']} diperbarui.");
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error StokUpload Web Finalisasi', ['exception' => $e]);
-            $msg = get_class($e) === 'Exception' ? $e->getMessage() : 'Terjadi kesalahan sistem saat memproses data.';
+            Log::error('Error StokUpload Web Finalisasi', ['exception' => $e]);
+            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan sistem saat memproses data.';
+
             return redirect()->back()->with('error', $msg);
         }
     }
@@ -324,8 +326,9 @@ class StokUploadController extends Controller
 
             return redirect()->route('stok-upload.riwayat')->with('success', $msg);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error StokUpload Web Batalkan', ['exception' => $e]);
-            $msg = get_class($e) === 'Exception' ? $e->getMessage() : 'Terjadi kesalahan sistem saat memproses data.';
+            Log::error('Error StokUpload Web Batalkan', ['exception' => $e]);
+            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan sistem saat memproses data.';
+
             return redirect()->back()->with('error', $msg);
         }
     }

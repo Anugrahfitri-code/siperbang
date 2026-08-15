@@ -9,6 +9,7 @@ use App\Models\StokUpload;
 use App\Models\StokUploadDetail;
 use App\Services\Inventory\StokFinalizationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class StokUploadController extends Controller
 {
@@ -136,8 +137,9 @@ class StokUploadController extends Controller
 
             return response()->json(['success' => true, 'message' => "Finalisasi berhasil! {$results['inserted']} barang baru ditambahkan, {$results['updated']} diperbarui."]);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error StokUpload API', ['exception' => $e]);
-            $msg = get_class($e) === 'Exception' ? $e->getMessage() : 'Terjadi kesalahan sistem saat memproses data.';
+            Log::error('Error StokUpload API', ['exception' => $e]);
+            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan sistem saat memproses data.';
+
             return response()->json(['success' => false, 'error' => $msg], 400);
         }
     }

@@ -38,7 +38,7 @@ class StokCancellationService
     public function cancel(StokUpload $batch, string $reason): array
     {
         if (! $batch->isCancellable()) {
-            throw new \Exception("Hanya upload dengan status 'Selesai' yang dapat dibatalkan. Status saat ini: {$batch->status}");
+            throw new \DomainException("Hanya upload dengan status 'Selesai' yang dapat dibatalkan. Status saat ini: {$batch->status}");
         }
 
         $actor = Auth::user()?->name ?? 'Petugas Persediaan';
@@ -50,7 +50,7 @@ class StokCancellationService
             ->get();
 
         if ($originalHistories->isEmpty()) {
-            throw new \Exception('Tidak ada histori stok yang dapat dibalik untuk batch ini. Mungkin finalisasi tidak menghasilkan perubahan stok.');
+            throw new \DomainException('Tidak ada histori stok yang dapat dibalik untuk batch ini. Mungkin finalisasi tidak menghasilkan perubahan stok.');
         }
 
         $results = ['reversed' => 0, 'skipped' => 0, 'clamped' => 0];
