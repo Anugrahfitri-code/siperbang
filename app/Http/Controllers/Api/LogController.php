@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\HistoryLog;
 use App\Models\Receipt;
+use App\Support\Export\SpreadsheetSecurity;
 use Illuminate\Http\Request;
 
 class LogController extends Controller
@@ -132,19 +133,19 @@ class LogController extends Controller
                     $total = $subtotal + $taxAmount;
 
                     fputcsv($file, [
-                        $rc->invoice_no,
+                        SpreadsheetSecurity::escapeFormula($rc->invoice_no),
                         $rc->date,
-                        $rc->store_name,
-                        $it->inventory_code,
-                        $it->name,
+                        SpreadsheetSecurity::escapeFormula($rc->store_name),
+                        SpreadsheetSecurity::escapeFormula($it->inventory_code),
+                        SpreadsheetSecurity::escapeFormula($it->name),
                         $it->qty,
-                        $it->unit,
+                        SpreadsheetSecurity::escapeFormula($it->unit),
                         $it->price,
                         $subtotal,
                         $taxAmount,
                         $total,
-                        $rc->method,
-                        $isAnnual ? '' : ($rc->bast_name ?? '-'),
+                        SpreadsheetSecurity::escapeFormula($rc->method),
+                        $isAnnual ? '' : SpreadsheetSecurity::escapeFormula($rc->bast_name ?? '-'),
                         $isAnnual ? '' : ($rc->bast_date ?? '-'),
                         $isAnnual ? '' : $rc->date,
                     ]);
