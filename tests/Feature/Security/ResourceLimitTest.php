@@ -137,4 +137,54 @@ class ResourceLimitTest extends TestCase
             ->postJson('/api/receipt-documents', ['document' => $file]);
         $response->assertStatus(202);
     }
+
+    public function test_stock_upload_rate_limited()
+    {
+        $file = UploadedFile::fake()->create('stocks.xlsx', 100);
+
+        for ($i = 0; $i < 20; $i++) {
+            $this->actingAs($this->userA)
+                ->post('/stok-upload', ['file_excel' => $file]);
+        }
+
+        $response = $this->actingAs($this->userA)
+            ->post('/stok-upload', ['file_excel' => $file]);
+        $response->assertStatus(429);
+    }
+
+    public function test_stock_import_rate_limited()
+    {
+        for ($i = 0; $i < 15; $i++) {
+            $this->actingAs($this->userA)
+                ->postJson('/stok-upload/1/verifikasi');
+        }
+
+        $response = $this->actingAs($this->userA)
+            ->postJson('/stok-upload/1/verifikasi');
+        $response->assertStatus(429);
+    }
+
+    public function test_pdf_export_rate_limited()
+    {
+        for ($i = 0; $i < 10; $i++) {
+            $this->actingAs($this->userA)
+                ->getJson('/api/requests/recap/pdf');
+        }
+
+        $response = $this->actingAs($this->userA)
+            ->getJson('/api/requests/recap/pdf');
+        $response->assertStatus(429);
+    }
+
+    public function test_excel_export_rate_limited()
+    {
+        for ($i = 0; $i < 20; $i++) {
+            $this->actingAs($this->userA)
+                ->postJson('/api/receipts/export-excel');
+        }
+
+        $response = $this->actingAs($this->userA)
+            ->postJson('/api/receipts/export-excel');
+        $response->assertStatus(429);
+    }
 }
