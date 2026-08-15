@@ -78,4 +78,32 @@ class InputValidationTest extends TestCase
         $response = $this->getJson('/api/requests/bon?start_date=not-a-date');
         $response->assertStatus(422);
     }
+
+    public function test_nonexistent_requester_fails_safely_for_superadmin()
+    {
+        $user = User::create([
+            'name' => 'Superadmin Test',
+            'username' => 'superadmin_test',
+            'email' => 'super@test.com',
+            'password' => bcrypt('password'),
+            'role' => 'Superadmin',
+            'status' => 'Aktif',
+        ]);
+        $this->actingAs($user);
+
+        $response = $this->postJson('/api/requests', [
+            'keperluan' => 'Test Delegation',
+            'status' => 'Draft',
+            'requester' => 'NonExistentUser123',
+            'items' => [
+                [
+                    'barang_id' => null,
+                    'nama_barang' => 'Barang A',
+                    'jumlah_diminta' => 1,
+                ],
+            ],
+        ]);
+
+        $response->assertStatus(422); // Because SafeBusinessException is usually mapped to 422 in this controller
+    }
 }

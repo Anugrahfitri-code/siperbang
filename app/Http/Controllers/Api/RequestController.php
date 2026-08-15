@@ -63,7 +63,7 @@ class RequestController extends Controller
             $section = $user->section ?? 'Tata Usaha';
             $targetUserId = $user->id;
 
-            if (in_array(strtolower($user->role), ['admin', 'superadmin']) && $request->filled('requester')) {
+            if (strtolower($user->role) === 'superadmin' && $request->filled('requester')) {
                 $targetUser = User::where('username', $request->input('requester'))
                     ->orWhere('name', $request->input('requester'))
                     ->first();
@@ -71,6 +71,8 @@ class RequestController extends Controller
                     $targetUserId = $targetUser->id;
                     $requester = $targetUser->name;
                     $section = $targetUser->section ?? 'Tata Usaha';
+                } else {
+                    throw new SafeBusinessException("User tujuan '{$request->input('requester')}' tidak ditemukan.");
                 }
             }
 
@@ -596,13 +598,15 @@ class RequestController extends Controller
             $requester = $bonHeader->requester;
             $section = $bonHeader->section;
 
-            if (in_array(strtolower($user->role), ['admin', 'superadmin']) && $request->filled('requester')) {
+            if (strtolower($user->role) === 'superadmin' && $request->filled('requester')) {
                 $targetUser = User::where('username', $request->input('requester'))
                     ->orWhere('name', $request->input('requester'))
                     ->first();
                 if ($targetUser) {
                     $requester = $targetUser->name;
                     $section = $targetUser->section ?? 'Tata Usaha';
+                } else {
+                    throw new SafeBusinessException("User tujuan '{$request->input('requester')}' tidak ditemukan.");
                 }
             }
 
