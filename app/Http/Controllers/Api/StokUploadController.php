@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\SafeBusinessException;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\KodePersediaan;
@@ -138,7 +139,7 @@ class StokUploadController extends Controller
             return response()->json(['success' => true, 'message' => "Finalisasi berhasil! {$results['inserted']} barang baru ditambahkan, {$results['updated']} diperbarui."]);
         } catch (\Exception $e) {
             Log::error('Error StokUpload API', ['exception' => $e]);
-            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan sistem saat memproses data.';
+            $msg = $e instanceof SafeBusinessException ? $e->getMessage() : 'Terjadi kesalahan sistem saat memproses data.';
 
             return response()->json(['success' => false, 'error' => $msg], 400);
         }

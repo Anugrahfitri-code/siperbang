@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Exceptions\Inventory\ExcelValidationException;
+use App\Exceptions\SafeBusinessException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\UploadStokExcelRequest;
 use App\Models\AuditLog;
@@ -74,7 +75,7 @@ class StokUploadController extends Controller
         } catch (\Exception $e) {
             Storage::delete($path);
             Log::error('Error StokUpload Web', ['exception' => $e]);
-            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan saat memproses file.';
+            $msg = $e instanceof SafeBusinessException ? $e->getMessage() : 'Terjadi kesalahan saat memproses file.';
 
             if ($request->wantsJson()) {
                 return response()->json([
@@ -300,7 +301,7 @@ class StokUploadController extends Controller
                 ->with('success', "Finalisasi berhasil! {$results['inserted']} barang baru ditambahkan, {$results['updated']} diperbarui.");
         } catch (\Exception $e) {
             Log::error('Error StokUpload Web Finalisasi', ['exception' => $e]);
-            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan sistem saat memproses data.';
+            $msg = $e instanceof SafeBusinessException ? $e->getMessage() : 'Terjadi kesalahan sistem saat memproses data.';
 
             return redirect()->back()->with('error', $msg);
         }
@@ -327,7 +328,7 @@ class StokUploadController extends Controller
             return redirect()->route('stok-upload.riwayat')->with('success', $msg);
         } catch (\Exception $e) {
             Log::error('Error StokUpload Web Batalkan', ['exception' => $e]);
-            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan sistem saat memproses data.';
+            $msg = $e instanceof SafeBusinessException ? $e->getMessage() : 'Terjadi kesalahan sistem saat memproses data.';
 
             return redirect()->back()->with('error', $msg);
         }

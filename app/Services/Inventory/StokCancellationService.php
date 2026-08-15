@@ -2,6 +2,7 @@
 
 namespace App\Services\Inventory;
 
+use App\Exceptions\SafeBusinessException;
 use App\Models\AuditLog;
 use App\Models\Barang;
 use App\Models\HistoryLog;
@@ -38,7 +39,7 @@ class StokCancellationService
     public function cancel(StokUpload $batch, string $reason): array
     {
         if (! $batch->isCancellable()) {
-            throw new \DomainException("Hanya upload dengan status 'Selesai' yang dapat dibatalkan. Status saat ini: {$batch->status}");
+            throw new SafeBusinessException("Hanya upload dengan status 'Selesai' yang dapat dibatalkan. Status saat ini: {$batch->status}");
         }
 
         $actor = Auth::user()?->name ?? 'Petugas Persediaan';
@@ -50,7 +51,7 @@ class StokCancellationService
             ->get();
 
         if ($originalHistories->isEmpty()) {
-            throw new \DomainException('Tidak ada histori stok yang dapat dibalik untuk batch ini. Mungkin finalisasi tidak menghasilkan perubahan stok.');
+            throw new SafeBusinessException('Tidak ada histori stok yang dapat dibalik untuk batch ini. Mungkin finalisasi tidak menghasilkan perubahan stok.');
         }
 
         $results = ['reversed' => 0, 'skipped' => 0, 'clamped' => 0];

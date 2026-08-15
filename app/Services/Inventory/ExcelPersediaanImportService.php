@@ -3,6 +3,7 @@
 namespace App\Services\Inventory;
 
 use App\Exceptions\Inventory\ExcelValidationException;
+use App\Exceptions\SafeBusinessException;
 use App\Models\KodePersediaan;
 use App\Models\StokUpload;
 use App\Support\Inventory\OfficeInventoryCatalog;
@@ -27,7 +28,7 @@ class ExcelPersediaanImportService
     public function import(string $filePath, string $originalFileName, string $storedFileName): StokUpload
     {
         if (! file_exists($filePath)) {
-            throw new \DomainException('File excel tidak ditemukan.');
+            throw new SafeBusinessException('File excel tidak ditemukan.');
         }
 
         $spreadsheet = IOFactory::load($filePath);

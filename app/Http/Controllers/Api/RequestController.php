@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\SafeBusinessException;
 use App\Http\Controllers\Controller;
 use App\Models\BonHeader;
 use App\Models\BonStatusHistory;
@@ -102,7 +103,7 @@ class RequestController extends Controller
             } while ($bonNo === null && $attempts < 10);
 
             if ($bonNo === null) {
-                throw new \DomainException('Gagal membuat nomor BON unik. Coba lagi.');
+                throw new SafeBusinessException('Gagal membuat nomor BON unik. Coba lagi.');
             }
 
             $bonHeader = BonHeader::create([
@@ -179,7 +180,7 @@ class RequestController extends Controller
             DB::rollBack();
 
             Log::error('Error RequestController', ['exception' => $e]);
-            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            $msg = $e instanceof SafeBusinessException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
 
             return response()->json(['message' => 'Gagal menyimpan pengajuan: '.$msg], 422);
         }
@@ -213,7 +214,7 @@ class RequestController extends Controller
                 if ($stockItem && ! $itemRequest->stock_allocated) {
                     $qtyToDeduct = $validated['deductStock']['qtyToDeduct'];
                     if ($stockItem->qty < $qtyToDeduct) {
-                        throw new \DomainException('Stok gudang tidak mencukupi untuk pemenuhan ini.');
+                        throw new SafeBusinessException('Stok gudang tidak mencukupi untuk pemenuhan ini.');
                     }
                     $stockItem->qty -= $qtyToDeduct;
                     $stockItem->last_updated = today();
@@ -269,7 +270,7 @@ class RequestController extends Controller
             DB::rollBack();
 
             Log::error('Error RequestController', ['exception' => $e]);
-            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            $msg = $e instanceof SafeBusinessException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
 
             return response()->json(['message' => $msg], 422);
         }
@@ -290,7 +291,7 @@ class RequestController extends Controller
 
             if (! $itemRequest->stock_allocated) {
                 if ($stockItem->qty < $validated['qtyDistributed']) {
-                    throw new \DomainException('Stok gudang tidak mencukupi untuk distribusi.');
+                    throw new SafeBusinessException('Stok gudang tidak mencukupi untuk distribusi.');
                 }
                 $stockItem->qty -= $validated['qtyDistributed'];
                 $stockItem->last_updated = today();
@@ -301,7 +302,7 @@ class RequestController extends Controller
                 if ($validated['qtyDistributed'] > $itemRequest->qty_fulfilled) {
                     $extraNeeded = $validated['qtyDistributed'] - $itemRequest->qty_fulfilled;
                     if ($stockItem->qty < $extraNeeded) {
-                        throw new \DomainException('Stok gudang tidak mencukupi untuk tambahan distribusi.');
+                        throw new SafeBusinessException('Stok gudang tidak mencukupi untuk tambahan distribusi.');
                     }
                     $stockItem->qty -= $extraNeeded;
                     $stockItem->last_updated = today();
@@ -351,7 +352,7 @@ class RequestController extends Controller
             DB::rollBack();
 
             Log::error('Error RequestController', ['exception' => $e]);
-            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            $msg = $e instanceof SafeBusinessException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
 
             return response()->json(['message' => $msg], 422);
         }
@@ -425,7 +426,7 @@ class RequestController extends Controller
             DB::rollBack();
 
             Log::error('Error RequestController', ['exception' => $e]);
-            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            $msg = $e instanceof SafeBusinessException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
 
             return response()->json(['message' => $msg], 422);
         }
@@ -442,7 +443,7 @@ class RequestController extends Controller
         try {
             $procurement = Procurement::findOrFail($validated['procurementId']);
             if ($procurement->status === 'Diterima') {
-                throw new \DomainException('Pengadaan ini sudah selesai.');
+                throw new SafeBusinessException('Pengadaan ini sudah selesai.');
             }
 
             $procurement->status = 'Diterima';
@@ -492,7 +493,7 @@ class RequestController extends Controller
             DB::rollBack();
 
             Log::error('Error RequestController', ['exception' => $e]);
-            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            $msg = $e instanceof SafeBusinessException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
 
             return response()->json(['message' => $msg], 422);
         }
@@ -650,7 +651,7 @@ class RequestController extends Controller
             DB::rollBack();
 
             Log::error('Error RequestController', ['exception' => $e]);
-            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            $msg = $e instanceof SafeBusinessException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
 
             return response()->json(['message' => 'Gagal memperbarui draft: '.$msg], 422);
         }
@@ -685,7 +686,7 @@ class RequestController extends Controller
             DB::rollBack();
 
             Log::error('Error RequestController', ['exception' => $e]);
-            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            $msg = $e instanceof SafeBusinessException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
 
             return response()->json(['message' => 'Gagal menghapus draft: '.$msg], 422);
         }
@@ -825,7 +826,7 @@ class RequestController extends Controller
             DB::rollBack();
 
             Log::error('Error RequestController', ['exception' => $e]);
-            $msg = $e instanceof \DomainException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            $msg = $e instanceof SafeBusinessException ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
 
             return response()->json(['message' => $msg], 422);
         }

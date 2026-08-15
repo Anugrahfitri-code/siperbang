@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Security;
 
+use App\Exceptions\SafeBusinessException;
 use App\Models\StokUpload;
 use App\Models\User;
 use App\Services\Inventory\StokFinalizationService;
@@ -68,7 +69,7 @@ class ErrorDisclosureTest extends TestCase
         $this->actingAs($user);
 
         $this->mock(StokFinalizationService::class, function ($mock) {
-            $mock->shouldReceive('finalize')->andThrow(new \DomainException('SAFE_DOMAIN_EXCEPTION_MESSAGE_36_3A'));
+            $mock->shouldReceive('finalize')->andThrow(new SafeBusinessException('SAFE_DOMAIN_EXCEPTION_MESSAGE_36_3A'));
         });
 
         $batch = clone StokUpload::create([
