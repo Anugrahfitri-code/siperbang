@@ -469,9 +469,7 @@ class ReceiptController extends Controller
             return response()->json([
                 'message' => 'Terjadi kesalahan sistem saat '
                     .'membatalkan kuitansi.',
-                'error' => config('app.debug')
-                    ? $exception->getMessage()
-                    : null,
+                'error' => null,
             ], 500);
         }
     }

@@ -177,7 +177,9 @@ class RequestController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['message' => 'Gagal menyimpan pengajuan: '.$e->getMessage()], 422);
+            \Illuminate\Support\Facades\Log::error('Error RequestController', ['exception' => $e]);
+            $msg = get_class($e) === 'Exception' ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            return response()->json(['message' => 'Gagal menyimpan pengajuan: ' . $msg], 422);
         }
     }
 
@@ -264,7 +266,9 @@ class RequestController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['message' => $e->getMessage()], 422);
+            \Illuminate\Support\Facades\Log::error('Error RequestController', ['exception' => $e]);
+            $msg = get_class($e) === 'Exception' ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            return response()->json(['message' => $msg], 422);
         }
     }
 
@@ -343,7 +347,9 @@ class RequestController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['message' => $e->getMessage()], 422);
+            \Illuminate\Support\Facades\Log::error('Error RequestController', ['exception' => $e]);
+            $msg = get_class($e) === 'Exception' ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            return response()->json(['message' => $msg], 422);
         }
     }
 
@@ -414,7 +420,9 @@ class RequestController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['message' => $e->getMessage()], 422);
+            \Illuminate\Support\Facades\Log::error('Error RequestController', ['exception' => $e]);
+            $msg = get_class($e) === 'Exception' ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            return response()->json(['message' => $msg], 422);
         }
     }
 
@@ -478,7 +486,9 @@ class RequestController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['message' => $e->getMessage()], 422);
+            \Illuminate\Support\Facades\Log::error('Error RequestController', ['exception' => $e]);
+            $msg = get_class($e) === 'Exception' ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            return response()->json(['message' => $msg], 422);
         }
     }
 
@@ -633,7 +643,9 @@ class RequestController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['message' => 'Gagal memperbarui draft: '.$e->getMessage()], 422);
+            \Illuminate\Support\Facades\Log::error('Error RequestController', ['exception' => $e]);
+            $msg = get_class($e) === 'Exception' ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            return response()->json(['message' => 'Gagal memperbarui draft: ' . $msg], 422);
         }
     }
 
@@ -665,7 +677,9 @@ class RequestController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['message' => 'Gagal menghapus draft: '.$e->getMessage()], 422);
+            \Illuminate\Support\Facades\Log::error('Error RequestController', ['exception' => $e]);
+            $msg = get_class($e) === 'Exception' ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            return response()->json(['message' => 'Gagal menghapus draft: ' . $msg], 422);
         }
     }
 
@@ -802,7 +816,9 @@ class RequestController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['message' => $e->getMessage()], 422);
+            \Illuminate\Support\Facades\Log::error('Error RequestController', ['exception' => $e]);
+            $msg = get_class($e) === 'Exception' ? $e->getMessage() : 'Terjadi kesalahan saat memproses data.';
+            return response()->json(['message' => $msg], 422);
         }
     }
 
