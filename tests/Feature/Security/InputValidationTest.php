@@ -206,7 +206,7 @@ class InputValidationTest extends TestCase
         // invalid annual
         $this->getJson('/api/export-excel?annual=nope')->assertStatus(422);
         // oversized search
-        $this->getJson('/api/export-excel?search=' . str_repeat('A', 300))->assertStatus(422);
+        $this->getJson('/api/export-excel?search='.str_repeat('A', 300))->assertStatus(422);
         // valid existing filters still work
         $this->getJson('/api/export-excel?year=2026&month=All&annual=true')->assertStatus(200);
     }
