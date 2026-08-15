@@ -34,6 +34,16 @@
         "react-select": "^5.10.2"
     },
     "overrides": {
-        "brace-expansion": "1.1.17"
+        "exceljs": {
+            "archiver": {
+                "archiver-utils": {
+                    "glob": {
+                        "minimatch": {
+                            "brace-expansion": "1.1.17"
+                        }
+                    }
+                }
+            }
+        }
     }
 }
