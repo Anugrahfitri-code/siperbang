@@ -517,7 +517,16 @@ function confirmDelete(button) {
     var name = tr.dataset.name;
 
     document.getElementById('deleteForm').action = '/master-barang/' + id + '/delete';
-    document.getElementById('deleteMessage').innerHTML = 'Apakah Anda yakin ingin menghapus barang <strong>' + name.replace(/</g, '&lt;') + '</strong>?<br><br>Data yang sudah dihapus tidak dapat dikembalikan.';
+    
+    var msgContainer = document.getElementById('deleteMessage');
+    msgContainer.textContent = 'Apakah Anda yakin ingin menghapus barang ';
+    var strong = document.createElement('strong');
+    strong.textContent = name;
+    msgContainer.appendChild(strong);
+    msgContainer.appendChild(document.createTextNode('?'));
+    msgContainer.appendChild(document.createElement('br'));
+    msgContainer.appendChild(document.createElement('br'));
+    msgContainer.appendChild(document.createTextNode('Data yang sudah dihapus tidak dapat dikembalikan.'));
 
     openConfirmModal('deleteModal');
 }

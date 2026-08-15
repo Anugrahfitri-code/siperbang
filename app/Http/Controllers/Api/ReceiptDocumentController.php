@@ -1250,9 +1250,7 @@ class ReceiptDocumentController extends Controller
 
                 'code' => 'verification_failed',
 
-                'error' => config('app.debug')
-                        ? $exception->getMessage()
-                        : null,
+                'error' => null,
             ], 500);
         }
     }

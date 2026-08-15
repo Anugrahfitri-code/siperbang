@@ -188,9 +188,15 @@
         const file = input.files[0];
         const label = document.getElementById('file-name-label');
         if (file) {
-            label.innerHTML = `File terpilih: <span class="text-indigo-600 font-bold font-mono text-sm">${file.name}</span> (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            label.textContent = '';
+            label.appendChild(document.createTextNode('File terpilih: '));
+            const span = document.createElement('span');
+            span.className = 'text-indigo-600 font-bold font-mono text-sm';
+            span.textContent = file.name;
+            label.appendChild(span);
+            label.appendChild(document.createTextNode(` (${(file.size / 1024 / 1024).toFixed(2)} MB)`));
         } else {
-            label.innerText = 'Seret & lepas file Anda ke sini, atau klik untuk menelusuri';
+            label.textContent = 'Seret & lepas file Anda ke sini, atau klik untuk menelusuri';
         }
     }
 </script>
