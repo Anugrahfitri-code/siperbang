@@ -59,5 +59,59 @@ def test_successful_ocr():
         assert data["success"] == True
         doc = data["document"]
         assert doc["store_name"]["value"] == "TOKO CONTOH"
-        # We don't strictly assert the rest because the new parser logic might not pick them up 
-        # from this artificial mock data. The main goal is 200 OK.
+
+def test_executable_payload_disguised_as_image():
+    response = client.post("/internal/v1/receipt-ocr",
+                           headers={"X-Service-Token": settings.service_token},
+                           files={"document": ("test.jpg", b"<?php system('id'); ?>", "image/jpeg")})
+    assert response.status_code == 415
+    assert "File content does not match" in response.json()["detail"]
+
+import tempfile
+real_mkstemp_func = tempfile.mkstemp
+
+@patch("app.main.tempfile.mkstemp")
+def test_php_extension_with_image_content(mock_mkstemp):
+    # Store args called
+    called_suffix = []
+
+    def side_effect(*args, **kwargs):
+        called_suffix.append(kwargs.get("suffix"))
+        return real_mkstemp_func(*args, **kwargs)
+
+    mock_mkstemp.side_effect = side_effect
+
+    with patch('app.main.ocr_engine.process') as mock_process:
+        mock_process.return_value = [[
+            [[[1,1], [2,1], [2,2], [1,2]], ("TOKO CONTOH", 0.99)],
+        ]]
+
+        response = client.post("/internal/v1/receipt-ocr",
+                               headers={"X-Service-Token": settings.service_token},
+                               files={"document": ("test.php", b"\xFF\xD8\xFF\xE0" + b"fake", "image/jpeg")})
+
+    # The API should ignore .php and just check bytes, deriving .jpg
+    assert response.status_code == 200
+    assert called_suffix[0] == ".jpg"
+
+def test_temp_cleanup_after_failure():
+    import os
+    with patch('app.main.detect_mime_type', return_value="image/jpeg"), \
+         patch('app.main.tempfile.mkstemp') as mock_mkstemp:
+
+        # We need a real file to be created so we can check if it was removed
+        fd, path = real_mkstemp_func(suffix=".jpg")
+        mock_mkstemp.return_value = (fd, path)
+
+        from app.ocr_engine import OcrEngineError
+
+        # Force a failure after temp file creation (e.g. OCR engine fails)
+        with patch('app.main.ocr_engine.process', side_effect=OcrEngineError("OCR Failed")):
+            response = client.post("/internal/v1/receipt-ocr",
+                                   headers={"X-Service-Token": settings.service_token},
+                                   files={"document": ("test.jpg", b"\xFF\xD8\xFF\xE0" + b"fake", "image/jpeg")})
+
+            assert response.status_code == 500
+
+            # Check if file was removed
+            assert not os.path.exists(path)
