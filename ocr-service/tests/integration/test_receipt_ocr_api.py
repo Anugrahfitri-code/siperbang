@@ -115,3 +115,52 @@ def test_temp_cleanup_after_failure():
 
             # Check if file was removed
             assert not os.path.exists(path)
+
+def test_temp_cleanup_after_success():
+    import os
+    with patch('app.main.detect_mime_type', return_value="image/jpeg"), \
+         patch('app.main.tempfile.mkstemp') as mock_mkstemp:
+
+        # We need a real file to be created so we can check if it was removed
+        fd, path = real_mkstemp_func(suffix=".jpg")
+        mock_mkstemp.return_value = (fd, path)
+
+        with patch('app.main.ocr_engine.process') as mock_process:
+            mock_process.return_value = [[
+                [[[1,1], [2,1], [2,2], [1,2]], ("TOKO CONTOH", 0.99)],
+            ]]
+
+            response = client.post("/internal/v1/receipt-ocr",
+                                   headers={"X-Service-Token": settings.service_token},
+                                   files={"document": ("test.jpg", b"\xFF\xD8\xFF\xE0" + b"fake", "image/jpeg")})
+
+            assert response.status_code == 200
+
+            # Check if file was removed
+            assert not os.path.exists(path)
+
+@patch("app.main.tempfile.mkstemp")
+def test_pdf_bytes_with_jpg_filename(mock_mkstemp):
+    # PDF magic bytes: %PDF-1.4 (25 50 44 46 2D 31 2E 34)
+    called_suffix = []
+
+    def side_effect(*args, **kwargs):
+        called_suffix.append(kwargs.get("suffix"))
+        return real_mkstemp_func(*args, **kwargs)
+
+    mock_mkstemp.side_effect = side_effect
+
+    with patch('app.main.ocr_engine.process') as mock_process:
+        mock_process.return_value = [[
+            [[[1,1], [2,1], [2,2], [1,2]], ("TOKO CONTOH", 0.99)],
+        ]]
+        with patch('app.main.pdfium.PdfDocument') as mock_pdfium:
+            mock_pdf_doc = mock_pdfium.return_value
+            mock_pdf_doc.__len__.return_value = 1
+
+            response = client.post("/internal/v1/receipt-ocr",
+                                    headers={"X-Service-Token": settings.service_token},
+                                    files={"document": ("test.jpg", b"%PDF-1.4\nfake", "image/jpeg")})
+
+    assert response.status_code == 200
+    assert called_suffix[0] == ".pdf"
