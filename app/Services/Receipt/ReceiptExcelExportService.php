@@ -321,12 +321,13 @@ class ReceiptExcelExportService
          * Contoh:
          * "Toko redzky plastik"  =>  "SUPPLIER : REDZKY PLASTIK"
          */
-        $sheet->setCellValue(
+        $sheet->setCellValueExplicit(
             'A2',
             'SUPPLIER : '
             .$this->formatSupplierName(
                 (string) $receipt->store_name
             ),
+            DataType::TYPE_STRING,
         );
 
         foreach ($items as $index => $item) {
@@ -346,9 +347,10 @@ class ReceiptExcelExportService
                 DataType::TYPE_STRING,
             );
 
-            $sheet->setCellValue(
+            $sheet->setCellValueExplicit(
                 'C'.$row,
                 trim((string) $item->name),
+                DataType::TYPE_STRING,
             );
 
             $sheet->setCellValue(
@@ -356,9 +358,10 @@ class ReceiptExcelExportService
                 (int) $item->qty,
             );
 
-            $sheet->setCellValue(
+            $sheet->setCellValueExplicit(
                 'E'.$row,
                 $this->formatUnit($item->unit),
+                DataType::TYPE_STRING,
             );
 
             $sheet->setCellValue(
@@ -617,7 +620,7 @@ class ReceiptExcelExportService
             $receipt = $receipts->first();
 
             $storeName = preg_replace(
-                '~[\\\\/:*?"<>|]+~u',
+                '~[\r\n\\\\/:*?"<>|]+~u',
                 '_',
                 trim((string) $receipt->store_name),
             ) ?: 'Kuitansi';
