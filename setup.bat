@@ -159,7 +159,10 @@ echo  ============================================
 echo   SETUP SELESAI!
 echo  ============================================
 echo.
-echo  Jalankan aplikasi dengan perintah:
+echo  Untuk menjalankan aplikasi untuk pertama kali, buat akun Superadmin:
+echo    php artisan app:provision-superadmin
+echo.
+echo  Lalu jalankan aplikasi dengan perintah:
 echo    php artisan serve
 echo.
 echo  Atau jalankan mode development lengkap:

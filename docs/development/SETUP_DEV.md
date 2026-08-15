@@ -82,15 +82,26 @@ QUEUE_CONNECTION=database
 
 ```bash
 # Seed kategori dan kode persediaan (master data wajib)
-php artisan db:seed --class="Database\\Seeders\\Inventory\\OfficeActivityInventoryCodeSeeder"
-
-# Seed semua (termasuk user dummy)
 php artisan db:seed
 ```
 
 ---
 
-## Langkah 4: Jalankan Aplikasi
+## Langkah 4: Buat Akun Superadmin
+
+Aplikasi tidak lagi menyediakan akun default. Anda harus membuat akun Superadmin pertama kali melalui console:
+
+```bash
+php artisan app:provision-superadmin
+```
+
+Ikuti prompt interaktif untuk memasukkan nama, username, dan password. Password harus memenuhi standar keamanan aplikasi (minimal 12 karakter, huruf besar, huruf kecil, angka, dan simbol).
+
+Setelah akun terbuat, Anda dapat menggunakannya untuk login ke aplikasi.
+
+---
+
+## Langkah 5: Jalankan Aplikasi
 
 ```bash
 # Jalankan semua service sekaligus (Laravel + Vite + Queue worker)
@@ -101,7 +112,7 @@ Akses aplikasi di: http://localhost:8000
 
 ---
 
-## Langkah 5: Setup OCR Service (Opsional)
+## Langkah 6: Setup OCR Service (Opsional)
 
 Diperlukan hanya jika ingin menggunakan fitur upload kuitansi dengan OCR.
 
@@ -142,20 +153,6 @@ php artisan test tests/Feature/Receipt/ReceiptDocumentTest.php
 cd ocr-service
 .\scripts\run-tests.ps1
 ```
-
----
-
-## Akun Default
-
-Setelah seeding, gunakan akun ini untuk login:
-
-| Username | Password | Role |
-|---|---|---|
-| admin | password | Superadmin |
-| iwan.s | password | Petugas Persediaan |
-| budi.tu | password | Ketua Tim Kerja |
-
-> **PENTING:** Password default adalah `password`. Segera ganti di halaman User Management setelah login pertama kali.
 
 ---
 

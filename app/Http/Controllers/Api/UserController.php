@@ -26,8 +26,7 @@ class UserController extends Controller
             'password' => ['required', 'string', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
         ]);
 
-        $password = $request->input('password');
-        $validated['password'] = Hash::make($password ?: 'password'); // Default password
+        $validated['password'] = Hash::make($validated['password']);
         $user = User::create($validated);
 
         return response()->json($user, 201);
