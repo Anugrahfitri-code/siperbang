@@ -2,28 +2,16 @@
 
 This document tracks known dependency vulnerabilities that are present in the dependency tree but have been proven safe or non-reachable in the production environment. These exceptions must be reassessed during any major package upgrade or architectural shift.
 
-## 1. brace-expansion (High)
-
-- **Package**: `brace-expansion`
-- **Version**: `1.1.16`
-- **Severity**: High
-- **Dependency Path**: `exceljs@4.4.0` -> `archiver@5.3.2` -> `archiver-utils@2.1.0` -> `glob@7.2.3` -> `minimatch@3.1.5` -> `brace-expansion@1.1.16`
-- **Why remediation is not currently available/safe**: A direct transitive upgrade breaks the `glob`/`minimatch` internal APIs and is not natively resolvable without introducing breaking changes or forced overrides that destabilize `archiver` and `exceljs`. ExcelJS relies on this exact version combination.
-- **Runtime reachability**: NOT REACHABLE. The application only executes ExcelJS within the browser (client-side) using Vite's bundling.
-- **Build reachability**: NOT REACHABLE. Vite strips `fs` and Node-specific modules (like `archiver`) during the production build. The code for `brace-expansion` is never executed during Vite bundling or deployed to production.
-- **Compensating controls**: Vite dead-code elimination ensures this code path is physically absent from the production browser bundle.
-- **Condition that requires reassessment**: Upgrade of ExcelJS to version 5.x or any switch to server-side XLSX generation.
-- **Target upgrade/removal strategy**: Await official `exceljs` patch or replace the library if server-side execution becomes necessary.
-
-## 2. uuid (Moderate)
+## 1. uuid (Moderate)
 
 - **Package**: `uuid`
 - **Version**: `8.3.2`
 - **Severity**: Moderate
 - **Dependency Path**: `exceljs@4.4.0` -> `uuid@8.3.2`
-- **Why remediation is not currently available/safe**: Fixed version (uuid@10+) involves API and module system changes (ESM vs CJS) that break the `exceljs` internal usage.
-- **Runtime reachability**: NOT REACHABLE (Vulnerability context). The application does not directly import `uuid`. ExcelJS uses it internally for zip generation. The browser environment implementation of `uuid` relies on the browser's native `crypto.getRandomValues()`, which does not suffer from the weak RNG vulnerability present in older Node implementations. Furthermore, there is no attacker-controlled buffer/offset path in our implementation.
-- **Build reachability**: NOT REACHABLE (Vulnerability context).
-- **Compensating controls**: Browser-native cryptographic functions are used.
-- **Condition that requires reassessment**: If UUID is ever utilized directly within the Node.js backend.
-- **Target upgrade/removal strategy**: Upgrade when `exceljs` updates its dependency tree.
+- **Why remediation is not currently available/safe**: Fixed versions (uuid@9+) involve breaking API and module system changes (ESM vs CJS) that directly break `exceljs` internal resolution and packaging.
+- **Runtime reachability**: SOURCE-PROVEN-NOT-REACHABLE (Vulnerability context). 
+- **Reachability Justification**: The advisory affects `v3`, `v5`, and `v6` APIs when an external, attacker-controlled output buffer and offset are supplied. A direct source inspection of `exceljs` usage within the SIPERBANG bundle (`cf-rule-ext-xform.js` and other usages) proves that ExcelJS exclusively calls the `uuidv4()` API with zero arguments. No output buffers or offsets are ever supplied by the application or by ExcelJS internals. The vulnerable conditions cannot physically occur.
+- **Build reachability**: NOT REACHABLE.
+- **Compensating controls**: API usage constraint (v4 parameterless).
+- **Condition that requires reassessment**: If UUID is ever utilized directly within the backend or if ExcelJS modifies its internal call signature to use vulnerable buffer bounds.
+- **Target upgrade/removal strategy**: Upgrade when `exceljs` updates its dependency tree to a patched UUID version natively.
