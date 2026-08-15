@@ -5,6 +5,9 @@ namespace App\Providers;
 use App\Services\SiteBrandingService;
 use App\Support\SiteBranding\HtmlSanitizer;
 use App\Support\SiteBranding\ImageOptimizer;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Throwable;
@@ -20,6 +23,36 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        RateLimiter::for('receipt-ocr', function (Request $request) {
+            return $request->user()
+                ? Limit::perMinute(10)->by($request->user()->id)
+                : Limit::perMinute(5)->by($request->ip());
+        });
+
+        RateLimiter::for('stock-upload', function (Request $request) {
+            return $request->user()
+                ? Limit::perMinute(20)->by($request->user()->id)
+                : Limit::perMinute(5)->by($request->ip());
+        });
+
+        RateLimiter::for('stock-import', function (Request $request) {
+            return $request->user()
+                ? Limit::perMinute(15)->by($request->user()->id)
+                : Limit::perMinute(5)->by($request->ip());
+        });
+
+        RateLimiter::for('pdf-export', function (Request $request) {
+            return $request->user()
+                ? Limit::perMinute(10)->by($request->user()->id)
+                : Limit::perMinute(5)->by($request->ip());
+        });
+
+        RateLimiter::for('excel-export', function (Request $request) {
+            return $request->user()
+                ? Limit::perMinute(20)->by($request->user()->id)
+                : Limit::perMinute(5)->by($request->ip());
+        });
+
         View::composer('*', function ($view): void {
             try {
                 $view->with(
