@@ -62,18 +62,28 @@ class ExportSecurityTest extends TestCase
 
         $content = $response->streamedContent();
 
-        $this->assertStringContainsString("'=1+1", $content);
-        $this->assertStringContainsString("'@SUM(A1:A2)", $content);
-        $this->assertStringContainsString("'-10+20", $content);
-        $this->assertStringContainsString("'+CMD", $content);
-        $this->assertStringContainsString('=HYPERLINK(""http://evil.com"",""Click"")', $content);
-        $this->assertStringContainsString("'@DANGER", $content);
+        $lines = explode("\n", trim($content));
+        $this->assertGreaterThan(1, count($lines));
 
+        // Parse header
+        $header = str_getcsv($lines[0]);
+        $this->assertEquals('No Nota', $header[0]);
+        $this->assertEquals('Metode Pengadaan', $header[11]);
+
+        // Parse first data row
+        $row = str_getcsv($lines[1]);
+        
+        $this->assertEquals("'" . '=1+1', $row[2]); // store_name
+        $this->assertEquals("'" . '@SUM(A1:A2)', $row[0]); // invoice_no
+        $this->assertEquals("'" . '-10+20', $row[11]); // method
+        $this->assertEquals("'" . '+CMD', $row[12]); // bast_name
+        $this->assertEquals("'" . '=HYPERLINK("http://evil.com","Click")', $row[4]); // name
+        $this->assertEquals("'" . '@DANGER', $row[6]); // unit
+        
         // Ensure numeric isn't prefixed if not starting with dangerous char
-        $this->assertStringContainsString('1010301001', $content);
-        $this->assertStringNotContainsString("'1010301001", $content);
-        $this->assertStringContainsString(',5,', $content);
-        $this->assertStringContainsString(',100.00,', $content);
+        $this->assertEquals('1010301001', $row[3]); // inventory_code
+        $this->assertEquals('5', $row[5]); // qty
+        $this->assertEquals('100.00', $row[7]); // price
     }
 
     public function test_xlsx_formula_injection_is_neutralized()
