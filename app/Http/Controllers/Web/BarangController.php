@@ -32,8 +32,8 @@ class BarangController extends Controller
             $search = trim((string) $validated['search']);
 
             $query->where(function (Builder $builder) use ($search): void {
-                $builder->where('name', 'ilike', "%{$search}%")
-                    ->orWhere('code', 'ilike', "%{$search}%");
+                $builder->whereLikePortable('name', $search)
+                    ->orWhereLikePortable('code', $search);
             });
         }
 
@@ -106,9 +106,9 @@ class BarangController extends Controller
 
         if ($queryString !== '') {
             $query->where(function (Builder $builder) use ($queryString): void {
-                $builder->where('name', 'ilike', "%{$queryString}%")
-                    ->orWhere('code', 'ilike', "%{$queryString}%")
-                    ->orWhere('category', 'ilike', "%{$queryString}%");
+                $builder->whereLikePortable('name', $queryString)
+                    ->orWhereLikePortable('code', $queryString)
+                    ->orWhereLikePortable('category', $queryString);
             });
         }
 

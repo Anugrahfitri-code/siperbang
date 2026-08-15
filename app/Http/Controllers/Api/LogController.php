@@ -21,7 +21,7 @@ class LogController extends Controller
             $query->where(function ($q) use ($user) {
                 // Return if user_id explicitly matches or actor contains user's name
                 $q->where('user_id', $user->id)
-                    ->orWhere('actor', 'like', "%{$user->name}%");
+                    ->orWhereLikePortable('actor', $user->name);
             });
         }
 
@@ -85,10 +85,10 @@ class LogController extends Controller
 
         if (! empty($search)) {
             $query->where(function ($q) use ($search) {
-                $q->where('store_name', 'like', "%{$search}%")
-                    ->orWhere('invoice_no', 'like', "%{$search}%")
+                $q->whereLikePortable('store_name', $search)
+                    ->orWhereLikePortable('invoice_no', $search)
                     ->orWhereHas('items', function ($subQ) use ($search) {
-                        $subQ->where('name', 'like', "%{$search}%");
+                        $subQ->whereLikePortable('name', $search);
                     });
             });
         }

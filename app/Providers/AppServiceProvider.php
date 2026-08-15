@@ -6,6 +6,7 @@ use App\Services\SiteBrandingService;
 use App\Support\SiteBranding\HtmlSanitizer;
 use App\Support\SiteBranding\ImageOptimizer;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
@@ -23,6 +24,19 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Builder::macro('whereLikePortable', function (string $column, string $search) {
+            $columnWrapped = $this->getGrammar()->wrap($column);
+            $escapedSearch = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search);
+
+            return $this->whereRaw("LOWER({$columnWrapped}) LIKE LOWER(?) ESCAPE '!'", ["%{$escapedSearch}%"]);
+        });
+
+        Builder::macro('orWhereLikePortable', function (string $column, string $search) {
+            $columnWrapped = $this->getGrammar()->wrap($column);
+            $escapedSearch = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search);
+
+            return $this->orWhereRaw("LOWER({$columnWrapped}) LIKE LOWER(?) ESCAPE '!'", ["%{$escapedSearch}%"]);
+        });
         RateLimiter::for('receipt-ocr', function (Request $request) {
             return $request->user()
                 ? Limit::perMinute(10)->by($request->user()->id)
