@@ -18,7 +18,7 @@ Route::middleware('auth')->group(function () {
 
     // ── Stok Upload — Stepper Workflow ──────────────────────────
     Route::get('/stok-upload', [$ctrl, 'index'])->name('stok-upload.index');
-    Route::post('/stok-upload', [$ctrl, 'upload'])->name('stok-upload.store');
+    Route::post('/stok-upload', [$ctrl, 'upload'])->name('stok-upload.store')->middleware('throttle:stock-upload');
     Route::get('/stok-upload/template', [$ctrl, 'downloadTemplate'])->name('stok-upload.template');
     Route::get('/stok-upload/riwayat', [$ctrl, 'riwayat'])->name('stok-upload.riwayat');
     Route::get('/stok-upload/sampah', [$ctrl, 'trash'])->name('stok-upload.trash');
@@ -30,10 +30,10 @@ Route::middleware('auth')->group(function () {
     // errors are shown on the upload page (index), not the stepper
 
     // Step 3 — Verifikasi Kode
-    Route::post('/stok-upload/{id}/verifikasi', [$ctrl, 'saveVerifikasi'])->name('stok-upload.verifikasi.store');
+    Route::post('/stok-upload/{id}/verifikasi', [$ctrl, 'saveVerifikasi'])->name('stok-upload.verifikasi.store')->middleware('throttle:stock-import');
 
     // Step 4 — Finalisasi & Pembatalan
-    Route::post('/stok-upload/{id}/finalisasi', [$ctrl, 'finalisasi'])->name('stok-upload.finalisasi');
+    Route::post('/stok-upload/{id}/finalisasi', [$ctrl, 'finalisasi'])->name('stok-upload.finalisasi')->middleware('throttle:stock-import');
     Route::post('/stok-upload/{id}/batalkan', [$ctrl, 'batalkan'])->name('stok-upload.batalkan');
 
     // Soft delete management

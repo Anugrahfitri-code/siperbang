@@ -101,8 +101,8 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/stok-upload/riwayat', [StokUploadController::class, 'apiRiwayat'])->name('api.stok-upload.riwayat');
     Route::get('/stok-upload/stats', [StokUploadController::class, 'apiStats'])->name('api.stok-upload.stats');
     Route::get('/stok-upload/{id}/stepper-api', [StokUploadController::class, 'apiStepper']);
-    Route::post('/stok-upload/{id}/verifikasi-api', [StokUploadController::class, 'apiSaveVerifikasi']);
-    Route::post('/stok-upload/{id}/finalisasi-api', [StokUploadController::class, 'apiFinalisasi']);
+    Route::post('/stok-upload/{id}/verifikasi-api', [StokUploadController::class, 'apiSaveVerifikasi'])->middleware('throttle:stock-import');
+    Route::post('/stok-upload/{id}/finalisasi-api', [StokUploadController::class, 'apiFinalisasi'])->middleware('throttle:stock-import');
 
     // ---- Ketua Tim & Superadmin ----
     Route::middleware('role:Ketua Tim,Ketua Tim Kerja,Superadmin')->group(function () {
@@ -115,7 +115,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::middleware('role:Petugas Persediaan,Superadmin')->group(function () {
         // Stocks
         Route::get('/stocks', [StockController::class, 'index']);
-        Route::post('/stocks/bulk', [StockController::class, 'bulkStore']);
+        Route::post('/stocks/bulk', [StockController::class, 'bulkStore'])->middleware('throttle:stock-upload');
 
         // Preview rekap pengadaan
         Route::get(
@@ -124,7 +124,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
                 BonRecapController::class,
                 'procurementPreview',
             ]
-        );
+        )->middleware('throttle:pdf-export');
 
         // Request Actions
         Route::put('/requests/{itemRequest}/status', [RequestController::class, 'updateStatus']);
@@ -166,9 +166,9 @@ Route::middleware('auth')->prefix('api')->group(function () {
                 ReceiptController::class,
                 'exportExcel',
             ]
-        );
+        )->middleware('throttle:excel-export');
         Route::get('/receipt-documents', [ReceiptDocumentController::class, 'index']);
-        Route::post('/receipt-documents', [ReceiptDocumentController::class, 'store']);
+        Route::post('/receipt-documents', [ReceiptDocumentController::class, 'store'])->middleware('throttle:receipt-ocr');
         Route::get(
             '/receipt-documents/{receiptDocument}',
             [
@@ -203,7 +203,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
         Route::put('/receipts/{receipt}/unverify', [ReceiptController::class, 'unverify']);
         Route::put('/receipts/{receipt}/items', [ReceiptController::class, 'updateItems']);
 
-        Route::post('/receipt-documents/{receiptDocument}/retry', [ReceiptDocumentController::class, 'retry']);
+        Route::post('/receipt-documents/{receiptDocument}/retry', [ReceiptDocumentController::class, 'retry'])->middleware('throttle:receipt-ocr');
         Route::delete('/receipt-documents/{receiptDocument}', [ReceiptDocumentController::class, 'destroy']);
 
         // Export
@@ -228,7 +228,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
                 BonRecapController::class,
                 'exportPdf',
             ]
-        );
+        )->middleware('throttle:pdf-export');
 
         // Users
         Route::get('/users', [UserController::class, 'index']);

@@ -10,6 +10,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -41,6 +42,15 @@ final class ProcessReceiptOcr implements ShouldQueue
         return [
             20,
             60,
+        ];
+    }
+
+    public function middleware(): array
+    {
+        return [
+            (new WithoutOverlapping($this->receiptDocumentId))
+                ->dontRelease()
+                ->expireAfter(160),
         ];
     }
 
