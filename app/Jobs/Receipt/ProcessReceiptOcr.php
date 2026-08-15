@@ -48,7 +48,9 @@ final class ProcessReceiptOcr implements ShouldQueue
     public function middleware(): array
     {
         return [
-            (new WithoutOverlapping($this->receiptDocumentId))->dontRelease(),
+            (new WithoutOverlapping($this->receiptDocumentId))
+                ->dontRelease()
+                ->expireAfter(160),
         ];
     }
 

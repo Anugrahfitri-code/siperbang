@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Security;
 
+use App\Jobs\Receipt\ProcessReceiptOcr;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
@@ -186,5 +188,38 @@ class ResourceLimitTest extends TestCase
         $response = $this->actingAs($this->userA)
             ->postJson('/api/receipts/export-excel');
         $response->assertStatus(429);
+    }
+
+    public function test_ocr_job_overlap_lock_configuration()
+    {
+        $jobA = new ProcessReceiptOcr(999);
+        $jobB = new ProcessReceiptOcr(1000);
+
+        $middlewaresA = $jobA->middleware();
+        $this->assertCount(1, $middlewaresA);
+
+        $lockA = $middlewaresA[0];
+        $this->assertInstanceOf(WithoutOverlapping::class, $lockA);
+
+        $middlewaresB = $jobB->middleware();
+        $lockB = $middlewaresB[0];
+
+        // Proof of key separation
+        $this->assertNotEquals($lockA->key, $lockB->key);
+        $this->assertEquals(999, $lockA->key);
+        $this->assertEquals(1000, $lockB->key);
+
+        // Proof of dontRelease behavior
+        $this->assertFalse($lockA->releaseAfter > 0);
+
+        // Proof of explicit expireAfter
+        $this->assertEquals(160, $lockA->expiresAfter);
+
+        // Prove invariant: JOB < EXPIRY < RETRY_AFTER
+        $jobTimeout = $jobA->timeout;
+        $queueRetryAfter = config('queue.connections.database.retry_after', 180);
+
+        $this->assertGreaterThan($jobTimeout, $lockA->expiresAfter, 'Lock expiry must be longer than job timeout to protect running job');
+        $this->assertLessThan($queueRetryAfter, $lockA->expiresAfter, 'Lock expiry must be shorter than queue retry_after to avoid stale locks');
     }
 }
