@@ -198,7 +198,7 @@ php artisan tinker
 → Jalankan `php artisan migrate`
 
 **Error: `ilike` operator di pencarian stok**
-→ Terjadi karena menggunakan SQLite. `ILIKE` hanya ada di PostgreSQL. Untuk dev pakai MySQL atau ganti query ke `LIKE` sementara.
+→ Terjadi karena menggunakan SQLite. `ILIKE` adalah sintaks PostgreSQL (target deployment kita). Untuk testing lokal, gunakan PostgreSQL, atau framework akan mengatasinya jika sudah menggunakan macro portabel.
 
 **OCR tidak bekerja / timeout**
 → Pastikan OCR service berjalan di port 8001. Cek `OCR_SERVICE_URL` di `.env`.

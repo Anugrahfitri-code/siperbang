@@ -9,7 +9,7 @@ SIPERBANG adalah aplikasi manajemen persediaan barang internal berbasis web untu
 | Backend | PHP 8.4 + Laravel 13 |
 | Frontend | React 19 + TypeScript + Tailwind CSS v4 |
 | Build tool | Vite 8 |
-| Database | SQLite (dev) / MySQL atau PostgreSQL (prod) |
+| Database | SQLite (dev) / PostgreSQL (prod) |
 | OCR Service | Python FastAPI + PaddleOCR |
 | Queue | Laravel Queue (database driver) |
 | Auth | Laravel Session-based Auth |
@@ -20,7 +20,7 @@ SIPERBANG adalah aplikasi manajemen persediaan barang internal berbasis web untu
 - Composer >= 2.x
 - Node.js >= 22.x + npm
 - Python >= 3.10 (untuk OCR service)
-- SQLite (dev) atau MySQL 8+ / PostgreSQL 15+ (prod)
+- SQLite (dev) atau PostgreSQL (prod)
 
 ## Instalasi Cepat
 
@@ -78,7 +78,7 @@ Lihat `.env.example` untuk daftar lengkap. Variabel kritis:
 ```
 APP_KEY=           # Di-generate otomatis saat setup
 APP_ENV=           # local | staging | production
-DB_CONNECTION=     # sqlite | mysql | pgsql
+DB_CONNECTION=     # sqlite | pgsql
 OCR_SERVICE_URL=   # URL OCR service, default: http://127.0.0.1:8001
 OCR_SERVICE_TOKEN= # Bearer token untuk OCR service
 ```

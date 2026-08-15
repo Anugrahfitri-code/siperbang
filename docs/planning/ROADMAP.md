@@ -33,7 +33,7 @@ Fokus: memperkuat yang sudah ada sebelum menambah fitur baru.
 - [ ] **Tambah test coverage** ke minimal 40% — fokus ke service layer (ExcelImport, Finalization, OCR Job)
 - [ ] **Konsolidasikan audit log** — hapus `history_logs`, pakai `audit_logs` saja, cover semua aksi sensitif
 - [ ] **Tambah Form Request class** untuk semua endpoint yang masih inline validation
-- [ ] **Konfigurasi production** — pilih database engine (MySQL vs PostgreSQL), buat dokumentasi infra
+- [ ] **Konfigurasi production** — selesaikan dokumentasi infrastruktur spesifik PostgreSQL
 - [ ] **Setup monitoring dasar** — error tracking (Sentry atau Laravel Telescope)
 
 ---
@@ -43,7 +43,7 @@ Fokus: memperkuat yang sudah ada sebelum menambah fitur baru.
 Fokus: siapkan sistem untuk lebih banyak user dan fitur baru.
 
 ### Arsitektur
-- [ ] **Migrasi database ke PostgreSQL** — full-text search native, JSONB untuk OCR results lebih efisien
+- [ ] **Optimasi PostgreSQL** — manfaatkan full-text search native, JSONB untuk OCR results lebih efisien
 - [ ] **Redis untuk cache dan queue** — gantikan database queue driver yang lambat di volume tinggi
 - [ ] **API versioning** — pisahkan `/api/v1/` agar perubahan backward compatible
 - [ ] **Pisahkan OCR service** ke server tersendiri — resource PaddleOCR berat, jangan satu server dengan Laravel
@@ -106,7 +106,7 @@ Fokus: siapkan sistem untuk lebih banyak user dan fitur baru.
 
 | Pertanyaan | Deadline Keputusan |
 |---|---|
-| Database production: MySQL atau PostgreSQL? | Q3 2026 |
+| Optimasi Khusus PostgreSQL (Full-Text Search/JSONB)? | Q3 2026 |
 | OCR service: satu server dengan Laravel atau terpisah? | Q4 2026 |
 | Hosting: on-premise atau cloud? | Q3 2026 |
 | Perlu multi-organisasi/multi-tenant di masa depan? | Q1 2027 |

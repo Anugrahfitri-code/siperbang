@@ -1,6 +1,6 @@
 # DATABASE.md — Skema Database SIPERBANG
 
-Database: SQLite (development) / MySQL 8+ atau PostgreSQL 15+ (production)
+Database: SQLite (development) / PostgreSQL (production, referensi acceptance: PostgreSQL 17.11)
 
 ---
 
@@ -436,4 +436,4 @@ Riwayat perubahan status BON.
 1. **Dua model stok:** `StockItem` (tabel `stock_items`) dan `Barang` (tabel `barang`). Keduanya muncul di codebase dengan fungsi yang tumpang tindih. Ini adalah technical debt yang perlu dikonsolidasikan.
 2. **Status sebagai string:** Semua kolom status menggunakan `varchar` tanpa constraint ENUM di database. Rentan typo. Direkomendasikan migrasi ke ENUM atau pakai PHP Backed Enum konsisten.
 3. **Soft Delete:** Hanya `stok_uploads` yang menggunakan SoftDeletes. Model lain hard delete.
-4. **PostgreSQL ILIKE:** `StockController@search` menggunakan `ilike` yang hanya ada di PostgreSQL. Saat pakai SQLite/MySQL akan error.
+4. **PostgreSQL ILIKE:** `StockController@search` menggunakan `ilike` yang memang direkomendasikan untuk PostgreSQL (database target SIPERBANG). Saat environment menggunakan SQLite untuk testing, macro portabel dapat menanganinya. MySQL bukan lagi target deployment.

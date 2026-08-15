@@ -12,10 +12,10 @@
 
 ## Prasyarat Server (Production)
 
-- PHP 8.4+ dengan ekstensi: dom, curl, libxml, pdo, pdo_mysql, mbstring, fileinfo, zip, gd, opcache
+- PHP 8.4+ dengan ekstensi: dom, curl, libxml, pdo, pdo_pgsql, mbstring, fileinfo, zip, gd, opcache
 - Composer 2.x
 - Node.js 22.x (hanya untuk build, tidak perlu di server production)
-- MySQL 8+ atau PostgreSQL 15+
+- PostgreSQL (Referensi baseline acceptance: PostgreSQL 17.11. Gunakan versi PostgreSQL yang dikelola perusahaan dan pastikan lulus suite acceptance sebelum go-live).
 - Nginx atau Apache
 - Supervisor (untuk menjalankan queue worker sebagai daemon)
 
@@ -75,12 +75,12 @@ APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://siperbang.example.com
 
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=siperbang_prod
-DB_USERNAME=siperbang_user
-DB_PASSWORD=<strong-password>
+DB_CONNECTION=pgsql
+DB_HOST=<db-host-provided-by-infrastructure>
+DB_PORT=5432
+DB_DATABASE=<db-name-provided-by-infrastructure>
+DB_USERNAME=<db-user-provided-by-infrastructure>
+DB_PASSWORD=<strong-password-provided-by-infrastructure>
 
 QUEUE_CONNECTION=database
 
@@ -454,8 +454,8 @@ php artisan migrate:rollback --step=3
 ### Database
 
 ```bash
-# MySQL backup harian (gunakan konfigurasi credential file ~/.my.cnf, jangan pass -p langsung)
-mysqldump --defaults-extra-file=~/.my.cnf siperbang_prod > backup_$(date +%Y%m%d).sql
+# PostgreSQL backup (gunakan konfigurasi otentikasi yang aman, seperti .pgpass atau mekanisme rahasia organisasi)
+pg_dump -Fc -h <db-host> -U <db-user> <db-name> > backup_$(date +%Y%m%d).dump
 
 # Simpan ke storage jangka panjang (S3, GCS, dll.)
 ```
@@ -481,13 +481,11 @@ Backup keberadaannya belum cukup jika tidak diuji. Diperlukan simulasi restore s
 - Jangan mengeksekusi restore destruktif pada database production atau development aktif.
 - Lakukan pada disposable STAGING/TEST database server.
 
-### Langkah Restore MySQL (Contoh)
+### Langkah Restore PostgreSQL (Contoh)
 ```bash
-# 1. Pastikan database target (siperbang_staging) kosong atau dapat ditimpa
-mysql --defaults-extra-file=~/.my.cnf -e "DROP DATABASE IF EXISTS siperbang_staging; CREATE DATABASE siperbang_staging;"
-
-# 2. Lakukan import dari file SQL
-mysql --defaults-extra-file=~/.my.cnf siperbang_staging < backup_YYYYMMDD.sql
+# 1. Pastikan database target (misal siperbang_staging) disediakan oleh tim infra sebagai disposable test DB.
+# 2. Lakukan import dari file dump custom-format
+pg_restore -h <db-host> -U <db-user> -d siperbang_staging -1 backup_YYYYMMDD.dump
 ```
 
 ### Langkah Restore File
@@ -507,8 +505,8 @@ tar -xzf storage_backup_YYYYMMDD.tar.gz -C /var/www/staging_siperbang/storage/ap
 
 Sebelum rilis ke production, **seluruh checklist berikut WAJIB dipenuhi pada environment Staging**:
 
-1. Menentukan dan menetapkan **satu** production DB engine secara eksklusif (MySQL atau PostgreSQL).
-2. Menggunakan DB engine dan versi yang sama di environment staging.
+1. Memastikan database target menggunakan PostgreSQL dan telah melewati PostgreSQL staging acceptance (clean migration, idempotency check, pencarian, constraints, transaction, backup, restore, smoke read).
+2. Menggunakan DB engine dan versi PostgreSQL yang setara di environment staging (referensi: PostgreSQL 17.11).
 3. Menjalankan migrasi penuh + full regression test (API/Browser) pada real database.
 4. Memvalidasi TLS certificate + HTTP→HTTPS redirect secara runtime.
 5. Memverifikasi seluruh *security headers* (CSP, HSTS, Permissions-Policy, X-Frame-Options, dsb.) aktif melalui real HTTP response test.

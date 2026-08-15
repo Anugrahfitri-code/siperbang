@@ -42,7 +42,7 @@ Dokumen ini merangkum fitur aktif. Struktur file diperbarui pada 2026-07-30.
 - **Akses:** Semua role terautentikasi
 - **Test:** Tidak ada
 - **Status:** Berfungsi normal
-- **Catatan:** Menggunakan `ILIKE` — hanya kompatibel PostgreSQL. Akan error di SQLite/MySQL.
+- **Catatan:** Menggunakan `ILIKE` — kompatibel dengan PostgreSQL (target SIPERBANG). Di development (SQLite), ditangani oleh macro.
 
 ### 2.2 Full Stock List
 - **File utama:** `app/Http/Controllers/Api/StockController.php` → `index()`
