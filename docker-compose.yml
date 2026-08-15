@@ -21,7 +21,7 @@ services:
       - "127.0.0.1:8001:8001"
 
     volumes:
-      - siperbang_ocr_models:/root/.paddlex
+      - siperbang_ocr_models:/home/ocruser/.paddlex
 
     healthcheck:
       test:

@@ -37,7 +37,8 @@ RUN python -m pip install --upgrade pip setuptools wheel \
 COPY app /app/app
 
 RUN useradd -m -d /home/ocruser -s /bin/bash ocruser && \
-    chown -R ocruser:ocruser /app
+    mkdir -p /home/ocruser/.paddlex && \
+    chown -R ocruser:ocruser /app /home/ocruser/.paddlex
 
 USER ocruser
 
