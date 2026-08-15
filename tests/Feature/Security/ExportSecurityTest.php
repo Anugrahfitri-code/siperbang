@@ -72,14 +72,14 @@ class ExportSecurityTest extends TestCase
 
         // Parse first data row
         $row = str_getcsv($lines[1]);
-        
-        $this->assertEquals("'" . '=1+1', $row[2]); // store_name
-        $this->assertEquals("'" . '@SUM(A1:A2)', $row[0]); // invoice_no
-        $this->assertEquals("'" . '-10+20', $row[11]); // method
-        $this->assertEquals("'" . '+CMD', $row[12]); // bast_name
-        $this->assertEquals("'" . '=HYPERLINK("http://evil.com","Click")', $row[4]); // name
-        $this->assertEquals("'" . '@DANGER', $row[6]); // unit
-        
+
+        $this->assertEquals("'".'=1+1', $row[2]); // store_name
+        $this->assertEquals("'".'@SUM(A1:A2)', $row[0]); // invoice_no
+        $this->assertEquals("'".'-10+20', $row[11]); // method
+        $this->assertEquals("'".'+CMD', $row[12]); // bast_name
+        $this->assertEquals("'".'=HYPERLINK("http://evil.com","Click")', $row[4]); // name
+        $this->assertEquals("'".'@DANGER', $row[6]); // unit
+
         // Ensure numeric isn't prefixed if not starting with dangerous char
         $this->assertEquals('1010301001', $row[3]); // inventory_code
         $this->assertEquals('5', $row[5]); // qty
@@ -121,15 +121,15 @@ class ExportSecurityTest extends TestCase
 
         // Check store name (starts with SUPPLIER : so it doesn't start with = anyway, but let's check it's a string)
         $this->assertEquals(DataType::TYPE_STRING, $sheet->getCell('A2')->getDataType());
-        $this->assertStringContainsString("SUPPLIER : '=SUM(A1:B1)", $sheet->getCell('A2')->getValue());
+        $this->assertStringContainsString('SUPPLIER : =SUM(A1:B1)', $sheet->getCell('A2')->getValue());
 
         // Check item name
         $this->assertEquals(DataType::TYPE_STRING, $sheet->getCell('C5')->getDataType());
-        $this->assertEquals("'+CMD()", $sheet->getCell('C5')->getValue());
+        $this->assertEquals('+CMD()', $sheet->getCell('C5')->getValue());
 
         // Check unit
         $this->assertEquals(DataType::TYPE_STRING, $sheet->getCell('E5')->getDataType());
-        $this->assertEquals("'@Pcs", $sheet->getCell('E5')->getValue());
+        $this->assertEquals('@Pcs', $sheet->getCell('E5')->getValue());
 
         // Check inventory code
         $this->assertEquals(DataType::TYPE_STRING, $sheet->getCell('B5')->getDataType());

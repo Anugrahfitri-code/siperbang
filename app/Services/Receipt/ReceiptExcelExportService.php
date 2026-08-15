@@ -4,7 +4,6 @@ namespace App\Services\Receipt;
 
 use App\Models\Receipt;
 use App\Services\SiteBrandingService;
-use App\Support\Export\SpreadsheetSecurity;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
@@ -322,12 +321,13 @@ class ReceiptExcelExportService
          * Contoh:
          * "Toko redzky plastik"  =>  "SUPPLIER : REDZKY PLASTIK"
          */
-        $sheet->setCellValue(
+        $sheet->setCellValueExplicit(
             'A2',
             'SUPPLIER : '
-            .SpreadsheetSecurity::escapeFormula($this->formatSupplierName(
+            .$this->formatSupplierName(
                 (string) $receipt->store_name
-            )),
+            ),
+            DataType::TYPE_STRING,
         );
 
         foreach ($items as $index => $item) {
@@ -341,15 +341,15 @@ class ReceiptExcelExportService
              */
             $sheet->setCellValueExplicit(
                 'B'.$row,
-                SpreadsheetSecurity::escapeFormula($this->normaliseInventoryCode(
+                $this->normaliseInventoryCode(
                     $item->inventory_code
-                )),
+                ),
                 DataType::TYPE_STRING,
             );
 
             $sheet->setCellValueExplicit(
                 'C'.$row,
-                SpreadsheetSecurity::escapeFormula(trim((string) $item->name)),
+                trim((string) $item->name),
                 DataType::TYPE_STRING,
             );
 
@@ -360,7 +360,7 @@ class ReceiptExcelExportService
 
             $sheet->setCellValueExplicit(
                 'E'.$row,
-                SpreadsheetSecurity::escapeFormula($this->formatUnit($item->unit)),
+                $this->formatUnit($item->unit),
                 DataType::TYPE_STRING,
             );
 
