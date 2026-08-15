@@ -533,7 +533,7 @@ class RequestController extends Controller
         }
 
         if (! empty($validated['bon_no'])) {
-            $query->where('bon_no', 'like', '%'.$validated['bon_no'].'%');
+            $query->whereLikePortable('bon_no', $validated['bon_no']);
         }
 
         if (! empty($validated['start_date'])) {

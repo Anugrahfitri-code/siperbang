@@ -56,9 +56,9 @@ class StockController extends Controller
 
         if ($search !== '') {
             $query->where(function (Builder $builder) use ($search): void {
-                $builder->where('code', 'ilike', "%{$search}%")
-                    ->orWhere('name', 'ilike', "%{$search}%")
-                    ->orWhere('category', 'ilike', "%{$search}%");
+                $builder->whereLikePortable('code', $search)
+                    ->orWhereLikePortable('name', $search)
+                    ->orWhereLikePortable('category', $search);
             });
         }
 
