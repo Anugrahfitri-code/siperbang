@@ -223,10 +223,10 @@ if (! is_dir($outputDirectory) && ! mkdir($outputDirectory, 0775, true) && ! is_
 
 $excludedPrefixes = [
     '.git/', '.idea/', '.vscode/', '.cursor/', '.codex/', '.pytest_cache/',
-    'vendor/', 'node_modules/', 'archive/', 'scratch/', 'desain_temp/', 'ocr-test/',
+    'vendor/', 'node_modules/', 'archive/', 'scratch/', 'desain_temp/', 'ocr-test/', 'tools/', 'tests/',
     'database/database.sqlite', 'public/hot', 'public/storage', 'public/fonts-manifest.dev.json',
     'bootstrap/cache/', 'storage/app/', 'storage/logs/', 'storage/framework/', 'storage/app/private/',
-    'ocr-service/.venv/', 'ocr-service/.pytest_cache/', 'ocr-service/debug-output/',
+    'ocr-service/.venv/', 'ocr-service/.pytest_cache/', 'ocr-service/debug-output/', 'ocr-service/tests/', 'ocr-service/tools/',
     'opencode.json', 'RELEASE_MANIFEST.sha256', 'RELEASE_COMMIT_SHA',
 ];
 
@@ -274,6 +274,7 @@ $shouldExclude = static function (string $relative) use ($excludedPrefixes, $exc
         'storage/framework/testing/.gitignore',
         'storage/framework/views/.gitignore',
         'storage/logs/.gitignore',
+        'ocr-service/tests/fixtures/synthetic-smoke-receipt.png',
     ], true)) {
         return false;
     }

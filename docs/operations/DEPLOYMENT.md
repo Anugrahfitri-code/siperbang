@@ -156,6 +156,13 @@ server {
         try_files $uri $uri/ /index.php?$query_string;
     }
 
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'self'; form-action 'self'; object-src 'none';" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=()" always;
+
     location ~ \.php$ {
         fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
@@ -175,7 +182,7 @@ Buat file `/etc/supervisor/conf.d/siperbang-ocr-worker.conf`:
 ```ini
 [program:siperbang-ocr-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php /var/www/siperbang/artisan queue:work database --queue=ocr --sleep=3 --tries=1 --timeout=120
+command=php /var/www/siperbang/artisan queue:work database --queue=ocr --sleep=3 --tries=1 --timeout=140
 autostart=true
 autorestart=true
 stopasgroup=true
@@ -216,6 +223,16 @@ Tanpa cron tersebut, versi terjadwal tetap tersimpan tetapi tidak akan aktif oto
 
 > **Catatan Migration:** OCR production pada panduan ini dijalankan menggunakan Docker Compose. Jangan menjalankan instance systemd OCR lama secara bersamaan pada port yang sama. Pastikan tidak ada service OCR lama yang masih menggunakan port 8001 sebelum mengaktifkan container Docker OCR.
 
+#### Peringatan Root Container (PRODUCTION HARDENING REQUIRED)
+
+Container OCR saat ini berjalan dengan `USER root` secara default. Menjalankan service dengan root di dalam container bukan praktik keamanan production yang direkomendasikan.
+
+**Tugas Staging (Wajib sebelum rilis Production):**
+1. Lakukan uji coba pembatasan akses (*non-root container user*) pada eksekusi Dockerfile OCR.
+2. Konfirmasi bahwa path lokal PaddleOCR seperti cache direktori atau `/tmp` memiliki akses tulis untuk user *non-root*.
+3. Konfirmasi bahwa tes OCR berjalan lancar.
+4. Hanya setujui eksekusi *root* untuk production **JIKA** modifikasi non-root terbukti secara teknis memblokir performa/library OCR dan arsitektur pengganti/isolasi tambahan telah didokumentasikan.
+
 #### OCR First-Boot Network Requirement
 
 > **PERHATIAN:** Current OCR deployment is NOT designed as a fully air-gapped installation when starting from a fresh server with no pre-existing dependencies/model cache.
@@ -226,7 +243,7 @@ Saat `siperbang_ocr_models` masih kosong pada fresh deployment, PaddleOCR belum 
 - PaddleOCR memeriksa model/cache lokal
 - model belum tersedia
 - mengambil model dari configured remote source
-- menyimpan cache ke `/root/.paddlex`
+- menyimpan cache ke `/root/.paddlex` (harus diperhatikan apabila berpindah ke non-root)
 
 Variabel `PADDLE_PDX_MODEL_SOURCE=BOS` menentukan remote model source untuk Paddle/PaddleX. Ini BUKAN offline mode. Model source is remote and requires outbound network when required model files are not yet cached. Tim infrastruktur harus memverifikasi endpoint outbound aktual yang digunakan versi Paddle/PaddleX yang dipasang.
 
@@ -437,8 +454,8 @@ php artisan migrate:rollback --step=3
 ### Database
 
 ```bash
-# MySQL backup harian
-mysqldump -u siperbang_user -p siperbang_prod > backup_$(date +%Y%m%d).sql
+# MySQL backup harian (gunakan konfigurasi credential file ~/.my.cnf, jangan pass -p langsung)
+mysqldump --defaults-extra-file=~/.my.cnf siperbang_prod > backup_$(date +%Y%m%d).sql
 
 # Simpan ke storage jangka panjang (S3, GCS, dll.)
 ```
@@ -453,6 +470,55 @@ tar -czf storage_backup_$(date +%Y%m%d).tar.gz /var/www/siperbang/storage/app/pr
 **Jadwal yang direkomendasikan:**
 - Database: backup harian, simpan 30 hari
 - Storage files: backup mingguan, simpan 3 bulan
+
+---
+
+## Restore Strategy & Rehearsal
+
+Backup keberadaannya belum cukup jika tidak diuji. Diperlukan simulasi restore secara berkala.
+
+### Prasyarat Restore Test
+- Jangan mengeksekusi restore destruktif pada database production atau development aktif.
+- Lakukan pada disposable STAGING/TEST database server.
+
+### Langkah Restore MySQL (Contoh)
+```bash
+# 1. Pastikan database target (siperbang_staging) kosong atau dapat ditimpa
+mysql --defaults-extra-file=~/.my.cnf -e "DROP DATABASE IF EXISTS siperbang_staging; CREATE DATABASE siperbang_staging;"
+
+# 2. Lakukan import dari file SQL
+mysql --defaults-extra-file=~/.my.cnf siperbang_staging < backup_YYYYMMDD.sql
+```
+
+### Langkah Restore File
+```bash
+# Ekstrak backup tarball ke direktori staging storage
+tar -xzf storage_backup_YYYYMMDD.tar.gz -C /var/www/staging_siperbang/storage/app/private --strip-components=5
+```
+
+### Smoke Test Pasc-Restore
+- Jalankan login.
+- Lakukan upload dokumen receipt ke OCR (memastikan permission folder private valid).
+- Uji download file excel atau PDF export.
+
+---
+
+## Mandatory Staging Gates
+
+Sebelum rilis ke production, **seluruh checklist berikut WAJIB dipenuhi pada environment Staging**:
+
+1. Menentukan dan menetapkan **satu** production DB engine secara eksklusif (MySQL atau PostgreSQL).
+2. Menggunakan DB engine dan versi yang sama di environment staging.
+3. Menjalankan migrasi penuh + full regression test (API/Browser) pada real database.
+4. Memvalidasi TLS certificate + HTTP→HTTPS redirect secara runtime.
+5. Memverifikasi seluruh *security headers* (CSP, HSTS, Permissions-Policy, X-Frame-Options, dsb.) aktif melalui real HTTP response test.
+6. Menguji jalannya Supervisor/queue smoke worker (proses antrean receipt OCR berjalan sukses).
+7. Menguji jalannya scheduler smoke (memverifikasi scheduler dapat mempublikasi versi branding tertunda).
+8. Memverifikasi OCR terekspos hanya di localhost/private binding dan tidak bisa diakses langsung publik.
+9. Menjalankan **OCR non-root feasibility test** (evaluasi apakah OCR bisa berjalan *non-root*, atau terpaksa *root* karena *PaddleOCR hardcoded paths*).
+10. Mengeksekusi backup creation dan memastikan file backup valid dan tersedia.
+11. Melakukan **restore rehearsal** ke server dummy/staging lain dari hasil backup yang ada.
+12. Melakukan tes read/write storage (termasuk folder uploads/reports) di bawah production-like permissions (non-root `www-data` ownership).
 
 ---
 
