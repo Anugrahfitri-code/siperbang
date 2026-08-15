@@ -36,6 +36,11 @@ RUN python -m pip install --upgrade pip setuptools wheel \
 
 COPY app /app/app
 
+RUN useradd -m -d /home/ocruser -s /bin/bash ocruser && \
+    chown -R ocruser:ocruser /app
+
+USER ocruser
+
 EXPOSE 8001
 
 CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "1", "--log-level", "info"]
