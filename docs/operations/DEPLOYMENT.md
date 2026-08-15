@@ -115,6 +115,12 @@ php artisan storage:link
 php artisan db:seed --class="Database\\Seeders\\Inventory\\OfficeActivityInventoryCodeSeeder"
 ```
 
+Untuk instalasi baru (fresh install), buat akun Superadmin pertama dengan perintah interaktif:
+
+```bash
+php artisan app:provision-superadmin
+```
+
 ### 5. Optimasi Cache
 
 ```bash
