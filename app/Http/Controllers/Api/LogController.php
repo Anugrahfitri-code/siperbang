@@ -60,10 +60,17 @@ class LogController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        $year = $request->query('year', '2026');
-        $month = $request->query('month', 'All');
-        $search = $request->query('search', '');
-        $isAnnual = $request->query('annual') === 'true';
+        $validated = $request->validate([
+            'year' => ['nullable', 'string', 'regex:/^(\d{4}|All)$/'],
+            'month' => ['nullable', 'string', 'in:All,1,2,3,4,5,6,7,8,9,10,11,12,01,02,03,04,05,06,07,08,09'],
+            'search' => ['nullable', 'string', 'max:255'],
+            'annual' => ['nullable', 'in:true,false,1,0'],
+        ]);
+
+        $year = $validated['year'] ?? '2026';
+        $month = $validated['month'] ?? 'All';
+        $search = $validated['search'] ?? '';
+        $isAnnual = in_array($validated['annual'] ?? 'false', ['true', '1'], true);
 
         $query = Receipt::with('items.inventoryCodeMaster')->where('is_verified', true);
 
