@@ -10,6 +10,7 @@ use App\Models\Distribution;
 use App\Models\HistoryLog;
 use App\Models\ItemRequest;
 use App\Models\Procurement;
+use App\Models\StockHistory;
 use App\Models\StockItem;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -211,17 +212,29 @@ class RequestController extends Controller
 
         DB::beginTransaction();
         try {
+            $itemRequest = ItemRequest::lockForUpdate()->findOrFail($itemRequest->id);
             $stockItem = null;
             if (isset($validated['deductStock']) && $validated['deductStock'] !== null) {
-                $stockItem = StockItem::find($validated['deductStock']['id']);
+                $stockItem = StockItem::lockForUpdate()->find($validated['deductStock']['id']);
                 if ($stockItem && ! $itemRequest->stock_allocated) {
                     $qtyToDeduct = $validated['deductStock']['qtyToDeduct'];
                     if ($stockItem->qty < $qtyToDeduct) {
                         throw new SafeBusinessException('Stok gudang tidak mencukupi untuk pemenuhan ini.');
                     }
+                    $qtyBefore = $stockItem->qty;
                     $stockItem->qty -= $qtyToDeduct;
                     $stockItem->last_updated = today();
                     $stockItem->save();
+
+                    $actor = $request->user() ? $request->user()->name : 'Sistem';
+                    StockHistory::create([
+                        'stock_item_id' => $stockItem->id,
+                        'qty_change' => -$qtyToDeduct,
+                        'qty_before' => $qtyBefore,
+                        'qty_after' => $stockItem->qty,
+                        'type' => 'Penyesuaian',
+                        'notes' => "Deduksi stok untuk pemenuhan BON {$itemRequest->bon_no} oleh {$actor}",
+                    ]);
 
                     $itemRequest->stock_allocated = true;
                     $itemRequest->stock_item_id = $stockItem->id;
@@ -290,13 +303,25 @@ class RequestController extends Controller
 
         DB::beginTransaction();
         try {
-            $stockItem = StockItem::findOrFail($validated['stockItemId']);
+            $itemRequest = ItemRequest::lockForUpdate()->findOrFail($itemRequest->id);
+            if (in_array($itemRequest->status, ['Selesai', 'Ditolak'])) {
+                throw new SafeBusinessException('Pengajuan ini tidak dapat didistribusikan pada status saat ini.');
+            }
+
+            $stockItem = StockItem::lockForUpdate()->findOrFail($validated['stockItemId']);
+
+            $qtyBefore = $stockItem->qty;
+            $qtyChange = 0;
+            $distType = '';
 
             if (! $itemRequest->stock_allocated) {
                 if ($stockItem->qty < $validated['qtyDistributed']) {
                     throw new SafeBusinessException('Stok gudang tidak mencukupi untuk distribusi.');
                 }
-                $stockItem->qty -= $validated['qtyDistributed'];
+                $qtyChange = $validated['qtyDistributed'];
+                $distType = 'Distribusi Barang';
+
+                $stockItem->qty -= $qtyChange;
                 $stockItem->last_updated = today();
                 $stockItem->save();
                 $itemRequest->stock_allocated = true;
@@ -307,10 +332,25 @@ class RequestController extends Controller
                     if ($stockItem->qty < $extraNeeded) {
                         throw new SafeBusinessException('Stok gudang tidak mencukupi untuk tambahan distribusi.');
                     }
-                    $stockItem->qty -= $extraNeeded;
+                    $qtyChange = $extraNeeded;
+                    $distType = 'Tambahan Distribusi Barang';
+
+                    $stockItem->qty -= $qtyChange;
                     $stockItem->last_updated = today();
                     $stockItem->save();
                 }
+            }
+
+            if ($qtyChange > 0) {
+                $actor = $request->user() ? $request->user()->name : 'Sistem';
+                StockHistory::create([
+                    'stock_item_id' => $stockItem->id,
+                    'qty_change' => -$qtyChange,
+                    'qty_before' => $qtyBefore,
+                    'qty_after' => $stockItem->qty,
+                    'type' => 'BON Digital',
+                    'notes' => "{$distType} sejumlah {$qtyChange} {$stockItem->unit} untuk BON {$itemRequest->bon_no} oleh {$actor}",
+                ]);
             }
 
             // Update qty_fulfilled and qty_to_procure berdasarkan jumlah aktual yang didistribusikan
@@ -444,7 +484,13 @@ class RequestController extends Controller
 
         DB::beginTransaction();
         try {
-            $procurement = Procurement::findOrFail($validated['procurementId']);
+            $itemRequest = ItemRequest::lockForUpdate()->findOrFail($itemRequest->id);
+            $procurement = Procurement::lockForUpdate()->findOrFail($validated['procurementId']);
+
+            if ((int) $procurement->item_request_id !== (int) $itemRequest->id) {
+                throw new SafeBusinessException('Pengadaan tidak sesuai dengan permintaan barang.');
+            }
+
             if ($procurement->status === 'Diterima') {
                 throw new SafeBusinessException('Pengadaan ini sudah selesai.');
             }
@@ -454,15 +500,26 @@ class RequestController extends Controller
 
             $stockItem = null;
             if ($itemRequest->stock_item_id) {
-                $stockItem = StockItem::find($itemRequest->stock_item_id);
+                $stockItem = StockItem::lockForUpdate()->find($itemRequest->stock_item_id);
             } else {
-                $stockItem = StockItem::where('name', $itemRequest->item_name)->first();
+                $stockItem = StockItem::lockForUpdate()->whereRaw('LOWER(name) = LOWER(?)', [$itemRequest->item_name])->first();
             }
 
             if ($stockItem) {
+                $qtyBefore = $stockItem->qty;
                 $stockItem->qty += $procurement->qty_procured;
                 $stockItem->last_updated = today();
                 $stockItem->save();
+
+                $actor = $request->user() ? $request->user()->name : 'Sistem';
+                StockHistory::create([
+                    'stock_item_id' => $stockItem->id,
+                    'qty_change' => $procurement->qty_procured,
+                    'qty_before' => $qtyBefore,
+                    'qty_after' => $stockItem->qty,
+                    'type' => 'Penyesuaian',
+                    'notes' => "Penyelesaian pengadaan {$procurement->qty_procured} unit {$itemRequest->item_name} untuk BON {$itemRequest->bon_no} oleh {$actor}",
+                ]);
 
                 $itemRequest->stock_item_id = $stockItem->id;
             }
@@ -777,6 +834,8 @@ class RequestController extends Controller
 
         DB::beginTransaction();
         try {
+            // Lock ItemRequest to ensure status doesn't change concurrently
+            $itemRequest = ItemRequest::lockForUpdate()->findOrFail($itemRequest->id);
             $isTerpenuhinSebagian = $itemRequest->status === 'Terpenuhi Sebagian';
 
             if ($isTerpenuhinSebagian) {
@@ -797,9 +856,20 @@ class RequestController extends Controller
                             ->first();
 
                     if ($stockItem) {
+                        $qtyBefore = $stockItem->qty;
                         $stockItem->qty += $itemRequest->qty_fulfilled;
                         $stockItem->last_updated = today();
                         $stockItem->save();
+
+                        $actor = $request->user() ? $request->user()->name : 'Sistem';
+                        StockHistory::create([
+                            'stock_item_id' => $stockItem->id,
+                            'qty_change' => $itemRequest->qty_fulfilled,
+                            'qty_before' => $qtyBefore,
+                            'qty_after' => $stockItem->qty,
+                            'type' => 'Penyesuaian',
+                            'notes' => "Pengembalian stok dari pembatalan pengajuan {$itemRequest->item_name} untuk BON {$itemRequest->bon_no} oleh {$actor}",
+                        ]);
                     }
                 }
                 $notes = "Alasan: {$validated['alasan']}";

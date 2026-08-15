@@ -223,6 +223,14 @@ class BarangController extends Controller
 
         $barang = Barang::findOrFail($id);
 
+        if ((int) $validated['qty'] !== (int) $barang->qty) {
+            if ($request->wantsJson()) {
+                return response()->json(['errors' => ['qty' => ['Kuantitas stok tidak dapat diubah melalui form edit master barang.']]], 422);
+            }
+
+            return back()->withErrors(['qty' => 'Kuantitas stok tidak dapat diubah melalui form edit master barang.'])->withInput()->with('edit_id', $id);
+        }
+
         $duplicate = Barang::query()
             ->whereRaw('LOWER(name) = ?', [mb_strtolower($validated['name'])])
             ->where('id', '!=', $id)
@@ -244,7 +252,6 @@ class BarangController extends Controller
             'code' => $normalizedCode,
             'unit' => trim($validated['unit']),
             'category' => $category,
-            'qty' => $validated['qty'],
         ]);
 
         if ($request->wantsJson()) {
