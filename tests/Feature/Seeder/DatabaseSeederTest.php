@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Seeder;
 
+use App\Models\KategoriBarang;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,5 +56,15 @@ class DatabaseSeederTest extends TestCase
         $this->assertEquals($originalHash, $user->password);
         $this->assertEquals('Superadmin', $user->role);
         $this->assertEquals('admin.real', $user->username);
+    }
+
+    public function test_database_seeder_seeds_reference_data()
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        // OfficeActivityInventoryCodeSeeder inserts some baseline catalog data.
+        // We will just verify that the catalog is not empty.
+        $this->assertDatabaseCount('kategori_barang', KategoriBarang::count());
+        $this->assertTrue(KategoriBarang::count() > 0, 'KategoriBarang should be seeded');
     }
 }

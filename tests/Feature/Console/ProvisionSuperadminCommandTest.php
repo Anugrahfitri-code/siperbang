@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Console;
 
+use App\Console\Commands\ProvisionSuperadminCommand;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Symfony\Component\Console\Exception\RuntimeException;
 use Tests\TestCase;
 
 class ProvisionSuperadminCommandTest extends TestCase
@@ -95,9 +97,30 @@ class ProvisionSuperadminCommandTest extends TestCase
 
     public function test_provisioning_does_not_have_password_cli_option()
     {
-        $this->expectException(\Symfony\Component\Console\Exception\RuntimeException::class);
-        // Artisan should throw if we pass an option that doesn't exist.
-        // We will just verify it throws an exception or doesn't have it.
+        $this->expectException(RuntimeException::class);
         $this->artisan('app:provision-superadmin --password=foo');
+    }
+
+    public function test_provisioning_does_not_have_forbidden_cli_options()
+    {
+        $this->assertFalse($this->app->make(ProvisionSuperadminCommand::class)->getDefinition()->hasOption('password'));
+        $this->assertFalse($this->app->make(ProvisionSuperadminCommand::class)->getDefinition()->hasOption('force'));
+        $this->assertFalse($this->app->make(ProvisionSuperadminCommand::class)->getDefinition()->hasOption('overwrite'));
+        $this->assertFalse($this->app->make(ProvisionSuperadminCommand::class)->getDefinition()->hasOption('reset-password'));
+    }
+
+    public function test_provisioning_does_not_leak_plaintext_password()
+    {
+        $uniquePassword = 'SuperSecure-36B-Test!';
+        $this->artisan('app:provision-superadmin')
+            ->expectsQuestion('Full Name', 'No Leak Admin')
+            ->expectsQuestion('Username', 'noleakadmin')
+            ->expectsQuestion('Password (min 12 characters)', $uniquePassword)
+            ->expectsQuestion('Confirm Password', $uniquePassword)
+            ->doesntExpectOutput($uniquePassword)
+            ->doesntExpectOutputToContain($uniquePassword)
+            ->assertSuccessful();
+
+        $this->assertDatabaseHas('users', ['username' => 'noleakadmin']);
     }
 }

@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class ProvisionSuperadminCommand extends Command
 {
@@ -33,6 +34,7 @@ class ProvisionSuperadminCommand extends Command
 
         if ($superadminExists) {
             $this->info('SUPERADMIN ALREADY EXISTS — NO CHANGES MADE');
+
             return self::SUCCESS; // Safe no-op
         }
 
@@ -42,12 +44,14 @@ class ProvisionSuperadminCommand extends Command
         $name = $this->ask('Full Name');
         if (empty($name)) {
             $this->error('Name cannot be empty.');
+
             return self::FAILURE;
         }
 
         $username = $this->ask('Username');
         if (empty($username)) {
             $this->error('Username cannot be empty.');
+
             return self::FAILURE;
         }
 
@@ -55,6 +59,7 @@ class ProvisionSuperadminCommand extends Command
         $usernameExists = User::where('username', $username)->exists();
         if ($usernameExists) {
             $this->error("User with username '{$username}' already exists. No user created.");
+
             return self::FAILURE;
         }
 
@@ -64,11 +69,12 @@ class ProvisionSuperadminCommand extends Command
 
         if ($password !== $confirmPassword) {
             $this->error('Passwords do not match. NO USER CREATED.');
+
             return self::FAILURE;
         }
 
         $validator = Validator::make(['password' => $password], [
-            'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::min(12)->letters()->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'string', Password::min(12)->letters()->mixedCase()->numbers()->symbols()],
         ]);
 
         if ($validator->fails()) {
@@ -76,6 +82,7 @@ class ProvisionSuperadminCommand extends Command
                 $this->error($error);
             }
             $this->error('Password does not meet the application policy. NO USER CREATED.');
+
             return self::FAILURE;
         }
 
@@ -92,9 +99,11 @@ class ProvisionSuperadminCommand extends Command
             ]);
 
             $this->info('Superadmin provisioned successfully.');
+
             return self::SUCCESS;
         } catch (\Exception $e) {
             $this->error('Failed to create user due to database error. No user created.');
+
             // Do not print raw exception to avoid leaking details
             return self::FAILURE;
         }
