@@ -21,16 +21,7 @@ Route::get('/api/settings', [SiteSettingController::class, 'index']);
 // Authenticated User Info
 Route::get('/api/user', function (Request $request) {
     if (Auth::check()) {
-        $user = Auth::user();
-        if (strtolower($user->status) === 'nonaktif') {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return response()->json(['message' => 'Akun Anda tidak aktif.'], 403);
-        }
-
-        return response()->json($user);
+        return response()->json(Auth::user());
     }
 
     return response()->json(['message' => 'Unauthenticated'], 401);
@@ -53,21 +44,14 @@ Route::post('/api/login', function (Request $request) {
         ], 429);
     }
 
+    $credentials['status'] = 'Aktif';
+
     if (Auth::attempt($credentials)) {
-        $user = Auth::user();
-        if (strtolower($user->status) === 'nonaktif') {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return response()->json(['message' => 'Akun Anda tidak aktif. Silakan hubungi Administrator.'], 403);
-        }
-
         RateLimiter::clear($throttleKey);
 
         $request->session()->regenerate();
 
-        return response()->json(['message' => 'Login successful', 'user' => $user]);
+        return response()->json(['message' => 'Login successful', 'user' => Auth::user()]);
     }
 
     RateLimiter::hit($throttleKey, 60);
@@ -84,7 +68,7 @@ Route::post('/api/logout', function (Request $request) {
 });
 
 // Protected API Routes
-Route::middleware('auth')->prefix('api')->group(function () {
+Route::middleware(['auth', 'active'])->prefix('api')->group(function () {
     // ---- Semua Authenticated User ----
     // Requests
     Route::get('/requests', [RequestController::class, 'index']);

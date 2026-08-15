@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
@@ -49,7 +50,15 @@ class UserController extends Controller
             unset($validated['password']);
         }
 
+        $oldStatus = $user->status;
+
         $user->update($validated);
+
+        if (strtolower($oldStatus) === 'aktif' && strtolower($user->status) === 'nonaktif') {
+            DB::table(config('session.table', 'sessions'))
+                ->where('user_id', $user->id)
+                ->delete();
+        }
 
         return response()->json($user);
     }

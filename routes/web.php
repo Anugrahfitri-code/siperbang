@@ -13,7 +13,7 @@ Route::get('/login', function () {
     return view('welcome');
 })->name('login');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
     $ctrl = StokUploadController::class;
 
     // ── Stok Upload — Stepper Workflow ──────────────────────────
