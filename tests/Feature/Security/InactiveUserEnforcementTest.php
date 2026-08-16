@@ -211,4 +211,52 @@ class InactiveUserEnforcementTest extends TestCase
         // Sessions remain 0
         $this->assertEquals(0, DB::table('sessions')->where('user_id', $target->id)->count());
     }
+
+    public function test_active_user_can_access_api_user()
+    {
+        $user = User::factory()->create([
+            'status' => 'Aktif',
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->getJson('/api/user');
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'id' => $user->id,
+            'username' => $user->username,
+        ]);
+    }
+
+    public function test_unauthenticated_user_cannot_access_api_user()
+    {
+        $response = $this->getJson('/api/user');
+
+        $response->assertStatus(401);
+        $response->assertJson(['message' => 'Unauthenticated.']);
+    }
+
+    public function test_stale_session_is_denied_on_api_user()
+    {
+        $user = User::factory()->create([
+            'status' => 'Aktif',
+        ]);
+
+        $this->actingAs($user);
+
+        // Verify can access initially
+        $response = $this->getJson('/api/user');
+        $response->assertStatus(200);
+
+        // Deactivate user
+        $user->update(['status' => 'Nonaktif']);
+
+        // Next request with same session should be denied
+        $response = $this->getJson('/api/user');
+
+        $response->assertStatus(401);
+        $response->assertJson(['message' => 'Unauthenticated.']);
+        $this->assertGuest();
+    }
 }

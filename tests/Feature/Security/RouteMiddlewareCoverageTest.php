@@ -26,4 +26,18 @@ class RouteMiddlewareCoverageTest extends TestCase
             'Found auth-protected routes missing the "active" middleware: '.implode(', ', $authRoutesMissingActive)
         );
     }
+
+    public function test_api_user_route_has_auth_and_active_middleware()
+    {
+        $route = collect(Route::getRoutes()->getRoutes())->first(function ($r) {
+            return $r->uri() === 'api/user' && in_array('GET', $r->methods());
+        });
+
+        $this->assertNotNull($route, 'Route /api/user not found.');
+
+        $middlewares = $route->gatherMiddleware();
+
+        $this->assertContains('auth', $middlewares, '/api/user does not have auth middleware.');
+        $this->assertContains('active', $middlewares, '/api/user does not have active middleware.');
+    }
 }

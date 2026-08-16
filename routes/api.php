@@ -18,15 +18,6 @@ use Illuminate\Support\Str;
 
 Route::get('/api/settings', [SiteSettingController::class, 'index']);
 
-// Authenticated User Info
-Route::get('/api/user', function (Request $request) {
-    if (Auth::check()) {
-        return response()->json(Auth::user());
-    }
-
-    return response()->json(['message' => 'Unauthenticated'], 401);
-});
-
 // Auth Routes
 Route::post('/api/login', function (Request $request) {
     $credentials = $request->validate([
@@ -70,6 +61,11 @@ Route::post('/api/logout', function (Request $request) {
 // Protected API Routes
 Route::middleware(['auth', 'active'])->prefix('api')->group(function () {
     // ---- Semua Authenticated User ----
+    // Authenticated User Info
+    Route::get('/user', function (Request $request) {
+        return response()->json($request->user());
+    });
+
     // Requests
     Route::get('/requests', [RequestController::class, 'index']);
     Route::get('/requests/bon', [RequestController::class, 'indexBons']);
