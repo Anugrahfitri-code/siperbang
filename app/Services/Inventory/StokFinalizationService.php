@@ -44,7 +44,7 @@ class StokFinalizationService
                 if ($lockedBatch->status === StokUpload::STATUS_SELESAI) {
                     throw new SafeBusinessException('Batch upload ini sudah pernah difinalisasi.');
                 }
-                throw new SafeBusinessException('Batch tidak dapat difinalisasi karena status saat ini adalah: ' . $lockedBatch->status);
+                throw new SafeBusinessException('Batch tidak dapat difinalisasi karena status saat ini adalah: '.$lockedBatch->status);
             }
 
             // 3. Load approved rows AFTER lock to ensure accurate state
@@ -59,9 +59,9 @@ class StokFinalizationService
             foreach ($approvedRows as $row) {
                 $code = $row->verified_kode_persediaan;
                 $normalizedName = strtolower(trim($row->nama_barang));
-                $key = $code . '|' . $normalizedName;
+                $key = $code.'|'.$normalizedName;
 
-                if (!isset($grouped[$key])) {
+                if (! isset($grouped[$key])) {
                     $grouped[$key] = [
                         'code' => $code,
                         'name' => trim($row->nama_barang),

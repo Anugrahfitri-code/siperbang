@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Security;
 
+use App\Models\Barang;
 use App\Models\KodePersediaan;
+use App\Models\StockHistory;
 use App\Models\StokUpload;
 use App\Models\StokUploadDetail;
 use App\Models\User;
-use App\Models\Barang;
-use App\Models\StockHistory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -17,16 +17,17 @@ class BulkStockIntegrityTest extends TestCase
     use RefreshDatabase;
 
     private User $petugas;
+
     private KodePersediaan $kodeValid;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->petugas = User::factory()->create(['role' => 'Petugas Persediaan']);
         $this->kodeValid = KodePersediaan::create([
             'kode' => '1.01.03.01.001',
-            'nama_barang' => 'Kertas HVS'
+            'nama_barang' => 'Kertas HVS',
         ]);
     }
 
@@ -34,7 +35,7 @@ class BulkStockIntegrityTest extends TestCase
     {
         // 1. /api/stocks/bulk no longer reachable
         $this->assertFalse(Route::has('api.stocks.bulk'));
-        
+
         $response = $this->actingAs($this->petugas)->postJson('/api/stocks/bulk', []);
         $this->assertContains($response->status(), [404, 405]);
     }
@@ -47,7 +48,7 @@ class BulkStockIntegrityTest extends TestCase
             'file_name_stored' => 'test.xlsx',
             'user_id' => $this->petugas->id,
             'upload_date' => now(),
-            'status' => StokUpload::STATUS_MENUNGGU_VERIFIKASI
+            'status' => StokUpload::STATUS_MENUNGGU_VERIFIKASI,
         ]);
         $detail1 = StokUploadDetail::create([
             'stok_upload_id' => $batch->id,
@@ -61,14 +62,14 @@ class BulkStockIntegrityTest extends TestCase
             'status_validation' => 'Menunggu Verifikasi',
             'status_verification' => 'Pending',
         ]);
-        
+
         // Setup batch 2 with 1 detail
         $batch2 = StokUpload::create([
             'file_name_original' => 'test2.xlsx',
             'file_name_stored' => 'test2.xlsx',
             'user_id' => $this->petugas->id,
             'upload_date' => now(),
-            'status' => StokUpload::STATUS_MENUNGGU_VERIFIKASI
+            'status' => StokUpload::STATUS_MENUNGGU_VERIFIKASI,
         ]);
         $detailOtherBatch = StokUploadDetail::create([
             'stok_upload_id' => $batch2->id,
@@ -95,12 +96,12 @@ class BulkStockIntegrityTest extends TestCase
                     'detail_id' => $detailOtherBatch->id, // Exists, but belongs to batch 2
                     'action' => 'Setuju',
                     'kode_persediaan' => $this->kodeValid->kode,
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertStatus(400); // Because detail validation inside transaction will fail
-        
+
         // Assert rollback: detail 1 should NOT be updated
         $this->assertEquals('Pending', $detail1->fresh()->status_verification);
     }
@@ -112,7 +113,7 @@ class BulkStockIntegrityTest extends TestCase
             'file_name_stored' => 'test.xlsx',
             'user_id' => $this->petugas->id,
             'upload_date' => now(),
-            'status' => StokUpload::STATUS_SELESAI
+            'status' => StokUpload::STATUS_SELESAI,
         ]);
         $detail = StokUploadDetail::create([
             'stok_upload_id' => $batch->id,
@@ -132,8 +133,8 @@ class BulkStockIntegrityTest extends TestCase
                 [
                     'detail_id' => $detail->id,
                     'action' => 'Tolak',
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertStatus(400);
@@ -148,7 +149,7 @@ class BulkStockIntegrityTest extends TestCase
             'file_name_stored' => 'test.xlsx',
             'user_id' => $this->petugas->id,
             'upload_date' => now(),
-            'status' => StokUpload::STATUS_MENUNGGU_VERIFIKASI
+            'status' => StokUpload::STATUS_MENUNGGU_VERIFIKASI,
         ]);
         StokUploadDetail::create([
             'stok_upload_id' => $batch->id,
@@ -165,7 +166,7 @@ class BulkStockIntegrityTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->petugas)->postJson("/api/stok-upload/{$batch->id}/finalisasi-api");
-        
+
         $response->assertStatus(400);
         $this->assertEquals(StokUpload::STATUS_MENUNGGU_VERIFIKASI, $batch->fresh()->status);
         $this->assertDatabaseCount('stock_items', 0);
@@ -178,9 +179,9 @@ class BulkStockIntegrityTest extends TestCase
             'file_name_stored' => 'test.xlsx',
             'user_id' => $this->petugas->id,
             'upload_date' => now(),
-            'status' => StokUpload::STATUS_SIAP_DIFINALISASI
+            'status' => StokUpload::STATUS_SIAP_DIFINALISASI,
         ]);
-        
+
         // Existing product
         $existingBarang = Barang::create([
             'code' => $this->kodeValid->kode,
@@ -249,7 +250,7 @@ class BulkStockIntegrityTest extends TestCase
             'file_name_stored' => 'test.xlsx',
             'user_id' => $this->petugas->id,
             'upload_date' => now(),
-            'status' => StokUpload::STATUS_SIAP_DIFINALISASI
+            'status' => StokUpload::STATUS_SIAP_DIFINALISASI,
         ]);
         StokUploadDetail::create([
             'stok_upload_id' => $batch->id,
@@ -273,7 +274,7 @@ class BulkStockIntegrityTest extends TestCase
         // 2nd call
         $response2 = $this->actingAs($this->petugas)->postJson("/api/stok-upload/{$batch->id}/finalisasi-api");
         $response2->assertStatus(400); // Already Selesai
-        
+
         // Assert qty hasn't doubled
         $this->assertEquals(10, Barang::where('name', 'Barang Baru')->first()->qty);
         $this->assertDatabaseCount('stok_histories', 1);
@@ -286,9 +287,9 @@ class BulkStockIntegrityTest extends TestCase
             'file_name_stored' => 'test.xlsx',
             'user_id' => $this->petugas->id,
             'upload_date' => now(),
-            'status' => StokUpload::STATUS_SIAP_DIFINALISASI
+            'status' => StokUpload::STATUS_SIAP_DIFINALISASI,
         ]);
-        
+
         // Duplicate items in same batch
         StokUploadDetail::create([
             'stok_upload_id' => $batch->id,
@@ -303,7 +304,7 @@ class BulkStockIntegrityTest extends TestCase
             'status_verification' => 'Setuju',
             'verified_kode_persediaan' => $this->kodeValid->kode,
         ]);
-        
+
         StokUploadDetail::create([
             'stok_upload_id' => $batch->id,
             'sheet_name' => 'Sheet1',

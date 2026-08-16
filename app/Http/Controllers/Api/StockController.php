@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
-use App\Models\KodePersediaan;
 use App\Models\StockItem;
 use App\Support\Inventory\OfficeInventoryCatalog;
 use Illuminate\Database\Eloquent\Builder;
@@ -110,8 +109,6 @@ class StockController extends Controller
             ],
         ]);
     }
-
-
 
     private function resolveStatus(int $qty): string
     {
