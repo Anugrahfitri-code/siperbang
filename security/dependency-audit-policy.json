@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "exceptions": [
+    {
+      "ecosystem": "npm",
+      "advisoryId": "GHSA-rgw5-rvv9-x895",
+      "package": "brace-expansion",
+      "severity": "high",
+      "reason": "SIPERBANG's Excel/archive usage does not expose the affected brace/globbing functionality to application/user-controlled input.",
+      "reachability": "NOT REACHABLE WITH STRONG SOURCE EVIDENCE",
+      "reviewedOn": "2026-08-16",
+      "expiresOn": "2026-09-15"
+    },
+    {
+      "ecosystem": "npm",
+      "advisoryId": "GHSA-w5hq-g745-h8pq",
+      "package": "uuid",
+      "severity": "moderate",
+      "reason": "Current ExcelJS/SIPERBANG usage does not invoke the advisory-affected UUID functionality.",
+      "reachability": "NOT REACHABLE WITH STRONG SOURCE EVIDENCE",
+      "reviewedOn": "2026-08-16",
+      "expiresOn": "2026-09-15"
+    }
+  ]
+}

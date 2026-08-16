@@ -1,0 +1,20 @@
+# reviewed date: 2026-08-16
+# Trivy mapped finding to linux-libc-dev
+# vulnerable implementation is Linux kernel subsystem code
+# OCR container runs host kernel, not kernel code from image package
+# company deployment acceptance MUST separately verify host kernel is patched
+CVE-2025-37777 exp:2026-09-15
+
+# reviewed date: 2026-08-16
+# Trivy mapped finding to linux-libc-dev
+# vulnerable implementation is Linux kernel subsystem code
+# OCR container runs host kernel, not kernel code from image package
+# company deployment acceptance MUST separately verify host kernel is patched
+CVE-2026-52989 exp:2026-09-15
+
+# reviewed date: 2026-08-16
+# Trivy mapped finding to linux-libc-dev
+# vulnerable implementation is Linux kernel subsystem code
+# OCR container runs host kernel, not kernel code from image package
+# company deployment acceptance MUST separately verify host kernel is patched
+CVE-2026-53215 exp:2026-09-15
