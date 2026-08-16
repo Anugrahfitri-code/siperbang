@@ -197,11 +197,12 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains (hanya HTTPS)
 ## Checklist Keamanan Sebelum Deploy ke Production
 
 - [ ] Set `APP_ENV=production` dan `APP_DEBUG=false`
-- [ ] Ganti semua password default user
+- [x] Tidak menyediakan kredensial privileged/default password di source.
 - [ ] Set OCR_SERVICE_TOKEN yang kuat (minimal 32 karakter random)
 - [ ] Aktifkan HTTPS dan set `APP_URL` ke https://
 - [ ] Konfigurasi security headers di nginx/Apache
-- [ ] Aktifkan rate limiting di endpoint login dan upload
+- [x] Rate limiting pada endpoint login telah diterapkan.
+- [ ] Evaluasi kebutuhan rate limiting khusus endpoint upload berdasarkan threat model dan beban operasional.
 - [ ] Pastikan `.env` tidak bisa diakses via web dan tidak masuk ZIP/backup source
 - [ ] Pastikan hanya `public/storage` yang dapat diakses web dan `storage/app/private` tetap tertutup
 - [ ] Pastikan `public/hot` tidak ada di production
