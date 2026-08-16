@@ -95,7 +95,6 @@ Route::middleware(['auth', 'active'])->prefix('api')->group(function () {
     Route::middleware('role:Petugas Persediaan,Superadmin')->group(function () {
         // Stocks
         Route::get('/stocks', [StockController::class, 'index']);
-        Route::post('/stocks/bulk', [StockController::class, 'bulkStore'])->middleware('throttle:stock-upload');
 
         // Preview rekap pengadaan
         Route::get(

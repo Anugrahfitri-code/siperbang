@@ -114,7 +114,7 @@ class ResourceLimitTest extends TestCase
         // Stock upload should still work (different bucket)
         $stockFile = UploadedFile::fake()->create('stocks.xlsx', 100);
         $responseStock = $this->actingAs($this->userA)
-            ->postJson('/api/stocks/bulk', ['file' => $stockFile]);
+            ->post('/stok-upload', ['file_excel' => $stockFile]);
 
         // As long as it is not 429
         $this->assertNotEquals(429, $responseStock->getStatusCode());

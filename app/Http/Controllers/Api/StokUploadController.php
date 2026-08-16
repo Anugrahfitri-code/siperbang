@@ -10,6 +10,7 @@ use App\Models\StokUpload;
 use App\Models\StokUploadDetail;
 use App\Services\Inventory\StokFinalizationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class StokUploadController extends Controller
@@ -78,7 +79,6 @@ class StokUploadController extends Controller
     public function apiSaveVerifikasi(Request $request, int $id)
     {
         $this->authorizeRole('Petugas Persediaan');
-        $batch = StokUpload::findOrFail($id);
 
         $validated = $request->validate([
             'items' => 'required|array',
@@ -87,43 +87,59 @@ class StokUploadController extends Controller
             'items.*.kode_persediaan' => 'nullable|string|max:50',
         ]);
 
-        foreach ($validated['items'] as $item) {
-            $detail = StokUploadDetail::where('stok_upload_id', $batch->id)
-                ->where('id', $item['detail_id'])
-                ->firstOrFail();
+        DB::transaction(function () use ($id, $validated, $request) {
+            $batch = StokUpload::lockForUpdate()->findOrFail($id);
 
-            match ($item['action']) {
-                'Setuju' => $detail->update([
-                    'status_verification' => 'Setuju',
-                    'status_validation' => 'Menunggu Verifikasi',
-                ]),
-                'Perbaiki' => $detail->update([
-                    'status_verification' => 'Setuju',
-                    'verified_kode_persediaan' => $item['kode_persediaan'] ?? $detail->kode_persediaan_excel,
-                    'status_validation' => 'Menunggu Verifikasi',
-                ]),
-                'Tolak' => $detail->update([
-                    'status_verification' => 'Tolak',
-                ]),
-            };
-        }
+            if (in_array($batch->status, [StokUpload::STATUS_SELESAI, StokUpload::STATUS_DIBATALKAN], true)) {
+                abort(400, 'Batch sudah tidak dapat diverifikasi.');
+            }
 
-        $this->syncBatchStats($batch);
+            $detailIds = collect($validated['items'])->pluck('detail_id');
+            $details = StokUploadDetail::where('stok_upload_id', $batch->id)
+                ->whereIn('id', $detailIds)
+                ->get()
+                ->keyBy('id');
 
-        $pendingCount = $batch->details()->where('status_verification', 'Pending')->count();
-        if ($pendingCount === 0) {
-            $batch->update([
-                'status' => StokUpload::STATUS_SIAP_DIFINALISASI,
-                'current_step' => StokUpload::STEP_REVIEW,
+            if ($details->count() !== count($validated['items'])) {
+                abort(400, 'Beberapa item tidak ditemukan atau bukan bagian dari batch ini.');
+            }
+
+            foreach ($validated['items'] as $item) {
+                $detail = $details->get($item['detail_id']);
+
+                match ($item['action']) {
+                    'Setuju' => $detail->update([
+                        'status_verification' => 'Setuju',
+                        'status_validation' => 'Menunggu Verifikasi',
+                    ]),
+                    'Perbaiki' => $detail->update([
+                        'status_verification' => 'Setuju',
+                        'verified_kode_persediaan' => $item['kode_persediaan'] ?? $detail->kode_persediaan_excel,
+                        'status_validation' => 'Menunggu Verifikasi',
+                    ]),
+                    'Tolak' => $detail->update([
+                        'status_verification' => 'Tolak',
+                    ]),
+                };
+            }
+
+            $this->syncBatchStats($batch);
+
+            $pendingCount = $batch->details()->where('status_verification', 'Pending')->count();
+            if ($pendingCount === 0) {
+                $batch->update([
+                    'status' => StokUpload::STATUS_SIAP_DIFINALISASI,
+                    'current_step' => StokUpload::STEP_REVIEW,
+                ]);
+            }
+
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'Verifikasi Kode Persediaan (API)',
+                'description' => "Menyimpan verifikasi kode untuk batch #{$batch->id}.",
+                'ip_address' => $request->ip(),
             ]);
-        }
-
-        AuditLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'Verifikasi Kode Persediaan (API)',
-            'description' => "Menyimpan verifikasi kode untuk batch #{$batch->id}.",
-            'ip_address' => $request->ip(),
-        ]);
+        });
 
         return response()->json(['success' => true, 'message' => 'Verifikasi berhasil disimpan']);
     }

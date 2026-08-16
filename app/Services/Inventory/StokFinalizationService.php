@@ -25,16 +25,6 @@ class StokFinalizationService
      */
     public function finalize(StokUpload $batch): array
     {
-        if ($batch->status === StokUpload::STATUS_SELESAI) {
-            throw new SafeBusinessException('Batch upload ini sudah pernah difinalisasi.');
-        }
-
-        $approvedRows = $batch->details()->where('status_verification', 'Setuju')->get();
-
-        if ($approvedRows->isEmpty()) {
-            throw new SafeBusinessException('Tidak ada data yang disetujui untuk difinalisasi. Silakan lakukan verifikasi terlebih dahulu.');
-        }
-
         $user = Auth::user();
         $actorName = $user ? $user->name : 'Petugas Persediaan';
         $userId = $user ? $user->id : 1;
@@ -45,39 +35,79 @@ class StokFinalizationService
             'details' => [],
         ];
 
-        DB::transaction(function () use ($batch, $approvedRows, $actorName, $userId, &$results) {
+        DB::transaction(function () use ($batch, $actorName, $userId, &$results) {
+            // 1. Lock the parent batch to serialize with apiSaveVerifikasi and other finalizations
+            $lockedBatch = StokUpload::lockForUpdate()->findOrFail($batch->id);
+
+            // 2. Exact source state verification
+            if ($lockedBatch->status !== StokUpload::STATUS_SIAP_DIFINALISASI) {
+                if ($lockedBatch->status === StokUpload::STATUS_SELESAI) {
+                    throw new SafeBusinessException('Batch upload ini sudah pernah difinalisasi.');
+                }
+                throw new SafeBusinessException('Batch tidak dapat difinalisasi karena status saat ini adalah: ' . $lockedBatch->status);
+            }
+
+            // 3. Load approved rows AFTER lock to ensure accurate state
+            $approvedRows = $lockedBatch->details()->where('status_verification', 'Setuju')->get();
+
+            if ($approvedRows->isEmpty()) {
+                throw new SafeBusinessException('Tidak ada data yang disetujui untuk difinalisasi. Silakan lakukan verifikasi terlebih dahulu.');
+            }
+
+            // 4. Deterministic coordination: group and sort by code and lowercase name
+            $grouped = [];
             foreach ($approvedRows as $row) {
                 $code = $row->verified_kode_persediaan;
+                $normalizedName = strtolower(trim($row->nama_barang));
+                $key = $code . '|' . $normalizedName;
 
-                // Match on BOTH code AND name — one code can cover multiple
-                // distinct products (e.g. Kantong sampah M / XL / L share
-                // code 1010305004).  Case-insensitive name match prevents
-                // duplicate-key collisions while still catching re-uploads.
+                if (!isset($grouped[$key])) {
+                    $grouped[$key] = [
+                        'code' => $code,
+                        'name' => trim($row->nama_barang),
+                        'qty' => 0,
+                        'unit' => $row->unit,
+                        'storage_location' => $row->storage_location,
+                        'sheet_name' => $row->sheet_name,
+                    ];
+                }
+                $grouped[$key]['qty'] += $row->qty;
+            }
+
+            ksort($grouped);
+
+            // 5. Process grouped items with correct deterministic locks
+            foreach ($grouped as $logicalItem) {
+                $code = $logicalItem['code'];
+
+                // Master row coordination for missing-row creation
+                DB::table('kode_persediaan')->where('kode', $code)->lockForUpdate()->first();
+
+                // Existing stock row coordination
                 $barang = Barang::where('code', $code)
-                    ->whereRaw('LOWER(name) = LOWER(?)', [$row->nama_barang])
+                    ->whereRaw('LOWER(name) = LOWER(?)', [$logicalItem['name']])
+                    ->lockForUpdate()
                     ->first();
 
                 if ($barang) {
-                    // Update existing item stock
                     $qtyBefore = $barang->qty;
-                    $qtyAfter = $qtyBefore + $row->qty;
+                    $qtyAfter = $qtyBefore + $logicalItem['qty'];
 
                     $barang->update([
                         'qty' => $qtyAfter,
                         'last_updated' => now(),
-                        'last_upload_id' => $batch->id,
-                        'storage_location' => $row->storage_location ?? $barang->storage_location,
+                        'last_upload_id' => $lockedBatch->id,
+                        'storage_location' => $logicalItem['storage_location'] ?? $barang->storage_location,
                     ]);
 
-                    // Record history log
                     StockHistory::create([
                         'stock_item_id' => $barang->id,
-                        'stok_upload_id' => $batch->id,
-                        'qty_change' => $row->qty,
+                        'stok_upload_id' => $lockedBatch->id,
+                        'qty_change' => $logicalItem['qty'],
                         'qty_before' => $qtyBefore,
                         'qty_after' => $qtyAfter,
                         'type' => 'Upload Excel',
-                        'notes' => "Penambahan stok dari batch #{$batch->id} (Sheet: {$row->sheet_name})",
+                        'notes' => "Penambahan stok dari batch #{$lockedBatch->id} (Sheet: {$logicalItem['sheet_name']})",
                     ]);
 
                     $results['updated']++;
@@ -87,34 +117,32 @@ class StokFinalizationService
                         'code' => $code,
                         'unit' => $barang->unit,
                         'qty_before' => $qtyBefore,
-                        'qty_added' => $row->qty,
+                        'qty_added' => $logicalItem['qty'],
                         'qty_after' => $qtyAfter,
                     ];
                 } else {
-                    // Create new item in stock_items
                     $category = $this->kodeService->getCategoryByCode($code);
 
                     $newBarang = Barang::create([
                         'code' => $code,
-                        'name' => $row->nama_barang,
+                        'name' => $logicalItem['name'],
                         'category' => $category,
-                        'qty' => $row->qty,
-                        'unit' => $row->unit,
-                        'storage_location' => $row->storage_location,
+                        'qty' => $logicalItem['qty'],
+                        'unit' => $logicalItem['unit'],
+                        'storage_location' => $logicalItem['storage_location'],
                         'last_updated' => now(),
                         'is_active' => true,
-                        'last_upload_id' => $batch->id,
+                        'last_upload_id' => $lockedBatch->id,
                     ]);
 
-                    // Record history log
                     StockHistory::create([
                         'stock_item_id' => $newBarang->id,
-                        'stok_upload_id' => $batch->id,
-                        'qty_change' => $row->qty,
+                        'stok_upload_id' => $lockedBatch->id,
+                        'qty_change' => $logicalItem['qty'],
                         'qty_before' => 0,
-                        'qty_after' => $row->qty,
+                        'qty_after' => $logicalItem['qty'],
                         'type' => 'Upload Excel',
-                        'notes' => "Stok awal dari batch #{$batch->id} (Sheet: {$row->sheet_name})",
+                        'notes' => "Stok awal dari batch #{$lockedBatch->id} (Sheet: {$logicalItem['sheet_name']})",
                     ]);
 
                     $results['inserted']++;
@@ -123,17 +151,17 @@ class StokFinalizationService
                         'name' => $newBarang->name,
                         'code' => $code,
                         'unit' => $newBarang->unit,
-                        'qty' => $row->qty,
+                        'qty' => $logicalItem['qty'],
                     ];
                 }
             }
 
-            // Update batch stats
-            $rejectedCount = $batch->details()->where('status_verification', 'Tolak')->count();
+            // 6. Update batch state
+            $rejectedCount = $lockedBatch->details()->where('status_verification', 'Tolak')->count();
 
-            $batch->update([
+            $lockedBatch->update([
                 'rejected_rows_count' => $rejectedCount,
-                'status' => 'Selesai',
+                'status' => StokUpload::STATUS_SELESAI,
             ]);
 
             // Build per-item detail for log
@@ -145,14 +173,13 @@ class StokFinalizationService
                 return $label;
             })->implode("\n");
 
-            $summary = "Finalisasi Batch #{$batch->id} oleh {$actorName}. "
+            $summary = "Finalisasi Batch #{$lockedBatch->id} oleh {$actorName}. "
                 ."Barang baru: {$results['inserted']}, Stok diperbarui: {$results['updated']}.\n"
                 ."Detail:\n{$itemDetails}";
 
             $ipAddress = request()->ip();
             $userAgent = request()->userAgent();
 
-            // Save Audit Log (admin-level)
             AuditLog::create([
                 'user_id' => $userId,
                 'action' => 'FINALISASI_STOK',
@@ -160,7 +187,6 @@ class StokFinalizationService
                 'ip_address' => $ipAddress,
             ]);
 
-            // Save History Log (visible in UI timeline) with full metadata
             HistoryLog::create([
                 'actor' => $actorName,
                 'user_id' => $userId,
@@ -168,7 +194,7 @@ class StokFinalizationService
                 'details' => $summary,
                 'ip_address' => $ipAddress,
                 'metadata' => [
-                    'batch_id' => $batch->id,
+                    'batch_id' => $lockedBatch->id,
                     'inserted' => $results['inserted'],
                     'updated' => $results['updated'],
                     'ip_address' => $ipAddress,

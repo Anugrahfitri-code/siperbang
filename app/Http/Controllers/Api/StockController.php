@@ -9,7 +9,6 @@ use App\Models\StockItem;
 use App\Support\Inventory\OfficeInventoryCatalog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class StockController extends Controller
 {
@@ -112,56 +111,7 @@ class StockController extends Controller
         ]);
     }
 
-    public function bulkStore(Request $request)
-    {
-        $stocks = $request->validate([
-            '*.code' => 'required|string|max:20',
-            '*.category' => 'nullable|string|max:255',
-            '*.name' => 'required|string|max:255',
-            '*.qty' => 'required|integer',
-            '*.unit' => 'required|string|max:50',
-            '*.lastUpdated' => 'nullable|date',
-        ]);
 
-        foreach ($stocks as $index => $stockData) {
-            $code = OfficeInventoryCatalog::normalizeCode($stockData['code']);
-            $category = OfficeInventoryCatalog::categoryForCode($code);
-
-            $isOfficialCode = $category !== null
-                && KodePersediaan::query()->where('kode', $code)->exists();
-
-            if (! $isOfficialCode) {
-                throw ValidationException::withMessages([
-                    "{$index}.code" => 'Kode wajib berasal dari master resmi kelompok 1.01.03.',
-                ]);
-            }
-
-            $stock = StockItem::query()
-                ->where('code', $code)
-                ->where('name', trim($stockData['name']))
-                ->first();
-
-            if ($stock) {
-                $stock->update([
-                    'category' => $category,
-                    'qty' => $stock->qty + $stockData['qty'],
-                    'unit' => trim($stockData['unit']),
-                    'last_updated' => $stockData['lastUpdated'] ?? now(),
-                ]);
-            } else {
-                StockItem::create([
-                    'code' => $code,
-                    'category' => $category,
-                    'name' => trim($stockData['name']),
-                    'qty' => $stockData['qty'],
-                    'unit' => trim($stockData['unit']),
-                    'last_updated' => $stockData['lastUpdated'] ?? now(),
-                ]);
-            }
-        }
-
-        return response()->json(['message' => 'Stocks uploaded successfully']);
-    }
 
     private function resolveStatus(int $qty): string
     {
