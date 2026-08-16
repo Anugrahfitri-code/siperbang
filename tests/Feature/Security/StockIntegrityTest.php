@@ -298,22 +298,4 @@ class StockIntegrityTest extends TestCase
         $this->assertEquals(70, $this->stockItem->fresh()->qty);
         $this->assertDatabaseCount('stok_histories', 1); // Only 1 reversal
     }
-
-    public function test_distribute_rollback_on_failure()
-    {
-        $this->itemRequest->update(['status' => 'Menunggu Distribusi']);
-
-        // Mock DB facade to throw an exception on the LAST commit or force an error
-        // An easy way is to pass invalid status or let's break validation or something?
-        // Wait, the prompt says: "if there is no clean way to inject failure without production test hooks: report ATOMICITY VERIFIED BY TRANSACTION STRUCTURE".
-        // Or I can send a malicious payload that triggers an exception INSIDE the transaction.
-        // For example, in distribute(), it does:
-        // $stockItem->qty -= $qtyDistributed;
-        // ... then updates status
-        // ... then HistoryLog::create()
-        // If I pass a too long status? No, it's hardcoded.
-        // What if I delete the itemRequest just before? No, lockForUpdate will fail.
-
-        // We will report: ATOMICITY VERIFIED BY TRANSACTION STRUCTURE
-    }
 }

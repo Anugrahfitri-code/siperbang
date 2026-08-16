@@ -2,116 +2,28 @@
 
 SIPERBANG adalah aplikasi pengelolaan persediaan barang untuk instansi pemerintah. Proyek ini terdiri dari aplikasi utama Laravel dan layanan OCR terpisah berbasis FastAPI.
 
-## Teknologi utama
+## Kebutuhan Sistem Produksi (Baseline)
 
-| Bagian | Teknologi |
-|---|---|
-| Backend | PHP 8.4 dan Laravel 13 |
-| Frontend | React 19, TypeScript, Tailwind CSS 4, Vite 8 |
-| Database | SQLite untuk pengembangan (local bootstrap), PostgreSQL 17.11 untuk staging/produksi |
-| OCR | Python, FastAPI, PaddleOCR |
-| Queue | Laravel database queue |
+- **PHP**: 8.4+
+- **Node.js**: `^20.19.0` atau `>=22.12.0` (dibutuhkan pada host yang melakukan proses build frontend)
+- **Database**: PostgreSQL baseline 17.11
+- **OCR Host Architecture**: x86_64 / AMD64 (ARM64 saat ini tidak disupport)
+- **OCR Runtime**: Docker (wajib untuk layanan OCR)
 
-## Kebutuhan sistem
+## Panduan Deployment
 
-- PHP 8.4 atau lebih baru
-- Composer 2
-- Node.js 20 atau lebih baru
-- npm
-- Python 3.10 atau lebih baru untuk layanan OCR
-- Ekstensi PHP: `pdo`, `mbstring`, `fileinfo`, `zip`, dan `gd`
-
-## Instalasi aplikasi utama
+Deployment ke server produksi **wajib** mengikuti panduan resmi dan melakukan validasi *preflight*.
+Jalankan skrip berikut di server untuk memastikan semua komponen siap:
 
 ```bash
-composer install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate
-php artisan storage:link
-npm ci
-npm run typecheck
-npm run lint
-npm run build
-npm run verify:build
+bash scripts/deployment/preflight.sh --with-ocr
 ```
 
-Konfigurasi awal menggunakan SQLite. Pastikan file database tersedia:
+Detail panduan deployment produksi dapat dilihat di: [docs/operations/DEPLOYMENT.md](docs/operations/DEPLOYMENT.md).
 
-```bash
-mkdir -p database
-touch database/database.sqlite
-```
+## Pengembangan (Development)
 
-Untuk PostgreSQL, sesuaikan variabel `DB_*` pada `.env`.
-
-## Menjalankan aplikasi
-
-Jalankan Laravel:
-
-```bash
-php artisan serve
-```
-
-Jalankan Vite pada terminal lain:
-
-```bash
-npm run dev
-```
-
-Jalankan queue worker pada terminal lain:
-
-```bash
-php artisan queue:work
-```
-
-Perintah `composer dev` memakai PowerShell melalui `scripts/dev.ps1`. Gunakan perintah tersebut pada Windows.
-
-## Menjalankan layanan OCR
-
-```bash
-cd ocr-service
-python -m venv .venv
-```
-
-Windows:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-Copy-Item .env.example .env
-.\scripts\run-server.ps1
-```
-
-Linux atau macOS:
-
-```bash
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-uvicorn app.main:app --host 127.0.0.1 --port 8001
-```
-
-Nilai `OCR_SERVICE_TOKEN` pada `.env` utama harus sama dengan nilai pada `ocr-service/.env`.
-
-## Struktur proyek
-
-```text
-app/                    kode aplikasi Laravel
-archive/                prototipe, aset, dan source lama di luar runtime
-config/                 konfigurasi Laravel
-database/               migrasi, factory, dan seeder
-docs/                   dokumentasi teknis
-ocr-service/            layanan OCR FastAPI
-public/                 entry point dan aset publik
-resources/              React, CSS, dan Blade
-routes/                  definisi route
-scripts/                 script pengembangan aktif
-storage/                 file kerja Laravel
-tests/                   test otomatis Laravel
-tools/                   diagnostik, test manual, dan script lama
-```
-
+Untuk pengembangan lokal, lihat panduan di [docs/development/SETUP_DEV.md](docs/development/SETUP_DEV.md).
 Lihat [docs/development/PROJECT_STRUCTURE.md](docs/development/PROJECT_STRUCTURE.md) untuk penjelasan rinci.
 
 ## Pengujian

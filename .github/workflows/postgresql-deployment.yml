@@ -1,0 +1,259 @@
+name: PostgreSQL Deployment Acceptance
+
+on:
+  push:
+    branches:
+      - main
+      - "ops/**"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: postgres-deployment-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-fresh-deployment:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.11
+        env:
+          POSTGRES_USER: siperbang_ci
+          POSTGRES_DB: siperbang_ci
+          POSTGRES_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.x
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2.x
+        with:
+          php-version: "8.4"
+          extensions: dom, curl, libxml, pdo, pdo_pgsql, mbstring, fileinfo, zip, gd, opcache
+          coverage: none
+
+      - name: Verify explicit pdo_pgsql
+        run: |
+          php -r 'exit(extension_loaded("pdo_pgsql") ? 0 : 1);'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.x
+        with:
+          node-version: "22.12.0"
+          cache: npm
+
+      - name: Production dependency install
+        run: |
+          composer validate --strict
+          composer install --optimize-autoloader --no-dev --no-interaction --no-progress --prefer-dist
+          npm ci
+
+      - name: Create synthetic CI environment
+        run: |
+          CI_OCR_TOKEN="$(openssl rand -hex 32)"
+          echo "::add-mask::$CI_OCR_TOKEN"
+          cat << EOF > .env
+          APP_ENV=production
+          APP_DEBUG=false
+          APP_URL=https://siperbang.invalid
+          DB_CONNECTION=pgsql
+          DB_HOST=127.0.0.1
+          DB_PORT=5432
+          DB_DATABASE=siperbang_ci
+          DB_USERNAME=siperbang_ci
+          QUEUE_CONNECTION=database
+          SESSION_DRIVER=database
+          CACHE_STORE=database
+          OCR_SERVICE_URL=http://127.0.0.1:8001
+          OCR_SERVICE_TOKEN=$CI_OCR_TOKEN
+          APP_KEY=
+          EOF
+          echo "DB_PASSWORD=${{ github.run_id }}-${{ github.run_attempt }}" >> .env
+          php artisan key:generate
+
+      - name: Verify checkout integrity before preflight
+        run: git diff --exit-code
+
+      - name: Run real deployment preflight
+        run: bash scripts/deployment/preflight.sh
+
+      - name: Verify checkout integrity after preflight
+        run: git diff --exit-code
+
+      - name: Verify exact PostgreSQL version
+        run: |
+          PG_VERSION=$(php -r "
+            try {
+              \$pdo = new PDO('pgsql:host=127.0.0.1;port=5432;dbname=siperbang_ci', 'siperbang_ci', '${{ github.run_id }}-${{ github.run_attempt }}');
+              \$stmt = \$pdo->query('SHOW server_version');
+              echo \$stmt->fetchColumn();
+            } catch (PDOException \$e) {
+              exit(1);
+            }
+          ")
+          echo "PostgreSQL server version: $PG_VERSION"
+          if [[ ! "$PG_VERSION" == 17.11* ]]; then
+            echo "FAIL: Expected PostgreSQL 17.11, got $PG_VERSION"
+            exit 1
+          fi
+
+      - name: Verify database is empty
+        run: |
+          TABLE_COUNT=$(php -r "
+            \$pdo = new PDO('pgsql:host=127.0.0.1;port=5432;dbname=siperbang_ci', 'siperbang_ci', '${{ github.run_id }}-${{ github.run_attempt }}');
+            \$stmt = \$pdo->query(\"SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'\");
+            echo \$stmt->fetchColumn();
+          ")
+          echo "Public tables before migration: $TABLE_COUNT"
+          if [ "$TABLE_COUNT" -ne 0 ]; then
+            echo "FAIL: Database is not empty"
+            exit 1
+          fi
+
+      - name: Run normal migration
+        run: php artisan migrate --force
+
+      - name: Migration completeness
+        run: |
+          php artisan migrate:status
+          TABLES=$(php -r "
+            \$pdo = new PDO('pgsql:host=127.0.0.1;port=5432;dbname=siperbang_ci', 'siperbang_ci', '${{ github.run_id }}-${{ github.run_attempt }}');
+            \$stmt = \$pdo->query(\"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'\");
+            \$names = \$stmt->fetchAll(PDO::FETCH_COLUMN);
+            echo implode(',', \$names);
+          ")
+          echo "Found tables: $TABLES"
+          for REQUIRED in users sessions cache jobs migrations; do
+            if [[ ! ",$TABLES," == *",$REQUIRED,"* ]]; then
+              echo "FAIL: Required table $REQUIRED missing"
+              exit 1
+            fi
+          done
+
+      - name: Deployment seeder
+        run: php artisan db:seed --class="Database\\Seeders\\Inventory\\OfficeActivityInventoryCodeSeeder" --force
+
+      - name: Storage link
+        run: php artisan storage:link
+
+      - name: Frontend production build
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run build
+          npm run verify:build
+          if [ -f public/hot ]; then
+            echo "FAIL: public/hot should not exist"
+            exit 1
+          fi
+
+      - name: Laravel production cache commands
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan optimize
+
+      - name: Basic boot check
+        run: |
+          php artisan about
+          php artisan route:list
+
+      - name: Migration idempotency
+        run: |
+          ROWS_BEFORE=$(php -r "
+            \$pdo = new PDO('pgsql:host=127.0.0.1;port=5432;dbname=siperbang_ci', 'siperbang_ci', '${{ github.run_id }}-${{ github.run_attempt }}');
+            echo \$pdo->query('SELECT count(*) FROM migrations')->fetchColumn();
+          ")
+          echo "Migration rows before: $ROWS_BEFORE"
+          php artisan migrate --force
+          ROWS_AFTER=$(php -r "
+            \$pdo = new PDO('pgsql:host=127.0.0.1;port=5432;dbname=siperbang_ci', 'siperbang_ci', '${{ github.run_id }}-${{ github.run_attempt }}');
+            echo \$pdo->query('SELECT count(*) FROM migrations')->fetchColumn();
+          ")
+          echo "Migration rows after: $ROWS_AFTER"
+          if [ "$ROWS_BEFORE" -ne "$ROWS_AFTER" ]; then
+            echo "FAIL: Migrations were not idempotent!"
+            exit 1
+          fi
+
+      - name: Post-migration PostgreSQL connection
+        run: |
+          php -r "
+            \$pdo = new PDO('pgsql:host=127.0.0.1;port=5432;dbname=siperbang_ci', 'siperbang_ci', '${{ github.run_id }}-${{ github.run_attempt }}');
+            \$pdo->query('SELECT 1')->fetchColumn();
+          "
+
+  postgres-backend-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.11
+        env:
+          POSTGRES_USER: siperbang_ci
+          POSTGRES_DB: siperbang_ci
+          POSTGRES_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.x
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2.x
+        with:
+          php-version: "8.4"
+          extensions: dom, curl, libxml, pdo, pdo_pgsql, mbstring, fileinfo, zip, gd, opcache
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Setup Environment
+        run: |
+          cp .env.example .env
+          echo "DB_PASSWORD=${{ github.run_id }}-${{ github.run_attempt }}" >> .env
+          php artisan key:generate
+
+      - name: Verify Database Identity
+        run: |
+          PG_VERSION=$(php -r "
+            try {
+              \$pdo = new PDO('pgsql:host=127.0.0.1;port=5432;dbname=siperbang_ci', 'siperbang_ci', '${{ github.run_id }}-${{ github.run_attempt }}');
+              \$stmt = \$pdo->query('SHOW server_version');
+              echo \$stmt->fetchColumn();
+            } catch (PDOException \$e) {
+              exit(1);
+            }
+          ")
+          echo "PostgreSQL server version: $PG_VERSION"
+          if [[ ! "$PG_VERSION" == 17.11* ]]; then
+            echo "FAIL: Expected PostgreSQL 17.11, got $PG_VERSION"
+            exit 1
+          fi
+
+      - name: Execute backend tests against PostgreSQL
+        env:
+          DB_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: vendor/bin/phpunit --configuration=phpunit.postgres.xml --display-all-issues
+
+      - name: Verify checkout integrity after backend tests
+        if: always()
+        run: git diff --exit-code

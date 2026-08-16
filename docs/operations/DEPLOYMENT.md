@@ -14,7 +14,7 @@
 
 - PHP 8.4+ dengan ekstensi: dom, curl, libxml, pdo, pdo_pgsql, mbstring, fileinfo, zip, gd, opcache
 - Composer 2.x
-- Node.js 22.x (hanya untuk build, tidak perlu di server production)
+- Node.js ^20.19.0 atau >=22.12.0 (dibutuhkan pada host yang melakukan proses build frontend)
 - PostgreSQL (Referensi baseline acceptance: PostgreSQL 17.11. Gunakan versi PostgreSQL yang dikelola perusahaan dan pastikan lulus suite acceptance sebelum go-live).
 - Nginx atau Apache
 - Supervisor (untuk menjalankan queue worker sebagai daemon)
@@ -23,11 +23,12 @@
 
 ## Langkah Deploy (Fresh Install)
 
-### 1. Upload Kode
+### 1. Clone Exact Release
 
 ```bash
 git clone <repo-url> /var/www/siperbang
 cd /var/www/siperbang
+git checkout <exact-release-tag-or-commit>
 ```
 
 ### 2. Install Dependencies
@@ -35,14 +36,7 @@ cd /var/www/siperbang
 ```bash
 composer install --optimize-autoloader --no-dev
 npm ci
-npm run typecheck
-npm run lint
-npm run build
-npm run verify:build
-rm -f public/hot
 ```
-
-`public/hot` tidak boleh ada di production. Keberadaannya membuat Laravel mencoba mengambil aset dari Vite development server.
 
 ### 3. Konfigurasi Environment
 
@@ -53,20 +47,7 @@ cp .env.example .env
 cp ocr-service/.env.example ocr-service/.env
 ```
 
-Lakukan pre-flight check sederhana untuk memastikan kedua file environment telah terbuat dengan sukses sebelum OCR dijalankan (misal dengan docker compose up):
-
-```bash
-test -f .env && echo "Laravel .env exists"
-test -f ocr-service/.env && echo "OCR .env exists"
-```
-
-Untuk keamanan OCR, buat **satu rahasia/token acak yang kuat**. Anda dapat men-generate token dengan perintah berikut (contoh pada Linux):
-
-```bash
-openssl rand -hex 32
-```
-
-> **PENTING:** Simpan hasil dari perintah di atas. Jangan commit hasilnya ke Git.
+Untuk keamanan OCR, buat **satu rahasia/token acak yang kuat**.
 
 Edit `.env` (utama Laravel) untuk production:
 
@@ -91,8 +72,6 @@ SESSION_DRIVER=database
 CACHE_STORE=database
 ```
 
-> **Catatan `OCR_SERVICE_URL`**: `http://127.0.0.1:8001` digunakan karena konfigurasi ini berlaku ketika Laravel berjalan langsung pada host/server dan container OCR mempublikasikan port 8001 pada host yang sama. Port OCR sengaja dibatasi hanya pada localhost (`127.0.0.1:8001`) agar tidak dapat diakses langsung dari jaringan publik/luar, karena hanya Laravel yang perlu mengaksesnya. Konfigurasi localhost ini berlaku untuk arsitektur saat ini: Laravel di host + OCR di Docker pada server yang sama. Jika Laravel nantinya juga dijalankan di dalam Docker, `127.0.0.1` dari container Laravel tidak menunjuk ke container OCR. Pada arsitektur tersebut Docker networking/service name harus digunakan.
-
 Kemudian edit `ocr-service/.env`:
 
 ```env
@@ -107,30 +86,51 @@ Generate application key untuk Laravel:
 php artisan key:generate
 ```
 
-### 4. Migrasi Database
+### 4. Run Deployment Preflight
+
+Pastikan environment sudah siap menggunakan command preflight:
+
+```bash
+bash scripts/deployment/preflight.sh --with-ocr
+```
+Jika gagal, perbaiki masalah yang ditunjukkan sebelum melanjutkan.
+
+### 5. Verify PostgreSQL Backup/Target
+
+Pastikan PostgreSQL yang dituju sudah tersedia (versi 17.11) dan sudah dibackup jika diperlukan.
+
+### 6. Run Normal Migration
 
 ```bash
 php artisan migrate --force
 php artisan storage:link
-php artisan db:seed --class="Database\\Seeders\\Inventory\\OfficeActivityInventoryCodeSeeder"
+php artisan db:seed --class="Database\Seeders\Inventory\OfficeActivityInventoryCodeSeeder"
 ```
 
-Untuk instalasi baru (fresh install), buat akun Superadmin pertama dengan perintah interaktif:
+Untuk instalasi baru (fresh install), buat akun Superadmin pertama:
 
 ```bash
 php artisan app:provision-superadmin
 ```
 
-### 5. Optimasi Cache
+### 7. Build/Cache Application
 
 ```bash
+npm run typecheck
+npm run lint
+npm run build
+npm run verify:build
+rm -f public/hot
+
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 php artisan optimize
 ```
 
-### 6. Set Permission
+### 8. Start/Configure Web Runtime
+
+Set permission yang tepat:
 
 ```bash
 chown -R www-data:www-data /var/www/siperbang/storage
@@ -139,43 +139,9 @@ chmod -R 775 /var/www/siperbang/storage
 chmod -R 775 /var/www/siperbang/bootstrap/cache
 ```
 
-### 7. Konfigurasi Nginx
+Konfigurasikan Nginx atau Apache (lihat referensi Nginx di revisi sebelumnya).
 
-```nginx
-server {
-    listen 443 ssl;
-    server_name siperbang.example.com;
-    root /var/www/siperbang/public;
-
-    index index.php;
-
-    ssl_certificate /path/to/cert.pem;
-    ssl_certificate_key /path/to/key.pem;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Strict-Transport-Security "max-age=31536000" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'self'; form-action 'self'; object-src 'none';" always;
-    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=()" always;
-
-    location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        include fastcgi_params;
-    }
-
-    location ~ /\.(?!well-known).* {
-        deny all;
-    }
-}
-```
-
-### 8. Setup Queue Worker dengan Supervisor
+### 9. Queue / Scheduler
 
 Buat file `/etc/supervisor/conf.d/siperbang-ocr-worker.conf`:
 
@@ -194,30 +160,17 @@ stdout_logfile=/var/www/siperbang/storage/logs/worker.log
 stopwaitsecs=120
 ```
 
-> **Catatan Concurrency:** OCR service saat ini mempunyai satu PaddleOCR inference slot. Queue OCR production sengaja menggunakan `numprocs=1` (satu worker) agar request OCR diserialisasi dari sisi Laravel dan tidak saling bertabrakan dengan inference lock 5 detik. Dengan satu worker, dokumen OCR diproses secara serial dan dokumen tambahan tetap aman menunggu di queue. Ini adalah pengaturan kapasitas default yang disengaja (intentional capacity setting) untuk arsitektur saat ini.
-
 ```bash
 supervisorctl reread
 supervisorctl update
 supervisorctl start siperbang-ocr-worker:*
 ```
 
-### 9. Laravel Scheduler
-
-Branding yang dijadwalkan dipublikasikan oleh command `branding:publish-due`. Tambahkan satu entri cron untuk user aplikasi:
+Tambahkan entri cron untuk scheduler:
 
 ```cron
 * * * * * cd /var/www/siperbang && php artisan schedule:run >> /dev/null 2>&1
 ```
-
-Uji konfigurasi:
-
-```bash
-php artisan schedule:list
-php artisan branding:publish-due
-```
-
-Tanpa cron tersebut, versi terjadwal tetap tersimpan tetapi tidak akan aktif otomatis pada waktunya.
 
 ### 10. Deploy OCR Service
 
@@ -231,13 +184,15 @@ Container OCR telah dikonfigurasi berjalan secara aman sebagai user *non-root* (
 
 > **PERHATIAN:** Current OCR deployment is NOT designed as a fully air-gapped installation when starting from a fresh server with no pre-existing dependencies/model cache.
 
+> **Arsitektur Host:** Current accepted OCR host architecture adalah x86_64 / AMD64. ARM64 NOT ACCEPTED for current pinned PaddlePaddle deployment unless separately validated in future.
+
 Pastikan server memiliki outbound network yang diperlukan untuk proses Docker build/dependency retrieval dan initial PaddleOCR model retrieval.
 
 Saat `siperbang_ocr_models` masih kosong pada fresh deployment, PaddleOCR belum memiliki model pretrained lokal. Saat OCR engine pertama kali diinisialisasi:
 - PaddleOCR memeriksa model/cache lokal
 - model belum tersedia
 - mengambil model dari configured remote source
-- menyimpan cache ke `/root/.paddlex` (harus diperhatikan apabila berpindah ke non-root)
+- menyimpan cache ke `/home/ocruser/.paddlex` (harus diperhatikan apabila berpindah ke non-root)
 
 Variabel `PADDLE_PDX_MODEL_SOURCE=BOS` menentukan remote model source untuk Paddle/PaddleX. Ini BUKAN offline mode. Model source is remote and requires outbound network when required model files are not yet cached. Tim infrastruktur harus memverifikasi endpoint outbound aktual yang digunakan versi Paddle/PaddleX yang dipasang.
 
@@ -247,7 +202,7 @@ Jalankan container OCR di latar belakang dan build image menggunakan source code
 docker compose up -d --build ocr
 ```
 
-> **Perhatian Volume:** Persistent cache untuk model Paddle/PaddleX OCR disimpan dalam named volume `siperbang_ocr_models` (mounted ke `/root/.paddlex`). JANGAN gunakan `docker compose down -v` untuk normal deployment/redeploy karena `-v` dapat menghapus named volume, termasuk cache model OCR.
+> **Perhatian Volume:** Persistent cache untuk model Paddle/PaddleX OCR disimpan dalam named volume `siperbang_ocr_models` (mounted ke `/home/ocruser/.paddlex`). JANGAN gunakan `docker compose down -v` untuk normal deployment/redeploy karena `-v` dapat menghapus named volume, termasuk cache model OCR.
 
 #### Verifikasi dan Troubleshooting
 
@@ -523,13 +478,13 @@ Cek status aplikasi:
 
 ```bash
 # Cek Laravel
-curl -f http://localhost/api/user  # harus return 401 (bukan 500)
+status="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1/api/user)"; test "$status" = "401"
 
 # Cek OCR service
 curl -f http://127.0.0.1:8001/health
 
 # Cek queue worker dan scheduler
-php artisan queue:monitor
+php artisan queue:monitor database:ocr --max=100
 php artisan schedule:list
 php artisan branding:publish-due
 
