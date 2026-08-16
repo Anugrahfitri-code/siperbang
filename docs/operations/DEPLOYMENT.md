@@ -223,15 +223,9 @@ Tanpa cron tersebut, versi terjadwal tetap tersimpan tetapi tidak akan aktif oto
 
 > **Catatan Migration:** OCR production pada panduan ini dijalankan menggunakan Docker Compose. Jangan menjalankan instance systemd OCR lama secara bersamaan pada port yang sama. Pastikan tidak ada service OCR lama yang masih menggunakan port 8001 sebelum mengaktifkan container Docker OCR.
 
-#### Peringatan Root Container (PRODUCTION HARDENING REQUIRED)
+#### OCR Non-Root Container
 
-Container OCR saat ini berjalan dengan `USER root` secara default. Menjalankan service dengan root di dalam container bukan praktik keamanan production yang direkomendasikan.
-
-**Tugas Staging (Wajib sebelum rilis Production):**
-1. Lakukan uji coba pembatasan akses (*non-root container user*) pada eksekusi Dockerfile OCR.
-2. Konfirmasi bahwa path lokal PaddleOCR seperti cache direktori atau `/tmp` memiliki akses tulis untuk user *non-root*.
-3. Konfirmasi bahwa tes OCR berjalan lancar.
-4. Hanya setujui eksekusi *root* untuk production **JIKA** modifikasi non-root terbukti secara teknis memblokir performa/library OCR dan arsitektur pengganti/isolasi tambahan telah didokumentasikan.
+Container OCR telah dikonfigurasi berjalan secara aman sebagai user *non-root* (`ocruser`). Hak akses untuk cache PaddleOCR telah dipersiapkan pada proses build. JANGAN menjalankan container OCR dengan pengaturan `privileged: true` atau mengembalikan *runtime* ke `root` karena alasan kompabilitas, kecuali disetujui secara eksplisit dengan asesmen risiko tersendiri.
 
 #### OCR First-Boot Network Requirement
 
@@ -513,10 +507,13 @@ Sebelum rilis ke production, **seluruh checklist berikut WAJIB dipenuhi pada env
 6. Menguji jalannya Supervisor/queue smoke worker (proses antrean receipt OCR berjalan sukses).
 7. Menguji jalannya scheduler smoke (memverifikasi scheduler dapat mempublikasi versi branding tertunda).
 8. Memverifikasi OCR terekspos hanya di localhost/private binding dan tidak bisa diakses langsung publik.
-9. Menjalankan **OCR non-root feasibility test** (evaluasi apakah OCR bisa berjalan *non-root*, atau terpaksa *root* karena *PaddleOCR hardcoded paths*).
+9. Menjalankan verifikasi keamanan *patch OS/kernel host perusahaan* dan memastikan environment host aman sebelum *go-live* (karena pemindaian Trivy pada container image tidak memvalidasi kernel host).
 10. Mengeksekusi backup creation dan memastikan file backup valid dan tersedia.
 11. Melakukan **restore rehearsal** ke server dummy/staging lain dari hasil backup yang ada.
 12. Melakukan tes read/write storage (termasuk folder uploads/reports) di bawah production-like permissions (non-root `www-data` ownership).
+13. **Dependency Security Gate (CI)**: Sebelum rilis, verifikasi bahwa pemindaian keamanan dependensi *continuous integration* (Composer, npm, Python `pip-audit`, dan Trivy Critical) menunjukkan status bersih (green) untuk *commit* rilis tersebut (Lihat [SECURITY.md](SECURITY.md)).
+14. **Tenggat Waktu Risiko Residual**: Pastikan bahwa *deployment* tidak dilakukan pada atau setelah tanggal kedaluwarsa pengecualian keamanan (seperti `2026-09-15` untuk npm dan Trivy). Apabila sudah mendekati atau melewati tenggat waktu, risiko harus ditinjau dan diperbarui terlebih dahulu.
+15. **Company-Host OCR Inference**: Melaksanakan *authenticated synthetic OCR inference* pada *host deployment* aktual perusahaan menggunakan dokumen pengujian non-sensitif (misalnya *synthetic receipt*) untuk memverifikasi fungsionalitas *end-to-end* secara utuh dan aman. Inference pada lokal *developer* TIDAK MENGGANTIKAN persyaratan pengujian pada host perusahaan ini karena perbedaan dukungan CPU/virtualisasi PaddlePaddle.
 
 ---
 
@@ -543,3 +540,17 @@ curl -f http://localhost/api/settings
 # Cek supervisor
 supervisorctl status
 ```
+
+---
+
+## Production Go-Live Boundary
+
+Penyelesaian *hardening* keamanan dan infrastruktur pada repositori **TIDAK** dengan sendirinya mengotorisasi *production go-live*. Sebelum *go-live*, *environment* perusahaan masih memerlukan:
+
+1. Verifikasi *patch* keamanan kernel host.
+2. Validasi environment/versi/konfigurasi PostgreSQL secara aktual.
+3. Validasi kebenaran *secrets* dan variabel *environment*.
+4. Uji *inference* OCR terautentikasi pada host perusahaan.
+5. *Smoke test* dan *security acceptance* pada tahap *staging* dan *deployment*.
+6. Kepemilikan operasional yang jelas terkait prosedur *backup* dan *rollback*.
+7. Persetujuan akhir (Final approval) secara resmi.

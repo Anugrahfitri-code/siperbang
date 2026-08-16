@@ -17,10 +17,10 @@ Sertakan: deskripsi masalah, langkah reproduksi, dan dampak potensial.
 - Session di-invalidate dan token di-regenerate setelah logout
 - Login menggunakan `username`, bukan email
 - Password di-hash menggunakan **bcrypt** via Laravel `Hash::make()`
+- Terdapat penegakan *active-user* (inactive user enforcement) pada rute aplikasi yang terlindungi (termasuk `/api/user`). Session dari user yang statusnya berubah menjadi Nonaktif akan ditolak.
+- Klien tidak dapat menentukan identitas requester secara bebas; identitas otorisasi selalu diambil dari sesi server.
 
 ### Yang Perlu Diperbaiki (Saat Ini)
-- [ ] Tidak ada pembatasan percobaan login (rate limiting) — rentan brute force
-- [ ] Password default user baru adalah string literal `'password'` — harus dipaksa ganti
 - [ ] Tidak ada kebijakan kompleksitas password
 - [ ] Tidak ada two-factor authentication (2FA)
 
@@ -105,10 +105,10 @@ Sistem menggunakan **Role-Based Access Control** via `RoleMiddleware`:
 
 ## Rate Limiting
 
-Saat ini **tidak ada** rate limiting di semua endpoint.
+- Rate limiting telah diimplementasikan pada endpoint login (`/api/login`) dan telah diverifikasi.
+- Saat ini belum ada pembatasan khusus pada endpoint fungsional lainnya.
 
 ### Yang Harus Ditambahkan
-- [ ] Rate limit pada endpoint login (`/api/login`) — minimal 5 percobaan per menit per IP
 - [ ] Rate limit pada endpoint upload OCR (file besar, resource intensif)
 - [ ] Rate limit umum pada semua endpoint API
 
@@ -126,6 +126,56 @@ Saat ini **tidak ada** rate limiting di semua endpoint.
 - [ ] Audit log belum mencakup seluruh login, logout, gagal login, akses ditolak, delete data, dan update user.
 - [ ] `history_logs` dan `audit_logs` masih tumpang tindih; rencanakan konsolidasi skema.
 - [ ] Pertimbangkan kebijakan retensi dan ekspor audit ke penyimpanan append-only.
+
+## Penanganan Error / Error Leakage
+
+Rute yang sensitif terhadap keamanan saat ini telah direview dan terverifikasi mengembalikan pesan error publik/generik ke sisi klien, tanpa mengekspos informasi eksepsi internal, log PDO, atau query SQL mentah.
+
+---
+
+## Integritas Stok / Data Integrity
+
+**Non-bulk stock (Single Request):**
+- Dilindungi oleh database transaction.
+- Menggunakan *row locking* (`lockForUpdate`) saat pembacaan stok berjalan bersamaan.
+- Konsistensi antara mutasi stok dan ledger (`StockHistory`) dijaga.
+- *PostgreSQL concurrency acceptance* pada beban konkuren (non-bulk) berstatus PASS.
+
+**Bulk / Finalization:**
+- Endpoint usang `/api/stocks/bulk` telah dihapus.
+- Validasi dan verifikasi batch dilakukan secara atomik.
+- Finalisasi diserialisasi menggunakan *database locking* di tingkat BON.
+- Sistem mencegah duplikasi finalisasi secara ketat.
+- Pembaruan terhadap stok yang sama secara konkuren serta pembuatan item logis (kode aktivitas/persediaan) yang belum ada pada saat bersamaan diatur secara aman (*coordinated*).
+- Status akhir BON, StockHistory, dan mutasi stok di-commit ke database secara atomik.
+
+---
+
+## Dependency / Supply-Chain Security
+
+Sistem integrasi *continuous dependency security* memblokir potensi serangan melalui mekanisme berikut:
+- **Composer**: `composer audit` bersifat *blocking*.
+- **npm**: *Production dependency audit* bersifat *blocking*, dengan pengecualian *accepted-risk* yang teridentifikasi secara spesifik dan sementara.
+- **Python OCR**: `pip-audit` bersifat *blocking*.
+- **Container / Image**: Pemindaian kerentanan Trivy CRITICAL bersifat *blocking*, sedangkan HIGH bersifat *report*.
+- Pemindaian dijadwalkan berjalan harian.
+- Semua aksi GitHub eksternal (*external GitHub Actions*) menggunakan rujukan *full immutable commit SHA*.
+
+*(Catatan: Blokade kerentanan di atas tidak menjanjikan risiko rantaian pasok nol secara permanen. Adopsi paket baru selalu wajib di-review).*
+
+### Pengecualian Risiko Residual Sementara (Expiry: 2026-09-15)
+
+**npm Accepted Risks:**
+- `GHSA-rgw5-rvv9-x895` (brace-expansion)
+- `GHSA-w5hq-g745-h8pq` (uuid)
+  - Pengecualian ini didasarkan pada tinjauan ketidakterjangkauan (*reachability*) di dalam kode aplikasi spesifik saat ini. Pengecualian bersifat *advisory-specific*, tidak mengizinkan kerentanan masa depan dari paket yang sama, dan temuan CRITICAL akan tetap memblokir deployment.
+
+**Trivy Exceptions:**
+- `CVE-2025-37777`, `CVE-2026-52989`, `CVE-2026-53215`
+  - Trivy memetakan kerentanan kernel Linux di atas pada dependensi `linux-libc-dev` di dalam image. Karena arsitektur container Docker menggunakan kernel host (bukan menjalankan kernel internal dari image), ini merupakan pengecualian aplikabilitas container yang sangat sempit (*narrow applicability exception*).
+  - **PENTING:** Ini TIDAK berarti OS host otomatis aman. Validasi *patch* keamanan kernel host milik perusahaan tetap WAJIB dilakukan secara independen sebelum *go-live*.
+
+Pengecualian risiko di atas kedaluwarsa pada **2026-09-15** dan wajib ditinjau, dihapus, atau diperpanjang melalui persetujuan secara spesifik.
 
 ---
 

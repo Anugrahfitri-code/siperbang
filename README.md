@@ -8,7 +8,7 @@ SIPERBANG adalah aplikasi pengelolaan persediaan barang untuk instansi pemerinta
 |---|---|
 | Backend | PHP 8.4 dan Laravel 13 |
 | Frontend | React 19, TypeScript, Tailwind CSS 4, Vite 8 |
-| Database | SQLite untuk pengembangan, PostgreSQL atau MySQL untuk produksi |
+| Database | SQLite untuk pengembangan (local bootstrap), PostgreSQL 17.11 untuk staging/produksi |
 | OCR | Python, FastAPI, PaddleOCR |
 | Queue | Laravel database queue |
 
@@ -138,6 +138,10 @@ OCR:
 cd ocr-service
 python -m pytest
 ```
+
+## Status Produksi
+
+Repository security dan kontrol data integrity telah di-harden dan diverifikasi secara teknis di level source code. Namun, **final company-environment acceptance tetap dibutuhkan (seperti verifikasi patch OS/kernel host dan uji coba inference OCR terautentikasi di infrastruktur nyata) sebelum production go-live disetujui.**
 
 ## Dokumentasi
 
